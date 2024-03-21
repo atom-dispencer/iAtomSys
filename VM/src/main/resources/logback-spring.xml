@@ -1,0 +1,35 @@
+<configuration>
+
+    <appender name="FILE_INFO" class="ch.qos.logback.core.FileAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+
+        <append>false</append>
+
+        <encoder>
+            <pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
+        </encoder>
+
+        <file>logs/iatomsys-info.log</file>
+    </appender>
+
+    <appender name="FILE_DEBUG" class="ch.qos.logback.core.FileAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>DEBUG</level>
+        </filter>
+
+        <append>false</append>
+
+        <encoder>
+            <pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
+        </encoder>
+
+        <file>logs/iatomsys-debug.log</file>
+    </appender>
+
+    <root level="debug">
+        <appender-ref ref="FILE_INFO" />
+        <appender-ref ref="FILE_DEBUG" />
+    </root>
+</configuration>

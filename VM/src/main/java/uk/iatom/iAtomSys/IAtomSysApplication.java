@@ -9,7 +9,7 @@ public class IAtomSysApplication {
 
 	public static void main(String[] args) {
 
-		Thread hook = new Thread(() -> System.out.println(ANSICodes.getResetSequence()));
+		Thread hook = new Thread(() -> System.out.println(ANSICodes.getAbortSequence()));
 		Runtime.getRuntime().addShutdownHook(hook);
 
 		SpringApplication.run(IAtomSysApplication.class, args);

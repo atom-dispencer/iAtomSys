@@ -9,16 +9,16 @@ import org.springframework.context.annotation.Configuration;
 public class ShutdownConfiguration {
 
     @Bean
-    public TerminateBean getTerminateBean() {
-        return new TerminateBean();
+    public TerminationBean getTerminateBean() {
+        return new TerminationBean();
     }
 
 
-    public static class TerminateBean {
+    public static class TerminationBean {
 
         @PreDestroy
         public void onDestroy() {
-            System.out.println("Spring Container is destroyed!");
+            System.out.println("TerminationBean destruction triggered...");
         }
     }
 }

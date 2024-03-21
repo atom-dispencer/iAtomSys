@@ -1,5 +1,6 @@
 package uk.iatom.iAtomSys.client.shell;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,12 +31,13 @@ public class ShellCommands {
 
     private final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
 
-    @PreDestroy
-    public void preDestroy() {
-        System.out.println("predestroy shellcommands help1111!!");
-        System.out.println(ANSICodes.OLD_BUFFER);
-        System.out.println("predestroy shellcommands help!!");
+    @PostConstruct
+    public void postConstruct() {
+        shellDisplay.activate();
     }
+
+    @PreDestroy
+    public void preDestroy() { shellDisplay.deactivate(); }
 
     @Value("${server.port}")
     int port;
@@ -54,8 +56,8 @@ public class ShellCommands {
     }
 
     @ShellMethod(key = "testing")
-    public String testing() {
-        return ANSICodes.NEW_BUFFER + "...1, 2, 3!";
+    public void testing() {
+        shellDisplay.showShortMessage("Stuff and things!");
     }
 
     @ShellMethod(key = "step")
