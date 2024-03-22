@@ -20,35 +20,36 @@ public class ANSICodes {
   public static final String POP_CURSOR_POS = "\033[u";
 
 
-  public static String getAbortSequence() {
+  public static String getExitMetaSequence() {
     return String.join("", new String[]{
+        "Issuing ANSI exit meta-sequence...",
         ANSICodes.OLD_BUFFER,
-        " ### ABORT ABORT ABORT ### "
+        "ANSI exit meta-sequence issued.",
     });
   }
 
-  public static String moveCursor(Point point) {
+  public static String moveTo(Point point) {
     // Row, then column
     return "\033[%d;%dH".formatted(point.y, point.x);
   }
 
-  public static String moveCursorHorizontalAbsolute(int column) {
+  public static String moveToColumn(int column) {
     return "\033[%dG".formatted(column);
   }
 
-  public static String moveCursorUp(int n) {
+  public static String moveUp(int n) {
     return "\033[%dA".formatted(n);
   }
 
-  public static String moveCursorDown(int n) {
+  public static String moveDown(int n) {
     return "\033[%dB".formatted(n);
   }
 
-  public static String moveCursorRight(int n) {
+  public static String moveRight(int n) {
     return "\033[%dC".formatted(n);
   }
 
-  public static String moveCursorLeft(int n) {
+  public static String moveLeft(int n) {
     return "\033[%dD".formatted(n);
   }
 

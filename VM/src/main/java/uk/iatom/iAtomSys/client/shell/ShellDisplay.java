@@ -128,7 +128,7 @@ public class ShellDisplay {
 
     String headerLine = " %s%s%s ".formatted(preHeading, heading, postHeading);
     String midLine =
-        " #" + ANSICodes.moveCursorHorizontalAbsolute(terminal.getSize().getColumns() - 1) + "# ";
+        " #" + ANSICodes.moveToColumn(terminal.getSize().getColumns() - 1) + "# ";
     String footerLine = " " + "#".repeat(terminal.getSize().getColumns() - 2) + " ";
 
     print(ANSICodes.PUSH_CURSOR_POS, ANSICodes.YOU_ARE_DRUNK, ANSICodes.CLEAR_SCREEN,
@@ -159,12 +159,12 @@ public class ShellDisplay {
     String line3 = "~ :>" + " ".repeat(COMMAND_MAX_WIDTH) + " ~";
     String line4 = "~".repeat(COMMAND_MAX_WIDTH + 6);
 
-    print(ANSICodes.moveCursor(startPoint),
-        line1 + ANSICodes.moveCursorLeft(COMMAND_MAX_WIDTH + 6) + ANSICodes.moveCursorDown(1),
-        line2 + ANSICodes.moveCursorLeft(COMMAND_MAX_WIDTH + 6) + ANSICodes.moveCursorDown(1),
-        line3 + ANSICodes.moveCursorLeft(COMMAND_MAX_WIDTH + 6) + ANSICodes.moveCursorDown(1),
+    print(ANSICodes.moveTo(startPoint),
+        line1 + ANSICodes.moveLeft(COMMAND_MAX_WIDTH + 6) + ANSICodes.moveDown(1),
+        line2 + ANSICodes.moveLeft(COMMAND_MAX_WIDTH + 6) + ANSICodes.moveDown(1),
+        line3 + ANSICodes.moveLeft(COMMAND_MAX_WIDTH + 6) + ANSICodes.moveDown(1),
         line4,
-        ANSICodes.moveCursor(startPoint) + ANSICodes.moveCursorRight(4) + ANSICodes.moveCursorDown(
+        ANSICodes.moveTo(startPoint) + ANSICodes.moveRight(4) + ANSICodes.moveDown(
             2));
   }
 }
