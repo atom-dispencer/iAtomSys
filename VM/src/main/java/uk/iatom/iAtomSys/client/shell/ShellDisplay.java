@@ -19,12 +19,11 @@ public class ShellDisplay {
   private final Logger logger = LoggerFactory.getLogger(ShellDisplay.class);
   @Getter
   private final ShellDisplayState state = new ShellDisplayState();
-  private final int COMMAND_MAX_WIDTH = 64;
   private final PrintStream sysOutCache = System.out;
   private boolean alive;
   private Terminal terminal;
   private final Supplier<Point> COMMAND_BOX_POS = () -> new Point(5,
-      terminal.getSize().getRows() - 10);
+      terminal.getSize().getRows() - 5);
 
   public void activate() {
     if (alive) {
@@ -90,11 +89,11 @@ public class ShellDisplay {
     disableSysOut();
   }
 
-  public void enableSysOut() {
+  private void enableSysOut() {
     System.setOut(sysOutCache);
   }
 
-  public void disableSysOut() {
+  private void disableSysOut() {
     System.setOut(new PrintStream(new OutputStream() {
       @Override
       public void write(int b) {
@@ -118,7 +117,7 @@ public class ShellDisplay {
     drawCommandInput(state.getCommandMessage());
   }
 
-  private void drawBackground() {
+  public void drawBackground() {
     assertShellLive();
     int preHeadingWidth = 10;
     String preHeading = "#".repeat(preHeadingWidth);
@@ -140,8 +139,8 @@ public class ShellDisplay {
    * Reset the typing-cursor to the start of the command input box and clear the current command
    * input.
    */
-  private void drawCommandInput(String commandMessage) {
-    //TODO should drawCommandInput clear the current command? Maybe need to flush System.in?
+  public void drawCommandInput(String commandMessage) {
+    int COMMAND_MAX_WIDTH = 64;
     assertShellLive();
     Point startPoint = COMMAND_BOX_POS.get();
 
