@@ -7,7 +7,6 @@ import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.shell.ExitRequest;
 
 import java.awt.*;
 import java.io.IOException;
@@ -42,8 +41,13 @@ public class ShellDisplay {
         }
 
         logger.info("Activating ShellDisplay...");
-        // TODO If zero, error and exit
         logger.info("Terminal size is: %s".formatted(terminal.getSize()));
+        if (terminal.getSize().getRows() == 0 || terminal.getSize().getColumns() == 0) {
+            logger.error(
+                    "A terminal dimension is zero. Rows:%d; Columns:%d;".formatted(terminal.getSize().getRows(), terminal.getSize().getColumns()),
+                    new ShellDrawingException("Neither terminal dimension may be zero.")
+            );
+        }
 
 
         print(
