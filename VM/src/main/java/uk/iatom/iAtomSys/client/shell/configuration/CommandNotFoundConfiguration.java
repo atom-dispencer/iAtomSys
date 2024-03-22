@@ -13,10 +13,11 @@ public class CommandNotFoundConfiguration implements CommandNotFoundMessageProvi
 
     @Override
     public String apply(ProviderContext providerContext) {
+        shellDisplay.onAnyCommand();
+
         String message = "Command not found: '%s'".formatted(providerContext.text());
         String trimmed = message.substring(0, Math.min(64, message.length()));
         shellDisplay.drawShortMessage(trimmed);
-        shellDisplay.drawCommandInput();
         return "";
     }
 }
