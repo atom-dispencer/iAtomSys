@@ -42,14 +42,20 @@ public class ShellCommands {
     @Value("${server.port}")
     int port;
 
+    private String formatUri(final String endpoint) {
+        return "http://localhost:%d/%s".formatted(port, endpoint);
+    }
+
     @ShellMethod(key = "hello")
-    public String hello() {
-        return "World!";
+    public void hello() {
+        shellDisplay.onAnyCommand();
+        shellDisplay.drawShortMessage("Hello!");
     }
 
     @ShellMethod(key = "shutdown")
     public String shutdown() {
-        shellDisplay.showShortMessage("Shutting down application...");
+        shellDisplay.onAnyCommand();
+        shellDisplay.drawShortMessage("Shutting down application...");
         System.out.println("lol Shutting down application...");
         ((ConfigurableApplicationContext) applicationContext).close();
         throw new ExitRequest();
@@ -57,13 +63,15 @@ public class ShellCommands {
 
     @ShellMethod(key = "testing")
     public void testing() {
-        shellDisplay.showShortMessage("Stuff and things!");
+        shellDisplay.onAnyCommand();
+        shellDisplay.drawShortMessage("Stuff and things!");
     }
 
     @ShellMethod(key = "step")
     public void step(
             final @ShellOption(value = "-n", defaultValue = "1") int count
     ) {
+        shellDisplay.onAnyCommand();
         URI uri = UriComponentsBuilder.fromHttpUrl(formatUri("step"))
                 .queryParam("count", count)
                 .build().toUri();
@@ -72,7 +80,4 @@ public class ShellCommands {
         logger.info(String.valueOf(statusCode));
     }
 
-    private String formatUri(final String endpoint) {
-        return "http://localhost:%d/%s".formatted(port, endpoint);
-    }
 }

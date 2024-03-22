@@ -35,4 +35,9 @@ public class ANSICodes {
         return "\033[%dG".formatted(column);
     }
 
+    public static String moveCursorUp(int n) { return "\033[%dA".formatted(n); }
+    public static String moveCursorDown(int n) { return "\033[%dB".formatted(n); }
+    public static String moveCursorRight(int n) { return "\033[%dC".formatted(n); }
+    public static String moveCursorLeft(int n) { return "\033[%dD".formatted(n); }
+
 }

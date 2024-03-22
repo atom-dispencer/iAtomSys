@@ -32,4 +32,9 @@ public class ShellBeans {
             }
         };
     }
+
+    @Bean
+    public CommandNotFoundConfiguration commandNotFoundConfiguration() {
+        return new CommandNotFoundConfiguration();
+    }
 }
