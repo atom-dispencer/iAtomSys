@@ -6,8 +6,9 @@ import org.springframework.shell.jline.PromptProvider;
 
 @Configuration
 public class ShellPromptConfiguration implements PromptProvider {
-    @Override
-    public AttributedString getPrompt() {
-        return new AttributedString("");  // Remove the prompt
-    }
+
+  @Override
+  public AttributedString getPrompt() {
+    return new AttributedString("");  // Remove the prompt
+  }
 }

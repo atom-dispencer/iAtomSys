@@ -9,14 +9,14 @@ import uk.iatom.iAtomSys.server.vm.IAtomSysVM;
 @Configuration
 public class ServerBeans {
 
-    @Bean
-    public VMConfiguration vmConfiguration() {
-        return new VMConfiguration();
-    }
+  @Bean
+  public VMConfiguration vmConfiguration() {
+    return new VMConfiguration();
+  }
 
-    @Bean
-    @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
-    public IAtomSysVM iAtomSysVM() {
-        return new IAtomSysVM();
-    }
+  @Bean
+  @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
+  public IAtomSysVM iAtomSysVM() {
+    return new IAtomSysVM();
+  }
 }

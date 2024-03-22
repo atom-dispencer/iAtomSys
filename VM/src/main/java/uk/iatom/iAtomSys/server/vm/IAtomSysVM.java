@@ -7,12 +7,13 @@ import org.springframework.stereotype.Component;
 @Component
 public class IAtomSysVM {
 
-    private Logger logger = LoggerFactory.getLogger(IAtomSysVM.class);
+  private Logger logger = LoggerFactory.getLogger(IAtomSysVM.class);
 
-    public IAtomSysVM() {}
+  public IAtomSysVM() {
+  }
 
-    public void processNextCycle() {
+  public void processNextCycle() {
 
-        //logger.info("Processing!");
-    }
+    //logger.info("Processing!");
+  }
 }

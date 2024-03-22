@@ -10,14 +10,14 @@ import uk.iatom.iAtomSys.server.vm.IAtomSysVM;
 @EnableScheduling
 public class AsyncConfiguration {
 
-    @Autowired
-    private VMConfiguration vmConfiguration;
+  @Autowired
+  private VMConfiguration vmConfiguration;
 
-    @Autowired
-    private IAtomSysVM iAtomSysVM;
+  @Autowired
+  private IAtomSysVM iAtomSysVM;
 
-    @Scheduled(fixedRateString = "#{@vmConfiguration.millisPerCycle}")
-    public void processNextCycle() {
-        iAtomSysVM.processNextCycle();
-    }
+  @Scheduled(fixedRateString = "#{@vmConfiguration.millisPerCycle}")
+  public void processNextCycle() {
+    iAtomSysVM.processNextCycle();
+  }
 }
