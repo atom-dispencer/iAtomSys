@@ -27,7 +27,7 @@ public class ShellCommands {
     private ApplicationContext applicationContext;
 
     @Autowired
-    private ShellDisplay shellDisplay;
+    private ShellDisplay display;
 
     private final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
 
@@ -39,11 +39,11 @@ public class ShellCommands {
 
     @PostConstruct
     public void postConstruct() {
-        shellDisplay.activate();
+        display.activate();
     }
 
     @PreDestroy
-    public void preDestroy() {shellDisplay.deactivate();}
+    public void preDestroy() {display.deactivate();}
 
     @Value("${server.port}")
     int port;
@@ -54,44 +54,38 @@ public class ShellCommands {
 
     @ShellMethod()
     public void hello() {
-        shellDisplay.onAnyCommand();
-        shellDisplay.drawShortMessage("Hello!");
+        display.getState().setCommandMessage("Hello!");
+        display.draw();
     }
 
     @ShellMethod()
     public String exit() {
-        shellDisplay.onAnyCommand();
-        shellDisplay.drawShortMessage("Shutting down application...");
+        display.getState().setCommandMessage("Shutting down application...");
+        display.draw();
         ((ConfigurableApplicationContext) applicationContext).close();
         throw new ExitRequest();
     }
 
     @ShellMethod()
     public void help(final @ShellOption(defaultValue = "0") int page) {
-        shellDisplay.onAnyCommand();
-
-        System.out.println("YOOOOOO");
-        System.out.println("YOOOOOO");
-        System.out.println("YOOOOOO");
-        System.out.println("YOOOOOO");
-
         if (0 <= page && page < HELP_PAGES.length) {
-            shellDisplay.drawShortMessage(HELP_PAGES[page]);
+            display.getState().setCommandMessage(HELP_PAGES[page]);
         } else {
-            shellDisplay.drawShortMessage("%d not in range [0,%d], try 'help 0'".formatted(page, HELP_PAGES.length - 1));
+            display.getState().setCommandMessage("%d not in range [0,%d], try 'help 0'".formatted(page, HELP_PAGES.length - 1));
         }
+        display.draw();
     }
 
     //TODO Availability methods https://docs.spring.io/spring-shell/reference/commands/availability.html
     @ShellMethod()
     public void step(final @ShellOption(value = "-n", defaultValue = "1") int count) {
-        shellDisplay.onAnyCommand();
         URI uri = UriComponentsBuilder.fromHttpUrl(formatUri("step"))
                 .queryParam("count", count)
                 .build().toUri();
         ResponseEntity<String> responseEntity = new RestTemplate().getForEntity(uri, String.class);
         int statusCode = responseEntity.getStatusCodeValue();
         logger.info(String.valueOf(statusCode));
+        display.draw();
     }
 
 }

@@ -1,10 +1,13 @@
 package uk.iatom.iAtomSys.client.shell;
 
 import jakarta.validation.constraints.NotNull;
+import lombok.Getter;
 import org.jline.terminal.Size;
+import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.shell.ExitRequest;
 
 import java.awt.*;
 import java.io.IOException;
@@ -16,11 +19,14 @@ public class ShellDisplay {
 
     private final Logger logger = LoggerFactory.getLogger(ShellDisplay.class);
 
+    @Getter
+    private final ShellDisplayState state = new ShellDisplayState();
+
     private boolean alive;
 
     private static final Size DEFAULT_SIZE = new Size(120, 30);
-    private Size terminalSize = DEFAULT_SIZE;
-    private final Supplier<Point> COMMAND_BOX_POS = () -> new Point(5, terminalSize.getRows() - 10);
+    private Terminal terminal;
+    private final Supplier<Point> COMMAND_BOX_POS = () -> new Point(5, terminal.getSize().getRows() - 10);
     private final int COMMAND_MAX_WIDTH = 64;
     private final PrintStream sysOutCache = System.out;
 
@@ -28,10 +34,16 @@ public class ShellDisplay {
         if (alive) return;
         this.alive = true;
 
+        try {
+            terminal = TerminalBuilder.terminal();
+        } catch (IOException iox) {
+            logger.error("Error activating ShellDisplay. Could not create new Terminal. Cannot continue.", iox);
+            System.exit(-1);
+        }
+
         logger.info("Activating ShellDisplay...");
-        terminalSize = getTargetTerminalSize();
         // TODO If zero, error and exit
-        logger.info("Terminal size is: %s".formatted(terminalSize));
+        logger.info("Terminal size is: %s".formatted(terminal.getSize()));
 
 
         print(
@@ -39,9 +51,12 @@ public class ShellDisplay {
                 ANSICodes.YOU_ARE_DRUNK
         );
 
-        disableSysOut();
+        // disableSysOut();
+
+        state.setCommandMessage("Enter a command below to get started!");
         draw();
-        drawShortMessage("Enter a command below to get started!");
+
+        System.out.println("If you can see this, System.out has not been disabled.");
     }
 
     public void deactivate() {
@@ -49,17 +64,14 @@ public class ShellDisplay {
         this.alive = false;
         logger.info("Deactivating ShellDisplay...");
 
-        print(ANSICodes.OLD_BUFFER);
-        enableSysOut();
-    }
 
-    public Size getTargetTerminalSize() {
         try {
-            // Does the terminal need to be disposed of?
-            return TerminalBuilder.terminal().getSize();
-        } catch (IOException e) {
-            logger.error("Error fetching terminal dimensions. Defaulting to %s".formatted(DEFAULT_SIZE.toString()), e);
-            return DEFAULT_SIZE;
+            terminal.close();
+        } catch (IOException iox) {
+            logger.error("Error closing old terminal.", iox);
+        } finally {
+            print(ANSICodes.OLD_BUFFER);
+            enableSysOut();
         }
     }
 
@@ -71,6 +83,10 @@ public class ShellDisplay {
         disableSysOut();
     }
 
+    public void enableSysOut() {
+        System.setOut(sysOutCache);
+    }
+
     public void disableSysOut() {
         System.setOut(new PrintStream(new OutputStream() {
             @Override
@@ -80,65 +96,40 @@ public class ShellDisplay {
         }));
     }
 
-    public void enableSysOut() {
-        System.setOut(sysOutCache);
-    }
 
     private void assertShellLive() {
         assert alive : new IllegalStateException("ShellDisplay cannot take actions while the shell is not live.");
     }
 
-    public void onAnyCommand() {
-        drawCommandInput();
-    }
-
+    /**
+     * Immediately redraw the UI with the current {@link ShellDisplayState}.
+     */
     public void draw() {
         assertShellLive();
-        drawBorder();
-        drawCommandInput();
+
+        drawBackground();
+        drawCommandInput(state.getCommandMessage());
     }
 
-    public void drawBorder() {
+    private void drawBackground() {
         assertShellLive();
-        int leader = 10;
+        int preHeadingWidth = 10;
+        String preHeading = "#".repeat(preHeadingWidth);
         String heading = " iAtomSysVM ";
-        String headerLine = " %s%s%s ".formatted(
-                "#".repeat(leader),
-                heading,
-                "#".repeat(terminalSize.getColumns() - 2 - leader - heading.length())
-        );
-        String midLine = " #" + ANSICodes.moveCursorHorizontalAbsolute(terminalSize.getColumns() - 1) + "# ";
-        String footerLine = " " + "#".repeat(terminalSize.getColumns() - 2) + " ";
+        int postHeadingWidth = terminal.getSize().getColumns() - 2 - preHeadingWidth - heading.length();
+        String postHeading = "#".repeat(postHeadingWidth);
+
+        String headerLine = " %s%s%s ".formatted(preHeading, heading, postHeading);
+        String midLine = " #" + ANSICodes.moveCursorHorizontalAbsolute(terminal.getSize().getColumns() - 1) + "# ";
+        String footerLine = " " + "#".repeat(terminal.getSize().getColumns() - 2) + " ";
 
         print(
                 ANSICodes.PUSH_CURSOR_POS,
                 ANSICodes.YOU_ARE_DRUNK,
-                ANSICodes.CLEAR_LINE,
+                ANSICodes.CLEAR_SCREEN,
                 headerLine + "\n",
-                (midLine + "\n").repeat(terminalSize.getRows() - 2),
+                (midLine + "\n").repeat(terminal.getSize().getRows() - 2),
                 footerLine,
-                ANSICodes.POP_CURSOR_POS
-        );
-    }
-
-    public void drawShortMessage(@NotNull final String shortMessage) {
-        assertShellLive();
-
-        int length = shortMessage.length();
-        String lengthCorrectedMessage = shortMessage;
-        if (length < COMMAND_MAX_WIDTH) {
-            String format = "%1$-" + COMMAND_MAX_WIDTH + "s";
-            lengthCorrectedMessage = format.formatted(shortMessage);
-        } else if (length > COMMAND_MAX_WIDTH) {
-            lengthCorrectedMessage = shortMessage.substring(0, COMMAND_MAX_WIDTH);
-        }
-
-        print(
-                ANSICodes.PUSH_CURSOR_POS,
-                ANSICodes.moveCursor(COMMAND_BOX_POS.get()),
-                ANSICodes.moveCursorDown(1),
-                ANSICodes.moveCursorRight(2),
-                lengthCorrectedMessage,
                 ANSICodes.POP_CURSOR_POS
         );
     }
@@ -146,13 +137,22 @@ public class ShellDisplay {
     /**
      * Reset the typing-cursor to the start of the command input box and clear the current command input.
      */
-    public void drawCommandInput() {
+    private void drawCommandInput(String commandMessage) {
         //TODO should drawCommandInput clear the current command? Maybe need to flush System.in?
         assertShellLive();
         Point startPoint = COMMAND_BOX_POS.get();
 
+        int length = commandMessage.length();
+        String lengthCorrectedMessage = commandMessage;
+        if (length < COMMAND_MAX_WIDTH) {
+            String format = "%1$-" + COMMAND_MAX_WIDTH + "s";
+            lengthCorrectedMessage = format.formatted(commandMessage);
+        } else if (length > COMMAND_MAX_WIDTH) {
+            lengthCorrectedMessage = commandMessage.substring(0, COMMAND_MAX_WIDTH);
+        }
+
         String line1 = "~".repeat(COMMAND_MAX_WIDTH + 6);
-        String line2 = "~ " + ANSICodes.moveCursorRight(COMMAND_MAX_WIDTH + 2) + " ~";
+        String line2 = "~ " + lengthCorrectedMessage + "   ~";
         String line3 = "~ :>" + " ".repeat(COMMAND_MAX_WIDTH) + " ~";
         String line4 = "~".repeat(COMMAND_MAX_WIDTH + 6);
 

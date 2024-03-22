@@ -35,8 +35,8 @@ public class CustomExceptionResolver implements CommandExceptionResolver {
             message = "Error logged: %s".formatted(ex.getClass().getSimpleName());
         }
 
-        shellDisplay.onAnyCommand();
-        shellDisplay.drawShortMessage(message);
+        shellDisplay.getState().setCommandMessage(message);
+        shellDisplay.draw();
         return CommandHandlingResult.empty();
     }
 

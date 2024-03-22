@@ -11,6 +11,7 @@ public class ANSICodes {
      */
     public static final String YOU_ARE_DRUNK = "\033[H";
 
+    public static final String CLEAR_SCREEN = "\033[2J";
     public static final String CLEAR_RIGHT_OF_CURSOR = "\033[0K";
     public static final String CLEAR_LEFT_OF_CURSOR = "\033[1K";
     public static final String CLEAR_LINE = "\033[2K";
