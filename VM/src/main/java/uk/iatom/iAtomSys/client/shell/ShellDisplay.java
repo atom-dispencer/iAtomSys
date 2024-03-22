@@ -70,7 +70,14 @@ public class ShellDisplay {
     } catch (IOException iox) {
       logger.error("Error closing old terminal.", iox);
     } finally {
-      print(ANSICodes.OLD_BUFFER);
+      print(
+          ANSICodes.OLD_BUFFER,
+          "\nExiting app...\n"
+      );
+      try {
+        int ignored = System.in.read(new byte[System.in.available()]);
+      } catch (IOException ignored) {
+      }
       enableSysOut();
     }
   }
