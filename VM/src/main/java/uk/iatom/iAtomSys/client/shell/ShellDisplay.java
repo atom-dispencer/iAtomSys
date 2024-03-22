@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.function.Supplier;
 
 public class ShellDisplay {
@@ -20,6 +22,7 @@ public class ShellDisplay {
     private Size terminalSize = DEFAULT_SIZE;
     private final Supplier<Point> COMMAND_BOX_POS = () -> new Point(5, terminalSize.getRows() - 10);
     private final int COMMAND_MAX_WIDTH = 64;
+    private final PrintStream sysOutCache = System.out;
 
     public void activate() {
         if (alive) return;
@@ -36,6 +39,7 @@ public class ShellDisplay {
                 ANSICodes.YOU_ARE_DRUNK
         );
 
+        disableSysOut();
         draw();
         drawShortMessage("Enter a command below to get started!");
     }
@@ -46,6 +50,7 @@ public class ShellDisplay {
         logger.info("Deactivating ShellDisplay...");
 
         print(ANSICodes.OLD_BUFFER);
+        enableSysOut();
     }
 
     public Size getTargetTerminalSize() {
@@ -59,9 +64,24 @@ public class ShellDisplay {
     }
 
     private void print(@NotNull final String... messages) {
+        enableSysOut();
         String joined = String.join("", messages);
         System.out.print(joined);
         System.out.flush();
+        disableSysOut();
+    }
+
+    public void disableSysOut() {
+        System.setOut(new PrintStream(new OutputStream() {
+            @Override
+            public void write(int b) {
+                // Do nothing, stream is dead.
+            }
+        }));
+    }
+
+    public void enableSysOut() {
+        System.setOut(sysOutCache);
     }
 
     private void assertShellLive() {

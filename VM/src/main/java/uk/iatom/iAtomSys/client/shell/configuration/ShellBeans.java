@@ -37,4 +37,9 @@ public class ShellBeans {
     public CommandNotFoundConfiguration commandNotFoundConfiguration() {
         return new CommandNotFoundConfiguration();
     }
+
+    @Bean
+    public CustomExceptionResolver customExceptionResolver() {
+        return new CustomExceptionResolver();
+    }
 }

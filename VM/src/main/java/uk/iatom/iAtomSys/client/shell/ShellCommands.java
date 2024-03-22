@@ -31,13 +31,19 @@ public class ShellCommands {
 
     private final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
 
+    public static final String[] HELP_PAGES = new String[]{
+            "[0] Usage: 'help <page>', or check GitHub docs.",
+            "[1] 'hello': Say hi!",
+            "[2] 'step <count>': Do current instruction and increment PC."
+    };
+
     @PostConstruct
     public void postConstruct() {
         shellDisplay.activate();
     }
 
     @PreDestroy
-    public void preDestroy() { shellDisplay.deactivate(); }
+    public void preDestroy() {shellDisplay.deactivate();}
 
     @Value("${server.port}")
     int port;
@@ -46,31 +52,39 @@ public class ShellCommands {
         return "http://localhost:%d/%s".formatted(port, endpoint);
     }
 
-    @ShellMethod(key = "hello")
+    @ShellMethod()
     public void hello() {
         shellDisplay.onAnyCommand();
         shellDisplay.drawShortMessage("Hello!");
     }
 
-    @ShellMethod(key = "shutdown")
-    public String shutdown() {
+    @ShellMethod()
+    public String exit() {
         shellDisplay.onAnyCommand();
         shellDisplay.drawShortMessage("Shutting down application...");
-        System.out.println("lol Shutting down application...");
         ((ConfigurableApplicationContext) applicationContext).close();
         throw new ExitRequest();
     }
 
-    @ShellMethod(key = "testing")
-    public void testing() {
+    @ShellMethod()
+    public void help(final @ShellOption(defaultValue = "0") int page) {
         shellDisplay.onAnyCommand();
-        shellDisplay.drawShortMessage("Stuff and things!");
+
+        System.out.println("YOOOOOO");
+        System.out.println("YOOOOOO");
+        System.out.println("YOOOOOO");
+        System.out.println("YOOOOOO");
+
+        if (0 <= page && page < HELP_PAGES.length) {
+            shellDisplay.drawShortMessage(HELP_PAGES[page]);
+        } else {
+            shellDisplay.drawShortMessage("%d not in range [0,%d], try 'help 0'".formatted(page, HELP_PAGES.length - 1));
+        }
     }
 
-    @ShellMethod(key = "step")
-    public void step(
-            final @ShellOption(value = "-n", defaultValue = "1") int count
-    ) {
+    //TODO Availability methods https://docs.spring.io/spring-shell/reference/commands/availability.html
+    @ShellMethod()
+    public void step(final @ShellOption(value = "-n", defaultValue = "1") int count) {
         shellDisplay.onAnyCommand();
         URI uri = UriComponentsBuilder.fromHttpUrl(formatUri("step"))
                 .queryParam("count", count)
