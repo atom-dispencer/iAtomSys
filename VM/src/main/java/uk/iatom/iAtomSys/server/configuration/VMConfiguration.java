@@ -7,6 +7,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties("iatomsys.vm")
 public class VMConfiguration {
 
-  private int millisPerCycle = 1000;
+  public int millisPerCycle = 1000;
 
+  public int integerWidthBytes;
+
+  public int processorStackSizeInts;
 }
