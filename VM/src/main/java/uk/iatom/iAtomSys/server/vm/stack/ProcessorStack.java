@@ -2,7 +2,7 @@ package uk.iatom.iAtomSys.server.vm.stack;
 
 public interface ProcessorStack {
 
-  void push(byte[] integer);
+  void push(int value);
 
-  void pop();
+  int pop();
 }

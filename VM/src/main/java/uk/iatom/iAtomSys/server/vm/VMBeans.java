@@ -1,11 +1,11 @@
 package uk.iatom.iAtomSys.server.vm;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import uk.iatom.iAtomSys.server.configuration.VMConfiguration;
 import uk.iatom.iAtomSys.server.vm.memory.ByteArrayMemory;
-import uk.iatom.iAtomSys.server.vm.memory.DataSizes;
 import uk.iatom.iAtomSys.server.vm.memory.Memory;
 import uk.iatom.iAtomSys.server.vm.register.InMemoryRegister;
 import uk.iatom.iAtomSys.server.vm.register.RegisterSet;
@@ -18,39 +18,36 @@ public class VMBeans {
   @Autowired
   private VMConfiguration vmConfiguration;
 
-  @Bean
-  public DataSizes dataSizes() {
-    return new DataSizes(0, 0);
-  }
-
-  @Bean
-  public Memory memory(DataSizes dataSizes) {
+  @Bean(BeanDefinition.SCOPE_SINGLETON)
+  public Memory memory() {
     return new ByteArrayMemory(new byte[(int) Math.pow(2, 16)]);
   }
 
-  @Bean
-  public RegisterSet registerSet(DataSizes dataSizes, Memory memory) {
+  @Bean(BeanDefinition.SCOPE_SINGLETON)
+  public RegisterSet registerSet(Memory memory) {
     return new RegisterSet(
-        new InMemoryRegister(0, dataSizes, memory),
-        new InMemoryRegister(RegisterSet.ACCUMULATOR_INDEX * dataSizes.integerBytes(), dataSizes,
-            memory),
-        new InMemoryRegister(RegisterSet.RETURN_INDEX * dataSizes.integerBytes(), dataSizes,
-            memory),
-        new InMemoryRegister(RegisterSet.POP_INDEX * dataSizes.integerBytes(), dataSizes, memory),
-        new InMemoryRegister(RegisterSet.NUMERIC_INDEX * dataSizes.integerBytes(), dataSizes,
-            memory),
-        new InMemoryRegister(RegisterSet.A_INDEX * dataSizes.integerBytes(), dataSizes, memory)
+        new InMemoryRegister(0, memory),
+        new InMemoryRegister(RegisterSet.INDEX_ACCUMULATOR * 2, memory),
+        new InMemoryRegister(RegisterSet.INDEX_RETURN * 2, memory),
+        new InMemoryRegister(RegisterSet.INDEX_IO_STACK * 2, memory),
+        new InMemoryRegister(RegisterSet.INDEX_IO_MEMORY * 2, memory),
+        new InMemoryRegister(RegisterSet.INDEX_NUMERIC * 2, memory),
+        new InMemoryRegister(RegisterSet.INDEX_A * 2, memory));
+  }
+
+  @Bean(BeanDefinition.SCOPE_SINGLETON)
+  public ProcessorStack processorStack(RegisterSet registerSet,
+      Memory memory) {
+    return new InMemoryProcessorStack(
+        registerSet.IOStack(),
+        memory,
+        (RegisterSet.INDEX_A + 1) * 2,
+        vmConfiguration.processorStackSizeInts * 2
     );
   }
 
-  @Bean
-  public ProcessorStack processorStack(DataSizes dataSizes, RegisterSet registerSet,
-      Memory memory) {
-    return new InMemoryProcessorStack(
-        registerSet.Pop(),
-        memory,
-        (RegisterSet.A_INDEX + 1) * dataSizes.integerBytes(),
-        vmConfiguration.processorStackSizeInts * dataSizes.integerBytes()
-    );
+  @Bean(BeanDefinition.SCOPE_SINGLETON)
+  public Flags flags() {
+    return new Flags();
   }
 }

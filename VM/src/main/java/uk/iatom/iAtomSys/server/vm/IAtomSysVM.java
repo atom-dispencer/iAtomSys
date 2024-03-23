@@ -13,6 +13,7 @@ public class IAtomSysVM {
 
   private Logger logger = LoggerFactory.getLogger(IAtomSysVM.class);
 
+
   @Autowired
   private Memory memory;
 
@@ -22,8 +23,42 @@ public class IAtomSysVM {
   @Autowired
   private ProcessorStack processorStack;
 
-  public void processNextCycle() {
+  @Autowired
+  private Flags flags;
 
-    logger.info("Processing!");
+
+  public void processNextCycle() {
+    byte[] instructionAndArguments = fetchNextInstructionAndArguments();
+    executeInstruction(instructionAndArguments);
+  }
+
+  private byte[] fetchNextInstructionAndArguments() {
+    int programCounter = registerSet.ProgramCounter().get();
+    return memory.read(programCounter, 3);
+  }
+
+  private void executeInstruction(byte[] instructionAndArguments) {
+    if (instructionAndArguments.length == 0) {
+      logger.warn("Cannot execute zero-byte instruction. Skipping.");
+      return;
+    }
+
+    Instructions instruction = Instructions.fromByte(instructionAndArguments[0]);
+
+    try {
+      instruction.executor.exec(instructionAndArguments[1], instructionAndArguments[2], memory,
+          registerSet, processorStack, flags);
+    } catch (InstructionExecutionException ixe) {
+
+      String extraInformation;
+      try {
+        extraInformation = "PC:%d".formatted(registerSet.ProgramCounter().get());
+      } catch (Exception e) {
+        logger.error("Error generating extra information for error.");
+        extraInformation = "(Error generating extra information.)";
+      }
+
+      logger.error("Error executing instruction. %s".formatted(extraInformation), ixe);
+    }
   }
 }

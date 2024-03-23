@@ -1,24 +1,21 @@
 package uk.iatom.iAtomSys.server.vm.register;
 
 
-import uk.iatom.iAtomSys.server.vm.memory.DataSizes;
 import uk.iatom.iAtomSys.server.vm.memory.Memory;
 
 public class InMemoryRegister implements Register {
 
   private Memory memory;
-  private DataSizes dataSizes;
   private int address;
 
-  public InMemoryRegister(int address, DataSizes dataSizes, Memory memory) {
+  public InMemoryRegister(int address, Memory memory) {
     this.address = address;
-    this.dataSizes = dataSizes;
     this.memory = memory;
   }
 
   @Override
   public int get() {
-    byte[] bytes = memory.read(this.address, dataSizes.integerBytes());
+    byte[] bytes = memory.read(this.address, 2);
     int result = 0;
     for (byte b : bytes) {
       result = (result << 8) + (result | b);

@@ -4,28 +4,46 @@ public record RegisterSet(
     Register ProgramCounter,
     Register Accumulator,
     Register Return,
-    Register Pop,
+    Register IOStack,
+    Register IOMemory,
     Register Numeric,
     Register A
 ) {
 
-  public static final int PROGRAM_COUNTER_INDEX = 0;
-  public static final int ACCUMULATOR_INDEX = 1;
-  public static final int RETURN_INDEX = 2;
+  public static final int INDEX_PROGRAM_COUNTER = 0;
+  public static final int INDEX_ACCUMULATOR = 1;
+  public static final int INDEX_RETURN = 2;
 
-  public static final int POP_INDEX = 3;
+  public static final int INDEX_IO_STACK = 3;
+  public static final int INDEX_IO_MEMORY = 4;
 
-  public static final int NUMERIC_INDEX = 4;
-  public static final int A_INDEX = 5;
+  public static final int INDEX_NUMERIC = 5;
+  public static final int INDEX_A = 6;
 
+  /**
+   * Convenience method as it may not be apparent that one can simply cast the byte to an int to use
+   * as an index.
+   *
+   * @param b The index of the register to fetch, as a byte.
+   * @return The {@link Register} in this {@link RegisterSet} corresponding to the given index.
+   */
+  public Register fromByte(byte b) {
+    return fromIndex(b);
+  }
+
+  /**
+   * @return The {@link Register} in this {@link RegisterSet} corresponding to the given integer
+   * index.
+   */
   public Register fromIndex(int index) {
     return switch (index) {
-      case PROGRAM_COUNTER_INDEX -> ProgramCounter;
-      case ACCUMULATOR_INDEX -> Accumulator;
-      case RETURN_INDEX -> Return;
-      case POP_INDEX -> Pop;
-      case NUMERIC_INDEX -> Numeric;
-      case A_INDEX -> A;
+      case INDEX_PROGRAM_COUNTER -> ProgramCounter;
+      case INDEX_ACCUMULATOR -> Accumulator;
+      case INDEX_RETURN -> Return;
+      case INDEX_IO_STACK -> IOStack;
+      case INDEX_IO_MEMORY -> IOMemory;
+      case INDEX_NUMERIC -> Numeric;
+      case INDEX_A -> A;
       default -> null;
     };
   }
