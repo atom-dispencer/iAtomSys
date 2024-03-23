@@ -4,6 +4,9 @@ import static uk.iatom.iAtomSys.server.vm.Int16Helper.INT_16_MAX;
 import static uk.iatom.iAtomSys.server.vm.Int16Helper.bytesToInt16;
 import static uk.iatom.iAtomSys.server.vm.Int16Helper.int16ToBytes;
 
+import uk.iatom.iAtomSys.server.vm.exception.InstructionExecutionException;
+import uk.iatom.iAtomSys.server.vm.exception.ProcessorStackOverflowException;
+import uk.iatom.iAtomSys.server.vm.exception.ProcessorStackUnderflowException;
 import uk.iatom.iAtomSys.server.vm.memory.Memory;
 import uk.iatom.iAtomSys.server.vm.register.Register;
 import uk.iatom.iAtomSys.server.vm.register.RegisterSet;
@@ -69,7 +72,7 @@ public enum Instructions {
    *
    * @param msByte The index of one of the {@link Register}s.
    * @param lsByte The index of the other {@link Register}.
-   * @see #xNOP(byte, byte, Memory, RegisterSet, ProcessorStack)
+   * @see #xNOP(byte, byte, Memory, RegisterSet, ProcessorStack, Flags)
    */
   private static void xRTX(byte msByte, byte lsByte, Memory memory, RegisterSet registerSet,
       ProcessorStack processorStack, Flags flags) {
@@ -87,7 +90,7 @@ public enum Instructions {
    *
    * @param msByte Most significant half of the memory address to read from.
    * @param lsByte Least significant half of the memory address to read from.
-   * @see #xNOP(byte, byte, Memory, RegisterSet, ProcessorStack)
+   * @see #xNOP(byte, byte, Memory, RegisterSet, ProcessorStack, Flags)
    */
   private static void xMRD(byte msByte, byte lsByte, Memory memory, RegisterSet registerSet,
       ProcessorStack processorStack, Flags flags) {
@@ -105,7 +108,7 @@ public enum Instructions {
    *
    * @param msByte Most significant half of the memory address to write to.
    * @param lsByte Least significant half of the memory address to write to.
-   * @see #xNOP(byte, byte, Memory, RegisterSet, ProcessorStack)
+   * @see #xNOP(byte, byte, Memory, RegisterSet, ProcessorStack, Flags)
    */
   private static void xMWT(byte msByte, byte lsByte, Memory memory, RegisterSet registerSet,
       ProcessorStack processorStack, Flags flags) {
@@ -124,12 +127,17 @@ public enum Instructions {
    *
    * @param msByte Unused.
    * @param lsByte Unused.
+   * @see #xNOP(byte, byte, Memory, RegisterSet, ProcessorStack, Flags)
    */
   private static void xPSH(byte msByte, byte lsByte, Memory memory, RegisterSet registerSet,
-      ProcessorStack processorStack, Flags flags) {
+      ProcessorStack processorStack, Flags flags) throws InstructionExecutionException {
 
-    int value = registerSet.IOStack().get();
-    processorStack.push(value);
+    try {
+      int value = registerSet.IOStack().get();
+      processorStack.push(value);
+    } catch (ProcessorStackOverflowException overflow) {
+      throw new InstructionExecutionException(Instructions.PSH, "", overflow);
+    }
   }
 
   /**
@@ -139,12 +147,17 @@ public enum Instructions {
    *
    * @param msByte Unused.
    * @param lsByte Unused.
+   * @see #xNOP(byte, byte, Memory, RegisterSet, ProcessorStack, Flags)
    */
   private static void xPOP(byte msByte, byte lsByte, Memory memory, RegisterSet registerSet,
-      ProcessorStack processorStack, Flags flags) {
+      ProcessorStack processorStack, Flags flags) throws InstructionExecutionException {
 
-    int value = processorStack.pop();
-    registerSet.IOStack().set(value);
+    try {
+      int value = processorStack.pop();
+      registerSet.IOStack().set(value);
+    } catch (ProcessorStackUnderflowException underflow) {
+      throw new InstructionExecutionException(Instructions.POP, "", underflow);
+    }
   }
 
   /**
@@ -154,6 +167,7 @@ public enum Instructions {
    *
    * @param msByte Unused.
    * @param lsByte Unused.
+   * @see #xNOP(byte, byte, Memory, RegisterSet, ProcessorStack, Flags)
    */
   private static void xADD(byte msByte, byte lsByte, Memory memory, RegisterSet registerSet,
       ProcessorStack processorStack, Flags flags) throws InstructionExecutionException {
@@ -188,6 +202,7 @@ public enum Instructions {
    *
    * @param msByte Unused.
    * @param lsByte Unused.
+   * @see #xNOP(byte, byte, Memory, RegisterSet, ProcessorStack, Flags)
    */
   private static void xSUB(byte msByte, byte lsByte, Memory memory, RegisterSet registerSet,
       ProcessorStack processorStack, Flags flags) throws InstructionExecutionException {

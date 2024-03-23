@@ -9,7 +9,7 @@ import uk.iatom.iAtomSys.server.vm.memory.ByteArrayMemory;
 import uk.iatom.iAtomSys.server.vm.memory.Memory;
 import uk.iatom.iAtomSys.server.vm.register.InMemoryRegister;
 import uk.iatom.iAtomSys.server.vm.register.RegisterSet;
-import uk.iatom.iAtomSys.server.vm.stack.InMemoryProcessorStack;
+import uk.iatom.iAtomSys.server.vm.stack.Int16InMemoryProcessorStack;
 import uk.iatom.iAtomSys.server.vm.stack.ProcessorStack;
 
 @Configuration
@@ -38,7 +38,7 @@ public class VMBeans {
   @Bean(BeanDefinition.SCOPE_SINGLETON)
   public ProcessorStack processorStack(RegisterSet registerSet,
       Memory memory) {
-    return new InMemoryProcessorStack(
+    return new Int16InMemoryProcessorStack(
         registerSet.IOStack(),
         memory,
         (RegisterSet.INDEX_A + 1) * 2,

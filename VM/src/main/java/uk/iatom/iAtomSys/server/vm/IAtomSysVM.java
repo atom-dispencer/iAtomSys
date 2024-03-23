@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import uk.iatom.iAtomSys.server.vm.exception.InstructionExecutionException;
 import uk.iatom.iAtomSys.server.vm.memory.Memory;
 import uk.iatom.iAtomSys.server.vm.register.RegisterSet;
 import uk.iatom.iAtomSys.server.vm.stack.ProcessorStack;

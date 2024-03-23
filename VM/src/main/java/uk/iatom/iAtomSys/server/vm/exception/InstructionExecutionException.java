@@ -1,4 +1,6 @@
-package uk.iatom.iAtomSys.server.vm;
+package uk.iatom.iAtomSys.server.vm.exception;
+
+import uk.iatom.iAtomSys.server.vm.Instructions;
 
 public class InstructionExecutionException extends Exception {
 
