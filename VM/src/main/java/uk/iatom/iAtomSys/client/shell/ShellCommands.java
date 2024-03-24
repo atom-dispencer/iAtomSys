@@ -2,13 +2,17 @@ package uk.iatom.iAtomSys.client.shell;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import java.io.File;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.shell.ExitRequest;
 import org.springframework.shell.standard.ShellComponent;
@@ -23,10 +27,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class ShellCommands {
 
   public static final String[] HELP_PAGES = new String[]{
-      "[0] Usage: 'help <page>', or check GitHub docs.",
-      "[1] 'hello': Say hi!",
-      "[2] 'step <count>': Do current instruction and increment PC."
-  };
+      "[0] Usage: 'help <page>', or check GitHub docs.", "[1] 'hello': Say hi!",
+      "[2] 'step <count>': Do current instruction and increment PC."};
   private final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
   @Value("${server.port}")
   int port;
@@ -47,6 +49,19 @@ public class ShellCommands {
 
   private String formatUri(final String endpoint) {
     return "http://localhost:%d/%s".formatted(port, endpoint);
+  }
+
+  private void send(String endpoint, String key, String value) {
+    String uriBase = formatUri(endpoint);
+    URI uri = UriComponentsBuilder.fromHttpUrl(uriBase).queryParam(key, value).build().toUri();
+    ResponseEntity<String> responseEntity = new RestTemplate().getForEntity(uri, String.class);
+
+    HttpStatusCode status = responseEntity.getStatusCode();
+    if (status.isError()) {
+      logger.error("Request to %s returned a HTTP error: %s".formatted(uriBase, status));
+    } else {
+      logger.info("Request to %s returned a HTTP success: %s".formatted(uriBase, status));
+    }
   }
 
   @ShellMethod()
@@ -77,12 +92,21 @@ public class ShellCommands {
   //TODO Availability methods https://docs.spring.io/spring-shell/reference/commands/availability.html
   @ShellMethod()
   public void step(final @ShellOption(value = "-n", defaultValue = "1") int count) {
-    URI uri = UriComponentsBuilder.fromHttpUrl(formatUri("step"))
-        .queryParam("count", count)
-        .build().toUri();
-    ResponseEntity<String> responseEntity = new RestTemplate().getForEntity(uri, String.class);
-    int statusCode = responseEntity.getStatusCodeValue();
-    logger.info(String.valueOf(statusCode));
+    send("step", "count", Integer.toString(count));
+    display.draw();
+  }
+
+  @ShellMethod
+  public void loadmem(final @ShellOption(defaultValue = "") String imageName) {
+    if (imageName.isBlank()) {
+      display.getState().setCommandMessage("Usage: 'loadmem <file name>'.");
+    } else {
+      String name = new File(imageName).getName();
+      String urlEncoded = URLEncoder.encode(name, StandardCharsets.UTF_8);
+      display.getState().setCommandMessage("Loading: %s".formatted(name));
+      send("loadmem", "file", urlEncoded);
+    }
+
     display.draw();
   }
 

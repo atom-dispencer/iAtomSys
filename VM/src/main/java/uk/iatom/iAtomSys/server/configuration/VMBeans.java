@@ -1,10 +1,14 @@
-package uk.iatom.iAtomSys.server.vm;
+package uk.iatom.iAtomSys.server.configuration;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import uk.iatom.iAtomSys.server.configuration.VMConfiguration;
+import org.springframework.context.annotation.Scope;
+import uk.iatom.iAtomSys.server.vm.Flags;
+import uk.iatom.iAtomSys.server.vm.IAtomSysVM;
 import uk.iatom.iAtomSys.server.vm.memory.ByteArrayMemory;
 import uk.iatom.iAtomSys.server.vm.memory.Memory;
 import uk.iatom.iAtomSys.server.vm.register.InMemoryRegister;
@@ -15,16 +19,30 @@ import uk.iatom.iAtomSys.server.vm.stack.ProcessorStack;
 @Configuration
 public class VMBeans {
 
-  @Autowired
-  private VMConfiguration vmConfiguration;
+  private final Logger logger = LoggerFactory.getLogger(VMBeans.class);
 
-  @Bean(BeanDefinition.SCOPE_SINGLETON)
+  @Bean
+  public VMConfiguration vmConfiguration() {
+    return new VMConfiguration();
+  }
+
+//  @Bean
+//  @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
+//  public IAtomSysVM iAtomSysVM() {
+//    logger.info("Creating VM bean");
+//    return new IAtomSysVM();
+//  }
+
+  @Bean
+  @Scope(BeanDefinition.SCOPE_SINGLETON)
   public Memory memory() {
     return new ByteArrayMemory(new byte[(int) Math.pow(2, 16)]);
   }
 
-  @Bean(BeanDefinition.SCOPE_SINGLETON)
+  @Bean
+  @Scope(BeanDefinition.SCOPE_SINGLETON)
   public RegisterSet registerSet(Memory memory) {
+    logger.info("Creating register set");
     return new RegisterSet(
         new InMemoryRegister(0, memory),
         new InMemoryRegister(RegisterSet.INDEX_ACCUMULATOR * 2, memory),
@@ -35,8 +53,9 @@ public class VMBeans {
         new InMemoryRegister(RegisterSet.INDEX_A * 2, memory));
   }
 
-  @Bean(BeanDefinition.SCOPE_SINGLETON)
-  public ProcessorStack processorStack(RegisterSet registerSet,
+  @Bean
+  @Scope(BeanDefinition.SCOPE_SINGLETON)
+  public ProcessorStack processorStack(VMConfiguration vmConfiguration, RegisterSet registerSet,
       Memory memory) {
     return new Int16InMemoryProcessorStack(
         registerSet.IOStack(),
@@ -46,7 +65,8 @@ public class VMBeans {
     );
   }
 
-  @Bean(BeanDefinition.SCOPE_SINGLETON)
+  @Bean
+  @Scope(BeanDefinition.SCOPE_SINGLETON)
   public Flags flags() {
     return new Flags();
   }
