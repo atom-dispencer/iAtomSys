@@ -3,12 +3,10 @@ package uk.iatom.iAtomSys.server.configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
-import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import uk.iatom.iAtomSys.server.vm.Flags;
-import uk.iatom.iAtomSys.server.vm.IAtomSysVM;
 import uk.iatom.iAtomSys.server.vm.memory.ByteArrayMemory;
 import uk.iatom.iAtomSys.server.vm.memory.Memory;
 import uk.iatom.iAtomSys.server.vm.register.InMemoryRegister;
@@ -49,8 +47,10 @@ public class VMBeans {
         new InMemoryRegister(RegisterSet.INDEX_RETURN * 2, memory),
         new InMemoryRegister(RegisterSet.INDEX_IO_STACK * 2, memory),
         new InMemoryRegister(RegisterSet.INDEX_IO_MEMORY * 2, memory),
+        new InMemoryRegister(RegisterSet.INDEX_POINTER * 2, memory),
         new InMemoryRegister(RegisterSet.INDEX_NUMERIC * 2, memory),
-        new InMemoryRegister(RegisterSet.INDEX_A * 2, memory));
+        new InMemoryRegister(RegisterSet.INDEX_IDK * 2, memory),
+        new InMemoryRegister(RegisterSet.INDEX_FLAGS * 2, memory));
   }
 
   @Bean
@@ -60,7 +60,7 @@ public class VMBeans {
     return new Int16InMemoryProcessorStack(
         registerSet.IOStack(),
         memory,
-        (RegisterSet.INDEX_A + 1) * 2,
+        (RegisterSet.INDEX_IDK + 1) * 2,
         vmConfiguration.processorStackSizeInts * 2
     );
   }

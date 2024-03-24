@@ -1,6 +1,6 @@
 # iAtomSys Virtual Machine
 | Language | Tools         | Dependencies                       |
-| -------- | ------------- | ---------------------------------- |
+|----------|---------------|------------------------------------|
 | Java     | IntelliJ IDEA | Spring Framework v3.2 (Web, Shell) |
 |          | Gradle 8.6    | Lombok                             |
 
@@ -21,14 +21,15 @@ implement that without too many worries over my tools.
 | Instruction       | Assembly | Hex | Arguments                | Function                                                 |
 |-------------------|----------|-----|--------------------------|----------------------------------------------------------|
 | No Operation      | NOP      | 00  | -                        |                                                          | 
-| Register Transfer | RTX      | 01  | `Register1`, `Register2` |                                                          |
-| To Be Honest...   | TBH      | 02  | `Integer`                | Write the given value to the `IDK` register.             |
-| Memory Read       | MRD      | 03  | -                        | Read the value at the address stored in `PTR` into `MEM` |
-| Memory Write      | MWT      | 04  | -                        | Write the value in `MEM` into `PTR`                      |
-| Push to Stack     | PSH      | 05  | -                        |                                                          |
-| Pop from Stack    | POP      | 06  | -                        |                                                          |
-| Add               | ADD      | 07  | -                        |                                                          |
-| Subtract          | SUB      | 08  | -                        |                                                          |
+| Halt              | HLT      |     | -                        | Stop the VM                                              |
+| Register Transfer | RTX      |     | `Register1`, `Register2` |                                                          |
+| To Be Honest...   | TBH      |     | `Integer`                | Write the given value to the `IDK` register              |
+| Memory Read       | MRD      |     | -                        | Read the value at the address stored in `PTR` into `MEM` |
+| Memory Write      | MWT      |     | -                        | Write the value in `MEM` into `PTR`                      |
+| Push to Stack     | PSH      |     | -                        |                                                          |
+| Pop from Stack    | POP      |     | -                        |                                                          |
+| Add               | ADD      |     | -                        |                                                          |
+| Subtract          | SUB      |     | -                        |                                                          |
 
 ## Registers
 
@@ -41,7 +42,14 @@ implement that without too many worries over my tools.
 | MemoryIO        | MEM      |     | Store the inputs and outputs of memory operations  | 
 | Pointer         | PTR      |     | Store memory addresses for memory operations       | 
 | Numeric         | NUM      |     | Store secondary values for mathematical operations | 
-| I Don't Know... | IDK      |     | No internal VM/CPU function. User-controlled       | 
+| I Don't Know... | IDK      |     | No internal VM/CPU function. User-controlled       |
+| Flags           | FLG      |     | Holds CPU flags, one bit per flag.                 |
+
+## Flags
+
+| Flag  | Mask |                                                                |
+|-------|------|----------------------------------------------------------------|
+| Carry | 0001 | Active when the accumulator has carried a bit during addition. |
 
 
 ## Example Programs

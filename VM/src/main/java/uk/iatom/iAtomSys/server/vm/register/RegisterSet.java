@@ -6,8 +6,10 @@ public record RegisterSet(
     Register Return,
     Register IOStack,
     Register IOMemory,
+    Register Pointer,
     Register Numeric,
-    Register A
+    Register Idk,
+    Register Flags
 ) {
 
   public static final int INDEX_PROGRAM_COUNTER = 0;
@@ -16,9 +18,11 @@ public record RegisterSet(
 
   public static final int INDEX_IO_STACK = 3;
   public static final int INDEX_IO_MEMORY = 4;
+  public static final int INDEX_POINTER = 5;
 
-  public static final int INDEX_NUMERIC = 5;
-  public static final int INDEX_A = 6;
+  public static final int INDEX_NUMERIC = 6;
+  public static final int INDEX_IDK = 7;
+  public static final int INDEX_FLAGS = 8;
 
   /**
    * Convenience method as it may not be apparent that one can simply cast the byte to an int to use
@@ -42,9 +46,12 @@ public record RegisterSet(
       case INDEX_RETURN -> Return;
       case INDEX_IO_STACK -> IOStack;
       case INDEX_IO_MEMORY -> IOMemory;
+      case INDEX_POINTER -> Pointer;
       case INDEX_NUMERIC -> Numeric;
-      case INDEX_A -> A;
-      default -> null;
+      case INDEX_IDK -> Idk;
+      case INDEX_FLAGS -> Flags;
+      default ->
+          throw new IndexOutOfBoundsException("%d is not a valid register index".formatted(index));
     };
   }
 }
