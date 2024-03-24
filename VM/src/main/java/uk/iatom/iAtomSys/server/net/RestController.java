@@ -35,9 +35,10 @@ public class RestController {
     logger.info("Step: %d".formatted(count));
   }
 
+  //TODO Test, test, test!!
   @GetMapping("/loadmem")
-  public String loadmem(@RequestParam String encodedFile, HttpServletResponse response) {
-    String decodedFile = URLDecoder.decode(encodedFile, StandardCharsets.UTF_8);
+  public String loadmem(@RequestParam String file, HttpServletResponse response) {
+    String decodedFile = URLDecoder.decode(file, StandardCharsets.UTF_8);
     File dirtyFile = new File(decodedFile);
     String name = "loadmem/" + dirtyFile.getName();
     File sanitisedNameOnlyFile = new File(name);

@@ -51,7 +51,9 @@ public class ShellCommands {
     return "http://localhost:%d/%s".formatted(port, endpoint);
   }
 
-  private void send(String endpoint, String key, String value) {
+  public record RequestResult(HttpStatusCode status, String message){}
+
+  private RequestResult send(String endpoint, String key, String value) {
     String uriBase = formatUri(endpoint);
     URI uri = UriComponentsBuilder.fromHttpUrl(uriBase).queryParam(key, value).build().toUri();
     ResponseEntity<String> responseEntity = new RestTemplate().getForEntity(uri, String.class);
@@ -62,6 +64,8 @@ public class ShellCommands {
     } else {
       logger.info("Request to %s returned a HTTP success: %s".formatted(uriBase, status));
     }
+
+    return new RequestResult(status, responseEntity.getBody());
   }
 
   @ShellMethod()
@@ -104,7 +108,18 @@ public class ShellCommands {
       String name = new File(imageName).getName();
       String urlEncoded = URLEncoder.encode(name, StandardCharsets.UTF_8);
       display.getState().setCommandMessage("Loading: %s".formatted(name));
-      send("loadmem", "file", urlEncoded);
+
+      try {
+        RequestResult result = send("loadmem", "file", urlEncoded);
+        if (result.status.isError()) {
+          display.getState().setCommandMessage("Failure: %s".formatted(result.message));
+        } else {
+          display.getState().setCommandMessage("Loaded %s".formatted(name));
+        }
+      } catch (Exception e) {
+        logger.error("Error executing loadmem request.", e);
+        display.getState().setCommandMessage("Request error: %s".formatted(e.getClass().getSimpleName()));
+      }
     }
 
     display.draw();
