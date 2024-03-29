@@ -61,7 +61,7 @@ public class VMBeans {
         registerSet.IOStack(),
         memory,
         (RegisterSet.INDEX_IDK + 1) * 2,
-        vmConfiguration.processorStackSizeInts * 2
+        vmConfiguration.processorStackSizeIntegers * 2
     );
   }
 

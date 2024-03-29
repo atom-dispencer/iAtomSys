@@ -31,8 +31,17 @@ public class RestController {
   }
 
   @GetMapping("/step")
-  public void step(@RequestParam int count) {
-    logger.info("Step: %d".formatted(count));
+  public String step(@RequestParam int count) {
+    if (count < 1 || count > 256) {
+      logger.warn("Rejected step requesting %d cycles".formatted(count));
+      return "Count must be in the interval [1,256]";
+    }
+
+    logger.info("Stepping %d cycles".formatted(count));
+    for (int i = 0; i < count; i++) {
+      vm.processNextCycle();
+    }
+    return "Stepped through %d cycles.".formatted(count);
   }
 
   //TODO Test, test, test!!

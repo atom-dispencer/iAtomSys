@@ -25,6 +25,8 @@ public class ShellDisplay {
   private final Supplier<Point> COMMAND_BOX_POS = () -> new Point(5,
       terminal.getSize().getRows() - 5);
 
+  // TODO GUI for program counter and registers at a minimum!
+
   public void activate() {
     if (alive) {
       return;

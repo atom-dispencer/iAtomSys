@@ -51,7 +51,9 @@ public class ShellCommands {
     return "http://localhost:%d/%s".formatted(port, endpoint);
   }
 
-  public record RequestResult(HttpStatusCode status, String message){}
+  public record RequestResult(HttpStatusCode status, String message) {
+
+  }
 
   private RequestResult send(String endpoint, String key, String value) {
     String uriBase = formatUri(endpoint);
@@ -96,7 +98,27 @@ public class ShellCommands {
   //TODO Availability methods https://docs.spring.io/spring-shell/reference/commands/availability.html
   @ShellMethod()
   public void step(final @ShellOption(value = "-n", defaultValue = "1") int count) {
-    send("step", "count", Integer.toString(count));
+
+    if (count < 1 || count > 256) {
+
+      display.getState()
+          .setCommandMessage("Count must be in interval [1,256], got %d".formatted(count));
+
+    } else {
+      try {
+        RequestResult result = send("step", "count", Integer.toString(count));
+        if (result.status.isError()) {
+          display.getState().setCommandMessage("Failure: %s".formatted(result.message));
+        } else {
+          display.getState().setCommandMessage("Stepped %d cycles".formatted(count));
+        }
+      } catch (Exception e) {
+        logger.error("Error executing send request.", e);
+        display.getState()
+            .setCommandMessage("Request error: %s".formatted(e.getClass().getSimpleName()));
+      }
+    }
+
     display.draw();
   }
 
@@ -118,7 +140,8 @@ public class ShellCommands {
         }
       } catch (Exception e) {
         logger.error("Error executing loadmem request.", e);
-        display.getState().setCommandMessage("Request error: %s".formatted(e.getClass().getSimpleName()));
+        display.getState()
+            .setCommandMessage("Request error: %s".formatted(e.getClass().getSimpleName()));
       }
     }
 

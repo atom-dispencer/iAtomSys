@@ -36,6 +36,9 @@ public class IAtomSysVM {
   public void processNextCycle() {
     byte[] instructionAndArguments = fetchNextInstructionAndArguments();
     executeInstruction(instructionAndArguments);
+
+    int pc = registerSet.ProgramCounter().get();
+    registerSet.ProgramCounter().set(pc + 1);
   }
 
   private byte[] fetchNextInstructionAndArguments() {
@@ -45,15 +48,24 @@ public class IAtomSysVM {
 
   private void executeInstruction(byte[] instructionAndArguments) {
     if (instructionAndArguments.length == 0) {
+      // TODO Stop VM at end of memory.
       logger.warn("Cannot execute zero-byte instruction. Skipping.");
       return;
     }
 
     Instructions instruction = Instructions.fromByte(instructionAndArguments[0]);
 
+    byte msByte = 0;
+    byte lsByte = 0;
+    if (instructionAndArguments.length >= 2) {
+      msByte = instructionAndArguments[1];
+    }
+    if (instructionAndArguments.length >= 3) {
+      msByte = instructionAndArguments[2];
+    }
+
     try {
-      instruction.executor.exec(instructionAndArguments[1], instructionAndArguments[2], memory,
-          registerSet, processorStack, flags);
+      instruction.executor.exec(msByte, lsByte, memory, registerSet, processorStack, flags);
     } catch (InstructionExecutionException ixe) {
 
       String extraInformation;

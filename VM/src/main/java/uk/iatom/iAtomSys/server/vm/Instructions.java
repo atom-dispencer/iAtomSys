@@ -18,13 +18,14 @@ public enum Instructions {
   // but here I put my foot down. Wrapping them makes them far
   // harder to read and is counterproductive.
   NOP((byte) 0x00, Instructions::xNOP), //
-  RTX((byte) 0x01, Instructions::xRTX), //
-  MRD((byte) 0x02, Instructions::xMRD), //
-  MWT((byte) 0x03, Instructions::xMWT), //
-  PSH((byte) 0x04, Instructions::xPSH), //
-  POP((byte) 0x05, Instructions::xPOP), //
-  ADD((byte) 0x06, Instructions::xADD), //
-  SUB((byte) 0x07, Instructions::xSUB); //
+  RCP((byte) 0x01, Instructions::xRCP), //
+  TBH((byte) 0x02, Instructions::xTBH), //
+  MRD((byte) 0x03, Instructions::xMRD), //
+  MWT((byte) 0x04, Instructions::xMWT), //
+  PSH((byte) 0x05, Instructions::xPSH), //
+  POP((byte) 0x06, Instructions::xPOP), //
+  ADD((byte) 0x07, Instructions::xADD), //
+  SUB((byte) 0x08, Instructions::xSUB); //
 
   public interface InstructionExecutor {
 
@@ -43,14 +44,15 @@ public enum Instructions {
   public static Instructions fromByte(byte b) {
     return switch (b) {
       case 0x00 -> Instructions.NOP;
-      case 0x01 -> Instructions.RTX;
-      case 0x02 -> Instructions.MRD;
-      case 0x03 -> Instructions.MWT;
-      case 0x04 -> Instructions.PSH;
-      case 0x05 -> Instructions.POP;
-      case 0x06 -> Instructions.ADD;
-      case 0x07 -> Instructions.SUB;
-      default -> throw new IllegalStateException("Unexpected value: " + b);
+      case 0x01 -> Instructions.RCP;
+      case 0x02 -> Instructions.TBH;
+      case 0x03 -> Instructions.MRD;
+      case 0x04 -> Instructions.MWT;
+      case 0x05 -> Instructions.PSH;
+      case 0x06 -> Instructions.POP;
+      case 0x07 -> Instructions.ADD;
+      case 0x08 -> Instructions.SUB;
+      default -> throw new IllegalStateException("Unexpected Instruction byte value: " + b);
     };
   }
 
@@ -66,27 +68,33 @@ public enum Instructions {
     // Do nothing (No Operation)
   }
 
+  private static void xTBH(byte msByte, byte lsByte, Memory memory, RegisterSet registerSet,
+      ProcessorStack processorStack, Flags flags) {
+    int value = Int16Helper.bytesToInt16(msByte, lsByte);
+    registerSet.Idk().set(value);
+  }
+
   /**
-   * Swap (aka. <i>transfer</i>) the values in two of the {@link Register}s in this
+   * Copy the values in one {@link Register} to another {@link Register} in this
    * {@link RegisterSet}.
    *
-   * @param msByte The index of one of the {@link Register}s.
-   * @param lsByte The index of the other {@link Register}.
+   * @param msByte The index of one the origin {@link Register}.
+   * @param lsByte The index of the destination {@link Register}.
    * @see #xNOP(byte, byte, Memory, RegisterSet, ProcessorStack, Flags)
    */
-  private static void xRTX(byte msByte, byte lsByte, Memory memory, RegisterSet registerSet,
+  private static void xRCP(byte msByte, byte lsByte, Memory memory, RegisterSet registerSet,
       ProcessorStack processorStack, Flags flags) {
 
     Register reg1 = registerSet.fromByte(msByte);
     Register reg2 = registerSet.fromByte(lsByte);
 
-    int reg1cache = reg1.get();
-    reg1.set(reg2.get());
-    reg2.set(reg1cache);
+    int value = reg1.get();
+    reg2.set(value);
   }
 
   /**
-   * Read an integer value from the given memory address into {@link RegisterSet#IOMemory()}
+   * Read an integer value into {@link RegisterSet#IOMemory()} from the memory address in
+   * {@link RegisterSet#Pointer()}.
    *
    * @param msByte Unused.
    * @param lsByte Unused.
@@ -94,8 +102,7 @@ public enum Instructions {
    */
   private static void xMRD(byte msByte, byte lsByte, Memory memory, RegisterSet registerSet,
       ProcessorStack processorStack, Flags flags) {
-    // TODO Update all instructions for new registers!!
-    int address = bytesToInt16(msByte, lsByte);
+    int address = registerSet.Pointer().get();
 
     byte[] bytesFromMemory = memory.read(address, 2);
     int fromMemory = bytesToInt16(bytesFromMemory);
@@ -104,10 +111,11 @@ public enum Instructions {
   }
 
   /**
-   * Write the integer value in {@link RegisterSet#IOMemory()} to the given memory address
+   * Write the integer value in {@link RegisterSet#IOMemory()} to the address in
+   * {@link RegisterSet#Pointer()}.
    *
-   * @param msByte Most significant half of the memory address to write to.
-   * @param lsByte Least significant half of the memory address to write to.
+   * @param msByte Unused.
+   * @param lsByte Unused.
    * @see #xNOP(byte, byte, Memory, RegisterSet, ProcessorStack, Flags)
    */
   private static void xMWT(byte msByte, byte lsByte, Memory memory, RegisterSet registerSet,
@@ -116,14 +124,13 @@ public enum Instructions {
     int value = registerSet.IOMemory().get();
     byte[] valueBytes = int16ToBytes(value);
 
-    int address = bytesToInt16(msByte, lsByte);
+    int address = registerSet.Pointer().get();
     memory.write(address, valueBytes);
   }
 
   /**
    * Push the value currently in the {@link RegisterSet#IOStack()} {@link Register} onto the
-   * {@link ProcessorStack}. Argument bytes are unused to have similar behaviour to other
-   * instructions which are unable to specify a {@link Register} due to argument-width constraints.
+   * {@link ProcessorStack}.
    *
    * @param msByte Unused.
    * @param lsByte Unused.
@@ -142,8 +149,7 @@ public enum Instructions {
 
   /**
    * Pop the integer currently on top of the {@link ProcessorStack} off and place it in the
-   * {@link RegisterSet#IOStack()}. Argument bytes are unused to have similar behaviour to other
-   * instructions which are unable to specify a {@link Register} due to argument-width constraints.
+   * {@link RegisterSet#IOStack()}.
    *
    * @param msByte Unused.
    * @param lsByte Unused.
