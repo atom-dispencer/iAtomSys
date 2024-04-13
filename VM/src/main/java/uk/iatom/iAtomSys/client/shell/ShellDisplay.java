@@ -24,9 +24,27 @@ public class ShellDisplay {
   private final PrintStream sysOutCache = System.out;
   private boolean alive;
   private Terminal terminal;
+
   private final Supplier<Point> COMMAND_BOX_POS = () -> new Point(5,
       terminal.getSize().getRows() - 5);
+  private final Supplier<Point> CREDITS_POS = () -> {
+    Point startPoint = COMMAND_BOX_POS.get();
+    startPoint.translate(COMMAND_MAX_WIDTH + 8, 0);
+    return startPoint;
+  };
+  private final Supplier<Point> REGISTERS_POS = () -> new Point(5, 5);
+  private final Supplier<Point> FLAGS_POS = () -> {
+    Point commandBoxStart = COMMAND_BOX_POS.get();
+    Point flagsStart = REGISTERS_POS.get();
+    int remainingHeight = commandBoxStart.y - flagsStart.y;
 
+    flagsStart.translate(0, (int) (remainingHeight * 0.5));
+    return flagsStart;
+  };
+  private final Supplier<Point> MEMORY_POS = () -> new Point(
+      CREDITS_POS.get().x,
+      REGISTERS_POS.get().y
+  );
   // TODO GUI for program counter and registers at a minimum!
 
   public void activate() {
@@ -118,8 +136,11 @@ public class ShellDisplay {
     assertShellLive();
 
     drawBackground();
-    drawCommandInput(state.getCommandMessage());
+//    drawRegisters(state.getRegisters());
+//    drawFlags(state.getFlags());
+//    drawMemoryState(state.getMemoryState());
     drawCredits();
+    drawCommandInput(state.getCommandMessage());
   }
 
   public void drawBackground() {
@@ -173,8 +194,7 @@ public class ShellDisplay {
 
   public void drawCredits() {
     assertShellLive();
-    Point startPoint = COMMAND_BOX_POS.get();
-    startPoint.translate(COMMAND_MAX_WIDTH + 8, 1);
+    Point startPoint = CREDITS_POS.get();
 
     // TODO Add license information to credits
     String line1 = "iAtomSysVM v0 - https://github.com/atom-dispencer/iAtomSys";
@@ -183,6 +203,7 @@ public class ShellDisplay {
     print(
         ANSICodes.PUSH_CURSOR_POS,
         ANSICodes.moveTo(startPoint),
+        ANSICodes.moveDown(1),
         line1 + ANSICodes.moveLeft(line1.length()) + ANSICodes.moveDown(1),
         line2,
         ANSICodes.POP_CURSOR_POS
@@ -190,6 +211,7 @@ public class ShellDisplay {
   }
 
   public void drawMemoryState(byte[] memoryState) {
+    // TODO Should drawMemoryState receive a byte[] or pre-processed String?
 
     // Draw outline box
 
