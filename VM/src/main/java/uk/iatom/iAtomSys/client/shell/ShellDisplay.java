@@ -15,6 +15,8 @@ import org.slf4j.LoggerFactory;
 
 public class ShellDisplay {
 
+  public static final int COMMAND_MAX_WIDTH = 64;
+
   private static final Size DEFAULT_SIZE = new Size(120, 30);
   private final Logger logger = LoggerFactory.getLogger(ShellDisplay.class);
   @Getter
@@ -117,6 +119,7 @@ public class ShellDisplay {
 
     drawBackground();
     drawCommandInput(state.getCommandMessage());
+    drawCredits();
   }
 
   public void drawBackground() {
@@ -142,7 +145,6 @@ public class ShellDisplay {
    * input.
    */
   public void drawCommandInput(String commandMessage) {
-    int COMMAND_MAX_WIDTH = 64;
     assertShellLive();
     Point startPoint = COMMAND_BOX_POS.get();
 
@@ -167,5 +169,37 @@ public class ShellDisplay {
         line4,
         ANSICodes.moveTo(startPoint) + ANSICodes.moveRight(4) + ANSICodes.moveDown(
             2));
+  }
+
+  public void drawCredits() {
+    assertShellLive();
+    Point startPoint = COMMAND_BOX_POS.get();
+    startPoint.translate(COMMAND_MAX_WIDTH + 8, 1);
+
+    // TODO Add license information to credits
+    String line1 = "iAtomSysVM v0 - https://github.com/atom-dispencer/iAtomSys";
+    String line2 = "Copyright © Adam Spencer 2024";
+
+    print(
+        ANSICodes.PUSH_CURSOR_POS,
+        ANSICodes.moveTo(startPoint),
+        line1 + ANSICodes.moveLeft(line1.length()) + ANSICodes.moveDown(1),
+        line2,
+        ANSICodes.POP_CURSOR_POS
+    );
+  }
+
+  public void drawMemoryState(byte[] memoryState) {
+
+    // Draw outline box
+
+    // If there is no state, draw the help message
+    if (memoryState == null) {
+
+    }
+    // If there IS a state, draw it
+    else {
+
+    }
   }
 }

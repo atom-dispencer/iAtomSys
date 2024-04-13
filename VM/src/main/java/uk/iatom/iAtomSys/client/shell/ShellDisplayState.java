@@ -10,5 +10,6 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode
 public class ShellDisplayState {
 
-  private String commandMessage = "";
+  private String commandMessage;
+  private byte[] memoryState;
 }

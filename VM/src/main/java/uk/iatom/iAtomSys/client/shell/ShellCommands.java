@@ -51,10 +51,6 @@ public class ShellCommands {
     return "http://localhost:%d/%s".formatted(port, endpoint);
   }
 
-  public record RequestResult(HttpStatusCode status, String message) {
-
-  }
-
   private RequestResult send(String endpoint, String key, String value) {
     String uriBase = formatUri(endpoint);
     URI uri = UriComponentsBuilder.fromHttpUrl(uriBase).queryParam(key, value).build().toUri();
@@ -100,10 +96,8 @@ public class ShellCommands {
   public void step(final @ShellOption(value = "-n", defaultValue = "1") int count) {
 
     if (count < 1 || count > 256) {
-
       display.getState()
           .setCommandMessage("Count must be in interval [1,256], got %d".formatted(count));
-
     } else {
       try {
         RequestResult result = send("step", "count", Integer.toString(count));
@@ -146,6 +140,10 @@ public class ShellCommands {
     }
 
     display.draw();
+  }
+
+  public record RequestResult(HttpStatusCode status, String message) {
+
   }
 
 }

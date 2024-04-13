@@ -27,15 +27,8 @@ public enum Instructions {
   ADD((byte) 0x07, Instructions::xADD), //
   SUB((byte) 0x08, Instructions::xSUB); //
 
-  public interface InstructionExecutor {
-
-    void exec(byte byte1, byte byte2, Memory memory, RegisterSet registerSet,
-        ProcessorStack processorStack, Flags flags) throws InstructionExecutionException;
-  }
-
   final byte byteValue;
   final InstructionExecutor executor;
-
   Instructions(byte byteValue, InstructionExecutor executor) {
     this.byteValue = byteValue;
     this.executor = executor;
@@ -235,5 +228,11 @@ public enum Instructions {
             "Excessive CarryCount=%d while subtracting NUM=%d from ACC=%d".formatted(carry, numeric,
                 accumulator), null);
     }
+  }
+
+  public interface InstructionExecutor {
+
+    void exec(byte byte1, byte byte2, Memory memory, RegisterSet registerSet,
+        ProcessorStack processorStack, Flags flags) throws InstructionExecutionException;
   }
 }
