@@ -2,9 +2,11 @@ package uk.iatom.iAtomSys.client.shell;
 
 import jakarta.validation.constraints.NotNull;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.function.Supplier;
 import lombok.Getter;
 import org.jline.terminal.Size;
@@ -111,6 +113,31 @@ public class ShellDisplay {
     disableSysOut();
   }
 
+  private void printBox(Rectangle bounds, char c, boolean clearInside) {
+
+    char[] headerFooter = new char[bounds.width];
+    Arrays.fill(headerFooter, c);
+
+    String middleLine;
+    if (clearInside) {
+      middleLine = c + " ".repeat(bounds.width - 2) + c;
+    } else {
+      middleLine = c + ANSICodes.moveRight(bounds.width - 2) + c;
+    }
+
+    String middleBlock = (ANSICodes.moveRight(bounds.x - 1) + middleLine + "\n")
+        .repeat(bounds.height - 2);
+
+    print(
+        ANSICodes.PUSH_CURSOR_POS, //
+        ANSICodes.moveTo(bounds.getLocation()), //
+        new String(headerFooter) + "\n", //
+        middleBlock, //
+        ANSICodes.moveRight(bounds.x - 1) + new String(headerFooter), //
+        ANSICodes.POP_CURSOR_POS
+    );
+  }
+
   private void enableSysOut() {
     System.setOut(sysOutCache);
   }
@@ -146,25 +173,26 @@ public class ShellDisplay {
   public void drawBackground() {
     assertShellLive();
     int preHeadingWidth = 10;
-    String preHeading = "#".repeat(preHeadingWidth);
-    String heading = " iAtomSysVM ";
-    int postHeadingWidth = terminal.getSize().getColumns() - 2 - preHeadingWidth - heading.length();
-    String postHeading = "#".repeat(postHeadingWidth);
 
-    String headerLine = " %s%s%s ".formatted(preHeading, heading, postHeading);
-    String midLine =
-        " #" + ANSICodes.moveToColumn(terminal.getSize().getColumns() - 1) + "# ";
-    String footerLine = " " + "#".repeat(terminal.getSize().getColumns() - 2) + " ";
+    print(ANSICodes.CLEAR_SCREEN);
 
-    print(ANSICodes.PUSH_CURSOR_POS, ANSICodes.YOU_ARE_DRUNK, ANSICodes.CLEAR_SCREEN,
-        headerLine + "\n", (midLine + "\n").repeat(terminal.getSize().getRows() - 2), footerLine,
-        ANSICodes.POP_CURSOR_POS);
+    Rectangle region = new Rectangle(2, 1, terminal.getSize().getColumns() - 2, terminal.getSize().getRows());
+    printBox(region, '#', false);
+
+    print( //
+        ANSICodes.PUSH_CURSOR_POS, //
+        ANSICodes.YOU_ARE_DRUNK, //
+        ANSICodes.moveDown(1) + ANSICodes.moveRight(2 + preHeadingWidth),
+        " iAtomSysVM ", //
+        ANSICodes.POP_CURSOR_POS
+    );
   }
 
   /**
    * Reset the typing-cursor to the start of the command input box and clear the current command
    * input.
    */
+  // TODO Make drawCommandInput use printBox
   public void drawCommandInput(String commandMessage) {
     assertShellLive();
     Point startPoint = COMMAND_BOX_POS.get();
@@ -214,6 +242,19 @@ public class ShellDisplay {
     // TODO Should drawMemoryState receive a byte[] or pre-processed String?
 
     // Draw outline box
+    Point startPoint = MEMORY_POS.get();
+    String headerLine = " " + "~".repeat(terminal.getSize().getColumns() - 4) + " ";
+    String midLine =
+        " ~" + ANSICodes.moveToColumn(terminal.getSize().getColumns() - 3) + "~ ";
+    String footerLine = " " + "~".repeat(terminal.getSize().getColumns() - 4) + " ";
+    print(
+        ANSICodes.PUSH_CURSOR_POS, //
+        ANSICodes.moveTo(startPoint), //
+        headerLine + "\n", //
+        (midLine + "\n").repeat(terminal.getSize().getRows() - 6), //
+        footerLine, //
+        ANSICodes.POP_CURSOR_POS
+    );
 
     // If there is no state, draw the help message
     if (memoryState == null) {
