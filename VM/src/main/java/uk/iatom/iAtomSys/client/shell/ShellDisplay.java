@@ -277,8 +277,21 @@ public class ShellDisplay {
     // Draw the state if it exists
     //
     if (memoryStateBytes != null) {
+      // TODO Should this really be done during display??
 
-      // MemoryState state = new MemoryState(memoryStateBytes)
+      // InstructionReader reader = new InstructionReader(memoryStateBytes);
+      // List<InstructionDecode> decodedList = new ArrayList<>();
+      // while(reader.hasNextByte()) {
+      //   InstructionDecode d = reader.tryDecodeNext();
+      //   decodedList.add(d);
+      // }
+      //
+      // public record InstructionDecode(
+      //   byte[] address,      // 0xABCD
+      //   byte[] instruction,  // 0x0101
+      //   String[] fragments   // RTX PCR ACC
+      // );
+
       // A single line is around 23 chars minimum
 
     }
