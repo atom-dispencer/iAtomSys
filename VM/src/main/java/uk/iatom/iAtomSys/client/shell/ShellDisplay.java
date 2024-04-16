@@ -1,6 +1,7 @@
 package uk.iatom.iAtomSys.client.shell;
 
 import jakarta.validation.constraints.NotNull;
+import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.io.IOException;
@@ -34,19 +35,25 @@ public class ShellDisplay {
     startPoint.translate(COMMAND_MAX_WIDTH + 8, 0);
     return startPoint;
   };
-  private final Supplier<Point> REGISTERS_POS = () -> new Point(5, 5);
-  private final Supplier<Point> FLAGS_POS = () -> {
-    Point commandBoxStart = COMMAND_BOX_POS.get();
-    Point flagsStart = REGISTERS_POS.get();
-    int remainingHeight = commandBoxStart.y - flagsStart.y;
+//  private final Supplier<Point> REGISTERS_POS = () -> new Point(5, 5);
+//  private final Supplier<Point> FLAGS_POS = () -> {
+//    Point commandBoxStart = COMMAND_BOX_POS.get();
+//    Point flagsStart = REGISTERS_POS.get();
+//    int remainingHeight = commandBoxStart.y - flagsStart.y;
+//
+//    flagsStart.translate(0, (int) (remainingHeight * 0.5));
+//    return flagsStart;
+//  };
+  private final Supplier<Point> MEMORY_POS = () -> new Point(5, 3);
+  private final Supplier<Rectangle> MEMORY_BOUNDS = () -> {
+    Point origin = MEMORY_POS.get();
+    Dimension dimension = new Dimension();
 
-    flagsStart.translate(0, (int) (remainingHeight * 0.5));
-    return flagsStart;
+    dimension.height = COMMAND_BOX_POS.get().y - origin.y - 1;
+    dimension.width = 60;
+
+    return new Rectangle(origin, dimension);
   };
-  private final Supplier<Point> MEMORY_POS = () -> new Point(
-      CREDITS_POS.get().x,
-      REGISTERS_POS.get().y
-  );
   // TODO GUI for program counter and registers at a minimum!
 
   public void activate() {
@@ -165,7 +172,7 @@ public class ShellDisplay {
     drawBackground();
 //    drawRegisters(state.getRegisters());
 //    drawFlags(state.getFlags());
-//    drawMemoryState(state.getMemoryState());
+    drawMemoryState(state.getMemoryState());
     drawCredits();
     drawCommandInput(state.getCommandMessage());
   }
@@ -241,29 +248,45 @@ public class ShellDisplay {
     );
   }
 
-  public void drawMemoryState(byte[] memoryState) {
-    // TODO Should drawMemoryState receive a byte[] or pre-processed String?
+  public void drawMemoryState(byte[] memoryStateBytes) {
+    Rectangle bounds = MEMORY_BOUNDS.get();
+    printBox(bounds, '+', true);
 
-    // Draw outline box
-    Point startPoint = MEMORY_POS.get();
-    String headerLine = " " + "~".repeat(terminal.getSize().getColumns() - 4) + " ";
-    String midLine =
-        " ~" + ANSICodes.moveToColumn(terminal.getSize().getColumns() - 3) + "~ ";
-    String footerLine = " " + "~".repeat(terminal.getSize().getColumns() - 4) + " ";
-    print(
+    //
+    // Draw the stuff that will always need to be drawn, ignoring state
+    //
+    String title = " Memory State ";
+    int titleStart = Math.floorDiv(bounds.width, 2) - Math.floorDiv(title.length(), 2);
+
+    print( //
         ANSICodes.PUSH_CURSOR_POS, //
-        ANSICodes.moveTo(startPoint), //
-        headerLine + "\n", //
-        (midLine + "\n").repeat(terminal.getSize().getRows() - 6), //
-        footerLine, //
-        ANSICodes.POP_CURSOR_POS
+
+        // Title
+        ANSICodes.moveTo(bounds.getLocation()), //
+        ANSICodes.moveRight(titleStart), //
+        title, //
+
+        // Boxes/memory addresses/whatever
+
+        //
+        ANSICodes.POP_CURSOR_POS //
     );
 
-    // If there is no state, draw the help message
-    if (memoryState == null) {
+
+    //
+    // Draw the state if it exists
+    //
+    if (memoryStateBytes != null) {
+
+      // MemoryState state = new MemoryState(memoryStateBytes)
+      // A single line is around 23 chars minimum
 
     }
-    // If there IS a state, draw it
+
+
+    //
+    // Otherwise draw a help message
+    //
     else {
 
     }
