@@ -182,9 +182,9 @@ public class ShellDisplay {
     print( //
         ANSICodes.PUSH_CURSOR_POS, //
         ANSICodes.YOU_ARE_DRUNK, //
-        ANSICodes.moveDown(1) + ANSICodes.moveRight(2 + preHeadingWidth),
+        ANSICodes.moveRight(2 + preHeadingWidth), //
         " iAtomSysVM ", //
-        ANSICodes.POP_CURSOR_POS
+        ANSICodes.POP_CURSOR_POS //
     );
   }
 
@@ -206,18 +206,21 @@ public class ShellDisplay {
       lengthCorrectedMessage = commandMessage.substring(0, COMMAND_MAX_WIDTH);
     }
 
-    String line1 = "~".repeat(COMMAND_MAX_WIDTH + 6);
-    String line2 = "~ " + lengthCorrectedMessage + "   ~";
-    String line3 = "~ :>" + " ".repeat(COMMAND_MAX_WIDTH) + " ~";
-    String line4 = "~".repeat(COMMAND_MAX_WIDTH + 6);
+    Rectangle bounds = new Rectangle(startPoint.x, startPoint.y, COMMAND_MAX_WIDTH + 6, 4);
+    printBox(bounds, '~', true);
 
-    print(ANSICodes.moveTo(startPoint),
-        line1 + ANSICodes.moveLeft(COMMAND_MAX_WIDTH + 6) + ANSICodes.moveDown(1),
-        line2 + ANSICodes.moveLeft(COMMAND_MAX_WIDTH + 6) + ANSICodes.moveDown(1),
-        line3 + ANSICodes.moveLeft(COMMAND_MAX_WIDTH + 6) + ANSICodes.moveDown(1),
-        line4,
-        ANSICodes.moveTo(startPoint) + ANSICodes.moveRight(4) + ANSICodes.moveDown(
-            2));
+    print( //
+
+        // Short message
+        ANSICodes.moveTo(startPoint), //
+        ANSICodes.moveRight(2) + ANSICodes.moveDown(1), //
+        lengthCorrectedMessage,
+
+        // Command input, ending at the input box
+        ANSICodes.moveTo(startPoint), //
+        ANSICodes.moveRight(2) + ANSICodes.moveDown(2), //
+        ":>" //
+    );
   }
 
   public void drawCredits() {
