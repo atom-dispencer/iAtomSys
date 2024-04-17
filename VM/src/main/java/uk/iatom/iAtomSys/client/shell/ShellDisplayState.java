@@ -12,4 +12,6 @@ public class ShellDisplayState {
 
   private String commandMessage;
   private byte[] memoryState;
+  private Object registers;
+  private Object flags;
 }

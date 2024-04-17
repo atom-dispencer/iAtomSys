@@ -15,12 +15,12 @@ import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.css.Rect;
 
 public class ShellDisplay {
 
   public static final int COMMAND_MAX_WIDTH = 64;
 
-  private static final Size DEFAULT_SIZE = new Size(120, 30);
   private final Logger logger = LoggerFactory.getLogger(ShellDisplay.class);
   @Getter
   private final ShellDisplayState state = new ShellDisplayState();
@@ -28,33 +28,97 @@ public class ShellDisplay {
   private boolean alive;
   private Terminal terminal;
 
-  private final Supplier<Point> COMMAND_BOX_POS = () -> new Point(5,
-      terminal.getSize().getRows() - 5);
+//  Rectangle bounds = new Rectangle(startPoint.x, startPoint.y, COMMAND_MAX_WIDTH + 6, 4);
+
+
+  private final Supplier<Rectangle> BORDER_RECT = () -> {
+    int start = 2;
+    Point origin = new Point(start, start);
+    Dimension bounds = new Dimension(
+        terminal.getSize().getColumns() - start,
+        terminal.getSize().getRows() - start
+    );
+    return new Rectangle(origin, bounds);
+  };
+
+  int COMMAND_TRAY_HEIGHT = 4;
+  private final Supplier<Rectangle> CONTENT_RECT = () -> {
+    Rectangle bounds = BORDER_RECT.get();
+
+    Point origin = new Point(
+        bounds.getLocation().x + 3,
+        bounds.getLocation().y + 2
+    );
+    Dimension dim = new Dimension(
+        bounds.width - 6,
+        bounds.height - COMMAND_TRAY_HEIGHT - 5
+    );
+    return new Rectangle(origin, dim);
+  };
+
+  private final Supplier<Rectangle> COMMAND_RECT = () -> {
+    Rectangle content = CONTENT_RECT.get();
+
+    Point origin = new Point(
+        content.x,
+        (int) content.getMaxY() + 1
+    );
+    Dimension dim = new Dimension(
+        COMMAND_MAX_WIDTH + 6,
+        4
+    );
+
+    return new Rectangle(origin, dim);
+  };
+
   private final Supplier<Point> CREDITS_POS = () -> {
-    Point startPoint = COMMAND_BOX_POS.get();
+    Point startPoint = COMMAND_RECT.get().getLocation();
     startPoint.translate(COMMAND_MAX_WIDTH + 8, 0);
     return startPoint;
   };
-//  private final Supplier<Point> REGISTERS_POS = () -> new Point(5, 5);
-//  private final Supplier<Point> FLAGS_POS = () -> {
-//    Point commandBoxStart = COMMAND_BOX_POS.get();
-//    Point flagsStart = REGISTERS_POS.get();
-//    int remainingHeight = commandBoxStart.y - flagsStart.y;
-//
-//    flagsStart.translate(0, (int) (remainingHeight * 0.5));
-//    return flagsStart;
-//  };
-  private final Supplier<Point> MEMORY_POS = () -> new Point(5, 3);
-  private final Supplier<Rectangle> MEMORY_BOUNDS = () -> {
-    Point origin = MEMORY_POS.get();
-    Dimension dimension = new Dimension();
 
-    dimension.height = COMMAND_BOX_POS.get().y - origin.y - 1;
-    dimension.width = 60;
+  private final Supplier<Rectangle> MEMORY_RECT = () -> {
+    Rectangle content = CONTENT_RECT.get();
 
+    Point origin = content.getLocation();
+    Dimension dimension = new Dimension(
+        60,
+        content.height
+    );
     return new Rectangle(origin, dimension);
   };
-  // TODO GUI for program counter and registers at a minimum!
+
+  private final Supplier<Rectangle> REGISTERS_RECT = () -> {
+    Rectangle content = CONTENT_RECT.get();
+
+    int REGISTER_FLAG_WIDTH = 40;
+
+    Point origin = new Point(
+        (int) content.getMaxX() - REGISTER_FLAG_WIDTH,
+        content.getLocation().y);
+    Dimension dim = new Dimension(
+        REGISTER_FLAG_WIDTH,
+        Math.floorDiv(content.height, 2) + 1);
+
+    return new Rectangle(origin, dim);
+  };
+
+  private final Supplier<Rectangle> FLAGS_RECT = () -> {
+    Rectangle content = CONTENT_RECT.get();
+    Rectangle registers = REGISTERS_RECT.get();
+
+    Point origin = new Point(
+        registers.x,
+        (int) registers.getMaxY() - 1
+    );
+    Dimension dim = new Dimension(
+        registers.width,
+        content.height - registers.height + 1
+    );
+
+    return new Rectangle(origin, dim);
+  };
+
 
   public void activate() {
     if (alive) {
@@ -170,9 +234,9 @@ public class ShellDisplay {
     assertShellLive();
 
     drawBackground();
-//    drawRegisters(state.getRegisters());
-//    drawFlags(state.getFlags());
     drawMemoryState(state.getMemoryState());
+    drawRegisters(state.getRegisters());
+    drawFlags(state.getFlags());
     drawCredits();
     drawCommandInput(state.getCommandMessage());
   }
@@ -183,12 +247,12 @@ public class ShellDisplay {
 
     print(ANSICodes.CLEAR_SCREEN);
 
-    Rectangle region = new Rectangle(2, 1, terminal.getSize().getColumns() - 2, terminal.getSize().getRows());
-    printBox(region, '#', false);
+    Rectangle rect = BORDER_RECT.get();
+    printBox(rect, '#', false);
 
     print( //
         ANSICodes.PUSH_CURSOR_POS, //
-        ANSICodes.YOU_ARE_DRUNK, //
+        ANSICodes.moveTo(rect.getLocation()), //
         ANSICodes.moveRight(2 + preHeadingWidth), //
         " iAtomSysVM ", //
         ANSICodes.POP_CURSOR_POS //
@@ -202,7 +266,7 @@ public class ShellDisplay {
   // TODO Make drawCommandInput use printBox
   public void drawCommandInput(String commandMessage) {
     assertShellLive();
-    Point startPoint = COMMAND_BOX_POS.get();
+    Rectangle rect = COMMAND_RECT.get();
 
     int length = commandMessage.length();
     String lengthCorrectedMessage = commandMessage;
@@ -213,18 +277,17 @@ public class ShellDisplay {
       lengthCorrectedMessage = commandMessage.substring(0, COMMAND_MAX_WIDTH);
     }
 
-    Rectangle bounds = new Rectangle(startPoint.x, startPoint.y, COMMAND_MAX_WIDTH + 6, 4);
-    printBox(bounds, '~', true);
+    printBox(rect, '~', true);
 
     print( //
 
         // Short message
-        ANSICodes.moveTo(startPoint), //
+        ANSICodes.moveTo(rect.getLocation()), //
         ANSICodes.moveRight(2) + ANSICodes.moveDown(1), //
         lengthCorrectedMessage,
 
         // Command input, ending at the input box
-        ANSICodes.moveTo(startPoint), //
+        ANSICodes.moveTo(rect.getLocation()), //
         ANSICodes.moveRight(2) + ANSICodes.moveDown(2), //
         ":>" //
     );
@@ -249,7 +312,7 @@ public class ShellDisplay {
   }
 
   public void drawMemoryState(byte[] memoryStateBytes) {
-    Rectangle bounds = MEMORY_BOUNDS.get();
+    Rectangle bounds = MEMORY_RECT.get();
     printBox(bounds, '+', true);
 
     //
@@ -303,5 +366,28 @@ public class ShellDisplay {
     else {
 
     }
+  }
+
+  public void drawRegisters(Object registers) {
+    assertShellLive();
+
+    Rectangle rect = REGISTERS_RECT.get();
+    printBox(rect, '+', true);
+
+    String title = " Registers & Flags ";
+    print( //
+        ANSICodes.PUSH_CURSOR_POS, //
+        ANSICodes.moveTo(rect.getLocation()), //
+        ANSICodes.moveRight(Math.floorDiv(rect.width, 2) - Math.floorDiv(title.length(), 2)), //
+        title, //
+        ANSICodes.POP_CURSOR_POS //
+    );
+  }
+
+  public void drawFlags(Object flags) {
+    assertShellLive();
+
+    Rectangle rect = FLAGS_RECT.get();
+    printBox(rect, '+', true);
   }
 }
