@@ -77,6 +77,11 @@ public class ShellCommands {
   public record RequestResult(HttpStatusCode status, String message) { }
 
   private void updateDisplayVMState() {
+
+
+    // TODO Need to handle running/not-running states as each state will display different info!
+    // ^^^^^^^^^^^^
+
     String uriBase = formatUri("state");
     URI uri = UriComponentsBuilder.fromHttpUrl(uriBase).queryParam("memoryByteCount", 16).build().toUri();
     ResponseEntity<VMStatePacket> response = new RestTemplate().getForEntity(uri, VMStatePacket.class);

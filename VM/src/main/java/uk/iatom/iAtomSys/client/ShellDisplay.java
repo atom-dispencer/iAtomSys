@@ -366,7 +366,7 @@ public class ShellDisplay {
       // Draw defaults
     } else {
       for (DecodedRegister register : state.getRegisters()) {
-        String content = "%s   %s\n".formatted(register.name(), register.value());
+        String content = "%s   %s".formatted(register.name(), register.value());
         info.append(content);
         info.append(ANSICodes.moveLeft(content.length()));
         info.append(ANSICodes.moveDown(1));
