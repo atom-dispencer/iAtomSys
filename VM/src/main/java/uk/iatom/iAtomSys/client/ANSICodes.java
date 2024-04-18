@@ -1,4 +1,4 @@
-package uk.iatom.iAtomSys.client.shell;
+package uk.iatom.iAtomSys.client;
 
 import java.awt.Point;
 

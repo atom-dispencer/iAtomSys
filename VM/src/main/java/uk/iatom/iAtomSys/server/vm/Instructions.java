@@ -78,8 +78,8 @@ public enum Instructions {
   private static void xRCP(byte msByte, byte lsByte, Memory memory, RegisterSet registerSet,
       ProcessorStack processorStack, Flags flags) {
 
-    Register reg1 = registerSet.fromByte(msByte);
-    Register reg2 = registerSet.fromByte(lsByte);
+    Register reg1 = registerSet.fromIndex(msByte);
+    Register reg2 = registerSet.fromIndex(lsByte);
 
     int value = reg1.get();
     reg2.set(value);

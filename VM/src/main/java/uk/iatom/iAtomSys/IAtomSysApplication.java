@@ -2,7 +2,7 @@ package uk.iatom.iAtomSys;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import uk.iatom.iAtomSys.client.shell.ANSICodes;
+import uk.iatom.iAtomSys.client.ANSICodes;
 
 @SpringBootApplication
 public class IAtomSysApplication {

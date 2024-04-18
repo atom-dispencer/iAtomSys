@@ -1,4 +1,4 @@
-package uk.iatom.iAtomSys.client.shell.configuration;
+package uk.iatom.iAtomSys.client.configuration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,7 +8,7 @@ import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.shell.command.CommandExceptionResolver;
 import org.springframework.shell.command.CommandHandlingResult;
 import org.springframework.stereotype.Component;
-import uk.iatom.iAtomSys.client.shell.ShellDisplay;
+import uk.iatom.iAtomSys.client.ShellDisplay;
 
 @Component
 public class CustomExceptionResolver implements CommandExceptionResolver {

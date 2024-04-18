@@ -1,4 +1,4 @@
-package uk.iatom.iAtomSys.client.shell;
+package uk.iatom.iAtomSys.client;
 
 public class ShellDrawingException extends Exception {
 

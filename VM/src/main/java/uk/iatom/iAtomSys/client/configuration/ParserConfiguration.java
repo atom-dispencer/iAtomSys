@@ -1,4 +1,4 @@
-package uk.iatom.iAtomSys.client.shell.configuration;
+package uk.iatom.iAtomSys.client.configuration;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;

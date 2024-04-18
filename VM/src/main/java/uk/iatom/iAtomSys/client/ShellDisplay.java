@@ -1,4 +1,4 @@
-package uk.iatom.iAtomSys.client.shell;
+package uk.iatom.iAtomSys.client;
 
 import jakarta.validation.constraints.NotNull;
 import java.awt.Dimension;
@@ -8,14 +8,14 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.Map.Entry;
 import java.util.function.Supplier;
 import lombok.Getter;
-import org.jline.terminal.Size;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.css.Rect;
+import uk.iatom.iAtomSys.client.decode.DecodedRegister;
 
 public class ShellDisplay {
 
@@ -27,9 +27,6 @@ public class ShellDisplay {
   private final PrintStream sysOutCache = System.out;
   private boolean alive;
   private Terminal terminal;
-
-//  Rectangle bounds = new Rectangle(startPoint.x, startPoint.y, COMMAND_MAX_WIDTH + 6, 4);
-
 
   private final Supplier<Rectangle> BORDER_RECT = () -> {
     int start = 2;
@@ -234,9 +231,9 @@ public class ShellDisplay {
     assertShellLive();
 
     drawBackground();
-    drawMemoryState(state.getMemoryState());
-    drawRegisters(state.getRegisters());
-    drawFlags(state.getFlags());
+    drawMemoryState();
+    drawRegisters();
+    drawFlags();
     drawCredits();
     drawCommandInput(state.getCommandMessage());
   }
@@ -311,7 +308,7 @@ public class ShellDisplay {
     );
   }
 
-  public void drawMemoryState(byte[] memoryStateBytes) {
+  public void drawMemoryState() {
     Rectangle bounds = MEMORY_RECT.get();
     printBox(bounds, '+', true);
 
@@ -320,6 +317,21 @@ public class ShellDisplay {
     //
     String title = " Memory State ";
     int titleStart = Math.floorDiv(bounds.width, 2) - Math.floorDiv(title.length(), 2);
+
+    StringBuilder contents = new StringBuilder();
+
+    //
+    // Draw the state if it exists
+    //
+    if (state.getMemory() != null) {
+      // A single line is around 23 chars minimum
+    }
+    //
+    // Otherwise draw a help message
+    //
+    else {
+
+    }
 
     print( //
         ANSICodes.PUSH_CURSOR_POS, //
@@ -330,61 +342,51 @@ public class ShellDisplay {
         title, //
 
         // Boxes/memory addresses/whatever
+        ANSICodes.moveTo(bounds.getLocation()), //
+        ANSICodes.moveRight(3), //
+        ANSICodes.moveLeft(3), //
+        contents.toString(), //
 
         //
         ANSICodes.POP_CURSOR_POS //
     );
-
-
-    //
-    // Draw the state if it exists
-    //
-    if (memoryStateBytes != null) {
-      // TODO Should this really be done during display??
-
-      // InstructionReader reader = new InstructionReader(memoryStateBytes);
-      // List<InstructionDecode> decodedList = new ArrayList<>();
-      // while(reader.hasNextByte()) {
-      //   InstructionDecode d = reader.tryDecodeNext();
-      //   decodedList.add(d);
-      // }
-      //
-      // public record InstructionDecode(
-      //   byte[] address,      // 0xABCD
-      //   byte[] instruction,  // 0x0101
-      //   String[] fragments   // RTX PCR ACC
-      // );
-
-      // A single line is around 23 chars minimum
-
-    }
-
-
-    //
-    // Otherwise draw a help message
-    //
-    else {
-
-    }
   }
 
-  public void drawRegisters(Object registers) {
+  public void drawRegisters() {
     assertShellLive();
 
     Rectangle rect = REGISTERS_RECT.get();
     printBox(rect, '+', true);
 
     String title = " Registers & Flags ";
+
+    StringBuilder info = new StringBuilder();
+
+    if (state.getRegisters() == null) {
+      // Draw defaults
+    } else {
+      for (DecodedRegister register : state.getRegisters()) {
+        String content = "%s   %s\n".formatted(register.name(), register.value());
+        info.append(content);
+        info.append(ANSICodes.moveLeft(content.length()));
+        info.append(ANSICodes.moveDown(1));
+      }
+    }
+
     print( //
         ANSICodes.PUSH_CURSOR_POS, //
         ANSICodes.moveTo(rect.getLocation()), //
         ANSICodes.moveRight(Math.floorDiv(rect.width, 2) - Math.floorDiv(title.length(), 2)), //
         title, //
+        ANSICodes.moveTo(rect.getLocation()), //
+        ANSICodes.moveRight(2), //
+        ANSICodes.moveDown(2), //
+        info.toString(), //
         ANSICodes.POP_CURSOR_POS //
     );
   }
 
-  public void drawFlags(Object flags) {
+  public void drawFlags() {
     assertShellLive();
 
     Rectangle rect = FLAGS_RECT.get();

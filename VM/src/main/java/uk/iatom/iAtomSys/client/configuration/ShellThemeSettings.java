@@ -1,4 +1,4 @@
-package uk.iatom.iAtomSys.client.shell.configuration;
+package uk.iatom.iAtomSys.client.configuration;
 
 import org.springframework.shell.style.ThemeSettings;
 

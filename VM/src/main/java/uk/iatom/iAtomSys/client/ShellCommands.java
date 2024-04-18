@@ -1,4 +1,4 @@
-package uk.iatom.iAtomSys.client.shell;
+package uk.iatom.iAtomSys.client;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -6,6 +6,9 @@ import java.io.File;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +24,11 @@ import org.springframework.shell.standard.ShellOption;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
+import uk.iatom.iAtomSys.api.VMStatePacket;
+import uk.iatom.iAtomSys.client.decode.DecodedInstruction;
+import uk.iatom.iAtomSys.client.decode.DecodedRegister;
+import uk.iatom.iAtomSys.client.decode.InstructionReader;
+import uk.iatom.iAtomSys.server.vm.register.RegisterSet;
 
 @ShellComponent
 @Component
@@ -64,6 +72,51 @@ public class ShellCommands {
     }
 
     return new RequestResult(status, responseEntity.getBody());
+  }
+
+  public record RequestResult(HttpStatusCode status, String message) { }
+
+  private void updateDisplayVMState() {
+    String uriBase = formatUri("state");
+    URI uri = UriComponentsBuilder.fromHttpUrl(uriBase).queryParam("memoryByteCount", 16).build().toUri();
+    ResponseEntity<VMStatePacket> response = new RestTemplate().getForEntity(uri, VMStatePacket.class);
+
+    HttpStatusCode status = response.getStatusCode();
+    if (status.isError()) {
+      logger.error("Request to %s returned a HTTP error: %s".formatted(uri, status));
+    } else {
+      logger.info("Request to %s returned a HTTP success: %s".formatted(uri, status));
+    }
+
+    if (response.getBody() == null) {
+      logger.error("Somehow got a null response body from updating VM state?");
+      display.getState().setCommandMessage("Bad VMState response - please report to developer.");
+      return;
+    }
+
+    InstructionReader reader = new InstructionReader(response.getBody().memory());
+    List<DecodedInstruction> instructions = new ArrayList<>();
+    while(reader.hasNextByte()) {
+      instructions.add(reader.readNextInstruction());
+    }
+
+    DecodedRegister flags = new DecodedRegister(RegisterSet.NAMES.getKey(RegisterSet.INDEX_FLAGS), "????");
+    List<DecodedRegister> registers = new ArrayList<>();
+    for(Entry<String, Integer> entry : response.getBody().registers().entrySet()) {
+      String name = entry.getKey();
+      int value = entry.getValue();
+      DecodedRegister register = new DecodedRegister(name, String.format("%04x", value));
+
+      if (RegisterSet.NAMES.getKey(RegisterSet.INDEX_FLAGS).equals(name)) {
+        flags = register;
+      } else {
+        registers.add(register);
+      }
+    }
+
+    display.getState().setMemory(instructions);
+    display.getState().setRegisters(registers);
+    display.getState().setFlags(flags);
   }
 
   @ShellMethod()
@@ -113,6 +166,7 @@ public class ShellCommands {
       }
     }
 
+    updateDisplayVMState();
     display.draw();
   }
 
@@ -139,11 +193,9 @@ public class ShellCommands {
       }
     }
 
+    updateDisplayVMState();
     display.draw();
   }
 
-  public record RequestResult(HttpStatusCode status, String message) {
-
-  }
 
 }

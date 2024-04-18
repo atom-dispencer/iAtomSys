@@ -1,5 +1,7 @@
 package uk.iatom.iAtomSys.server.vm.register;
 
+import uk.iatom.iAtomSys.client.decode.BiMap;
+
 public record RegisterSet(
     Register ProgramCounter,
     Register Accumulator,
@@ -24,15 +26,18 @@ public record RegisterSet(
   public static final int INDEX_IDK = 7;
   public static final int INDEX_FLAGS = 8;
 
-  /**
-   * Convenience method as it may not be apparent that one can simply cast the byte to an int to use
-   * as an index.
-   *
-   * @param b The index of the register to fetch, as a byte.
-   * @return The {@link Register} in this {@link RegisterSet} corresponding to the given index.
-   */
-  public Register fromByte(byte b) {
-    return fromIndex(b);
+  public static final BiMap<String, Integer> NAMES = new BiMap<>();
+
+  static {
+    NAMES.put("PCR", INDEX_PROGRAM_COUNTER);
+    NAMES.put("ACC", INDEX_ACCUMULATOR);
+    NAMES.put("RTN", INDEX_RETURN);
+    NAMES.put("STK", INDEX_IO_STACK);
+    NAMES.put("MEM", INDEX_IO_MEMORY);
+    NAMES.put("PTR", INDEX_POINTER);
+    NAMES.put("NUM", INDEX_NUMERIC);
+    NAMES.put("IDK", INDEX_IDK);
+    NAMES.put("FLG", INDEX_FLAGS);
   }
 
   /**
