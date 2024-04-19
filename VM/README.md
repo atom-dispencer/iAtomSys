@@ -126,17 +126,15 @@ RCP IDK PTR   // Write to ff02
 MWT           // ^
 ```
 ```
-// TODO THIS EXAMPLE HAS NOT BEEN UPDATED
 // Read a value from an unknown memory address
 
 // Memory
-ff00: ff  // The address ff02
-ff01: 02
-ff02: 00  // The number 100
-ff03: 64
+ff00: ff 02  // The address ff02
+ff01: 00 64  // The number 100
 
-TBH ff02     // Load ff02 into IDK
-RCP IDK PTR  // Swap values in IDK and PTR
-MRD          // Read value at value in PTR (ff02) into MEM
+ff01         // Load ff02 into IDK
+INC IDK      // ^
+RCP IDK PTR  // Copy IDK to PTR
+MRD          // Read value ("100") at value in PTR (ff02) into MEM
 // MEM now contains 0064
 ```
