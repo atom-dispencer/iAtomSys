@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.shell.style.Theme;
 import org.springframework.shell.style.ThemeSettings;
 import uk.iatom.iAtomSys.client.ShellDisplay;
+import uk.iatom.iAtomSys.client.disassembly.InstructionDisassembler;
 
 @Configuration
 public class ShellBeans {

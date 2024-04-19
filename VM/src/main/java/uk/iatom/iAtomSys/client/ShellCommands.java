@@ -24,11 +24,11 @@ import org.springframework.shell.standard.ShellOption;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-import uk.iatom.iAtomSys.api.VMStatePacket;
-import uk.iatom.iAtomSys.client.decode.DecodedInstruction;
-import uk.iatom.iAtomSys.client.decode.DecodedRegister;
-import uk.iatom.iAtomSys.client.decode.InstructionReader;
-import uk.iatom.iAtomSys.server.vm.register.RegisterSet;
+import uk.iatom.iAtomSys.client.disassembly.DecodedRegister;
+import uk.iatom.iAtomSys.client.disassembly.MemoryDisassembler;
+import uk.iatom.iAtomSys.common.net.VMStatePacket;
+import uk.iatom.iAtomSys.common.register.Register;
+import uk.iatom.iAtomSys.common.register.RegisterSet;
 
 @ShellComponent
 @Component
@@ -40,10 +40,10 @@ public class ShellCommands {
   private final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
   @Value("${server.port}")
   int port;
-  @Autowired
-  private ApplicationContext applicationContext;
-  @Autowired
-  private ShellDisplay display;
+  @Autowired private ApplicationContext applicationContext;
+  @Autowired private ShellDisplay display;
+  @Autowired private MemoryDisassembler memoryDisassembler;
+  @Autowired private RegisterSet registerSet;
 
   @PostConstruct
   public void postConstruct() {
@@ -99,27 +99,26 @@ public class ShellCommands {
       return;
     }
 
-    InstructionReader reader = new InstructionReader(response.getBody().memory());
-    List<DecodedInstruction> instructions = new ArrayList<>();
-    while(reader.hasNextByte()) {
-      instructions.add(reader.readNextInstruction());
-    }
+    short[] shorts = response.getBody().memory();
+    List<String[]> instructions = memoryDisassembler.disassemble(shorts);
 
-    DecodedRegister flags = new DecodedRegister(RegisterSet.NAMES.getKey(RegisterSet.INDEX_FLAGS), "????");
+    // Give flags a default value so it isn't null
+    DecodedRegister flags = new DecodedRegister(Register.FLG(registerSet).getName(), "????");
+
     List<DecodedRegister> registers = new ArrayList<>();
-    for(Entry<String, Integer> entry : response.getBody().registers().entrySet()) {
+    for(Entry<String, Short> entry : response.getBody().registers().entrySet()) {
       String name = entry.getKey();
       int value = entry.getValue();
       DecodedRegister register = new DecodedRegister(name, String.format("%04x", value));
 
-      if (RegisterSet.NAMES.getKey(RegisterSet.INDEX_FLAGS).equals(name)) {
+      if (Register.FLG(registerSet).getName().equals(name)) {
         flags = register;
       } else {
         registers.add(register);
       }
     }
 
-    display.getState().setMemory(instructions);
+    display.getState().setInstructions(instructions);
     display.getState().setRegisters(registers);
     display.getState().setFlags(flags);
   }

@@ -8,14 +8,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
-import java.util.Map.Entry;
 import java.util.function.Supplier;
 import lombok.Getter;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.iatom.iAtomSys.client.decode.DecodedRegister;
+import uk.iatom.iAtomSys.client.disassembly.DecodedRegister;
 
 public class ShellDisplay {
 
@@ -323,7 +322,7 @@ public class ShellDisplay {
     //
     // Draw the state if it exists
     //
-    if (state.getMemory() != null) {
+    if (state.getInstructions() != null) {
       // A single line is around 23 chars minimum
     }
     //

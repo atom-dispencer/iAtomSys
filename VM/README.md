@@ -42,48 +42,54 @@ The virtual CPU will interpret one 16-bit integer at a time:
 ```
 If the integer is odd (contains a 1 in its least significant bit), it will be copied into the least-
   significant 15 bits of the IDK register and left-shifted once.
-If the integer is even, it will be interpreted as one of the instructions denoted below:
+If the integer is even, it will be interpreted as one of the instructions denoted below.
 
-| Instruction       | Assembly | Opcode | Flags           | Function                                                                                                                                                                    |
-|-------------------|----------|--------|-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| No Operation      | NOP      | 00     |                 | Does nothing (effectively a 1-cycle pause).                                                                                                                                 | 
-| Register Transfer | RCP      |        |                 | Read the integer in `IDK`. Decode the most significant byte as `Register1` and the least significant byte as `Register2`. Copy the integer in `Register1` into `Register2`. |
-| Memory Read       | MRD      |        |                 | Read the value at the address stored in `PTR` into `MEM`.                                                                                                                   |
-| Memory Write      | MWT      |        |                 | Write the value in `MEM` to the address stored in `PTR`.                                                                                                                    |
-| Push to Stack     | PSH      |        |                 | Push the value in `STK` onto the top of the stack.                                                                                                                          |
-| Pop from Stack    | POP      |        |                 | Pop the value off the top of the stack into `STK`.                                                                                                                          |
-| Increment         | INC      |        | `0-3: Register` | Increment the value in `Register` by 1.                                                                                                                                     |
-| Decrement         | DEC      |        | `0-3: Register` | Decrement the value in `Register` by 1.                                                                                                                                     |
-| Add               | ADD      |        | `0-3: Register` | Add the value in `Register` to `ACC`.                                                                                                                                       |
-| Subtract          | SUB      |        | `0-3: Register` | Subtract the value in `Register` from `ACC`.                                                                                                                                |
-| Zero              | ZRO      |        | `0-3: Register` | Set the value in `Register` to 0.                                                                                                                                           |
+Many `Register` flags are followed by a `Register*` flag. If the `Register*` flag is enabled, the
+  true 16-bit memory address of the register should be used, rather than the register's contents.
+
+| Instruction    | Assembly | Opcode | Flags                                                                | Function                                                                |
+|----------------|----------|--------|----------------------------------------------------------------------|-------------------------------------------------------------------------|
+| No Operation   | NOP      | 00     |                                                                      | Does nothing (effectively a 1-cycle pause).                             | 
+| Move           | MOV      |        | `0-1: Register1`, `2: Register1*`, `3-4: Register2`, `5: Register2*` | Move the value at `Address1` into `Address2`.                           |
+| Set Flag       | FLG      |        | `0-3: 4-bit ID`, `4: Value`                                          | Set the given bit (0-15) in the FLG hidden-register to the given value. |
+| Push to Stack  | PSH      |        | `0-1: Register`, `2: Register*`                                      | Push the value at the given address onto the top of the CPU stack.      |
+| Pop from Stack | POP      |        | `0-1: Register`, `2: Register*`                                      | Pop the value off the top of the stack into the given address.          |
+| Increment      | INC      |        | `0-1: Register`, `2: Register*`                                      | Increment the integer stored at the given address by 1.                 |
+| Decrement      | DEC      |        | `0-1: Register`, `2: Register*`                                      | Decrement the integer stored at the given address by 1.                 |
+| Add            | ADD      |        | `0-1: Register`, `2: Register*`                                      | Add the value at the given address to `ACC`.                            |
+| Subtract       | SUB      |        | `0-1: Register`, `2: Register*`                                      | Subtract the value at the given address from `ACC`.                     |
+| Zero           | ZRO      |        | `0-1: Register`, `2: Register*`                                      | Set the value at the given address to 0.                                |
 
 ## Registers
 
 Registers in the VM are stored in memory and can therefore be accessed through standard memory
   addresses. This is, however, inadvisable and generally impractical.
+Bear in mind that the whole state of the VM is stored in memory, so 'Registers' are just an
+  abstraction for a known constant memory address.
+Registers can be passed as flags to instructions via their 2-bit address.
 
+| Register          | Assembly | Hex | Function                                           |
+|-------------------|----------|-----|----------------------------------------------------|
+| Accumulator       | ACC      | 00  | The VM/CPU accumulator for mathematical operations | 
+| I Don't Know...   | IDK      | 01  | No internal VM/CPU function. User-controlled       |
+| To Be Honest...   | TBH      | 02  | No internal VM/CPU function. User-controlled       |
+| Laugh Out Loud... | LOL      | 03  | No internal VM/CPU function. User-controlled       |
 
-### Addressable Registers
-Addressable registers can be passed as flags to instructions via their 4-bit address.
+### Hidden Registers
+Several registers are hidden, meaning that they cannot be addressed directly from instructions.
+Interactions with these must happen indirectly via other instructions.
 
-| Register        | Assembly | Hex | Function                                           |
-|-----------------|----------|-----|----------------------------------------------------|
-| Program Counter | PCR      |     | Stores the current address for program execution   | 
-| Flags           | FLG      |     | Holds CPU flags, one bit per flag.                 |
-| Accumulator     | ACC      |     | The VM/CPU accumulator for mathematical operations | 
-| Return          | RTN      |     | Store pointers to function return values           | 
-| StackIO         | STK      |     | Store the inputs and outputs of stack operations   | 
-| MemoryIO        | MEM      |     | Store the inputs and outputs of memory operations  | 
-| Pointer         | PTR      |     | Store memory addresses for memory operations       | 
-| Numeric         | NUM      |     | Store secondary values for mathematical operations | 
-| I Don't Know... | IDK      |     | No internal VM/CPU function. User-controlled       |
+| Register        | Hex | Function                                         |
+|-----------------|-----|--------------------------------------------------|
+| Program Counter | 04  | Stores the current address for program execution | 
+| Flags           | 05  | Stores CPU flags.                                | 
 
 ## Flags
+CPU flags are stored in the invisible register FLG.
 
-| Flag  | Mask |                                                                |
-|-------|------|----------------------------------------------------------------|
-| Carry | 01   | Active when the accumulator has carried a bit during addition. |
+| Flag  | Bit | Mask |                                                                |
+|-------|-----|------|----------------------------------------------------------------|
+| Carry | 1   | 0001 | Active when the accumulator has carried a bit during addition. |
 
 
 ## Example Programs
@@ -109,16 +115,14 @@ ADD IDK
 // Program
 ff01          // Read ff01 into IDK (want ff00 but must be odd)
 DEC IDK       // Decrement IDK ff01 -> ff00
-RCP IDK PTR   // Read "500" from ff00 into MEM
-MRD           // ^
+MRD IDK LOL   // ^
 RCP MEM ACC   // Move 500 into ACC
 
 ff01          // Move ff01 into IDK (it's odd, so no changes!)
-RCP IDK PTR   // Read "250" from ff01 into MEM
-MRD           // ^
-RCP MEM NUM   // Move 250 into NUM
+RCP IDK       // Read "250" from ff01 into MEM
+MRD IDK       // ^
 
-ADD           // Add the value in NUM to that in ACC, storing the result in ACC
+ADD MEM       // Add the value in MEM to that in ACC, storing the result in ACC
 RCP ACC MEM   // Write ACC (750) back to memory
 ff03          // Want to write to ff02, but that's even!
 DEC IDK       // ^

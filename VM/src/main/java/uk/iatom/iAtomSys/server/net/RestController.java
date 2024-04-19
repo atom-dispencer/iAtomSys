@@ -5,6 +5,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URLDecoder;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
@@ -15,9 +17,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import uk.iatom.iAtomSys.api.VMStatePacket;
-import uk.iatom.iAtomSys.server.vm.IAtomSysVM;
-import uk.iatom.iAtomSys.server.vm.register.RegisterSet;
+import uk.iatom.iAtomSys.common.net.VMStatePacket;
+import uk.iatom.iAtomSys.common.register.Register;
+import uk.iatom.iAtomSys.common.register.RegisterSet;
+import uk.iatom.iAtomSys.server.IAtomSysVM;
 
 @org.springframework.web.bind.annotation.RestController
 @RequestMapping("")
@@ -29,7 +32,7 @@ public class RestController {
   private IAtomSysVM vm;
 
   @GetMapping("/state")
-  public VMStatePacket state(@RequestParam int memoryByteCount, HttpServletResponse response) {
+  public VMStatePacket state(@RequestParam short memoryByteCount, HttpServletResponse response) {
 
     if (memoryByteCount < 1 || memoryByteCount > 512) {
       logger.warn("Refusing to fulfill 'state' request for %d memory bytes.".formatted(memoryByteCount));
@@ -37,20 +40,18 @@ public class RestController {
       return null;
     }
 
-    int startAddress = vm.getRegisterSet().ProgramCounter().get();
-    byte[] memory = vm.getMemory().read(startAddress, memoryByteCount);
+    short startAddress = Register.PCR(vm.getRegisterSet()).get();
+    short[] memory = new short[memoryByteCount];
+    vm.getMemory().readRange(startAddress, memory);
 
     RegisterSet regs = vm.getRegisterSet();
-    Map<String, Integer> registers = Map.of( //
-        "PCR", regs.ProgramCounter().get(), //
-        "ACC", regs.Accumulator().get(), //
-        "RTN", regs.Return().get(), //
-        "STK", regs.IOStack().get(), //
-        "MEM", regs.IOMemory().get(), //
-        "PTR", regs.Pointer().get(), //
-        "NUM", regs.Numeric().get(), //
-        "IDK", regs.Idk().get(), //
-        "FLG", regs.Flags().get() //
+    Map<String, Short> registers = Map.of( //
+        "PCR", Register.PCR(regs).get(), //
+        "FLG", Register.FLG(regs).get(), //
+        "ACC", Register.ACC(regs).get(), //
+        "IDK", Register.IDK(regs).get(), //
+        "TBH", Register.TBH(regs).get(), //
+        "LOL", Register.LOL(regs).get() //
     );
 
     return new VMStatePacket(memory, registers);
@@ -96,7 +97,9 @@ public class RestController {
         return "Requested file larger than VM memory.";
       }
 
-      byte[] buffer = stream.readAllBytes();
+      byte[] byteBuffer = stream.readAllBytes();
+      short[] buffer = new short[byteBuffer.length/2];
+      ByteBuffer.wrap(byteBuffer).order(ByteOrder.BIG_ENDIAN).asShortBuffer().get(buffer);
 
       if (buffer.length > memorySize) {
         logger.error("New buffer size %d > memory size %d".formatted(fileLength, memorySize));
@@ -108,7 +111,7 @@ public class RestController {
       }
 
       logger.info("Writing image... (%d bytes)".formatted(buffer.length));
-      vm.getMemory().write(0, buffer);
+      vm.getMemory().write((short) 0, buffer);
 
     } catch (IOException ioException) {
       response.setStatus(HttpStatus.FORBIDDEN.value());

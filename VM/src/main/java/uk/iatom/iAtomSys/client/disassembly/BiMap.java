@@ -1,4 +1,4 @@
-package uk.iatom.iAtomSys.client.decode;
+package uk.iatom.iAtomSys.client.disassembly;
 
 import java.util.HashMap;
 

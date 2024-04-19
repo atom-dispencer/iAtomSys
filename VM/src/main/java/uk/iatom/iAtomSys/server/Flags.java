@@ -1,4 +1,4 @@
-package uk.iatom.iAtomSys.server.vm;
+package uk.iatom.iAtomSys.server;
 
 import lombok.Data;
 
