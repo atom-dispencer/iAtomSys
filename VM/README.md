@@ -51,7 +51,7 @@ Many `Register` flags are followed by a `Register*` flag. If the `Register*` fla
 |----------------|----------|--------|----------------------------------------------------------------------|-------------------------------------------------------------------------|
 | No Operation   | NOP      | 00     |                                                                      | Does nothing (effectively a 1-cycle pause).                             | 
 | Move           | MOV      |        | `0-1: Register1`, `2: Register1*`, `3-4: Register2`, `5: Register2*` | Move the value at `Address1` into `Address2`.                           |
-| Set Flag       | FLG      |        | `0-3: 4-bit ID`, `4: Value`                                          | Set the given bit (0-15) in the FLG hidden-register to the given value. |
+| Set Flag       | FLG      |        | `0-3: 4-bit ID`, `4: On/Off`                                         | Set the given bit (0-15) in the FLG hidden-register to the given value. |
 | Push to Stack  | PSH      |        | `0-1: Register`, `2: Register*`                                      | Push the value at the given address onto the top of the CPU stack.      |
 | Pop from Stack | POP      |        | `0-1: Register`, `2: Register*`                                      | Pop the value off the top of the stack into the given address.          |
 | Increment      | INC      |        | `0-1: Register`, `2: Register*`                                      | Increment the integer stored at the given address by 1.                 |

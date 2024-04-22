@@ -1,37 +1,53 @@
 package uk.iatom.iAtomSys.client.disassembly;
 
+import uk.iatom.iAtomSys.common.instruction.FlagHelper;
 import uk.iatom.iAtomSys.common.instruction.Instruction;
 import uk.iatom.iAtomSys.common.instruction.InstructionSet;
+import uk.iatom.iAtomSys.common.register.RegisterReference;
 import uk.iatom.iAtomSys.common.register.RegisterSet;
-import uk.iatom.iAtomSys.server.IAtomSysVM;
 import uk.iatom.iAtomSys.common.register.Register;
 
 @FunctionalInterface
 public interface InstructionDisassembler {
   String[] disassemble(Instruction instruction, byte flags, InstructionSet instructionSet, RegisterSet registerSet);
 
+  private static String formatRegisterPointer(Register register, boolean isSelfReference) {
+    return register.getName() + (isSelfReference ? "*" : "");
+  }
+
   static String[] noFlags(Instruction instruction, byte ignoredFlags, InstructionSet ignoredInstructionSet, RegisterSet ignoredRegisterSet) {
-    return new String[] { instruction.name(), "" };
+    return new String[] { instruction.name() };
   }
 
-  static String[] register_0_3(Instruction instruction, byte flags, InstructionSet instructionSet, RegisterSet registerSet) {
-    byte registerId = (byte) ((flags | 0xf0) >> 4);
-    Register register = registerSet.getRegister(registerId);
-    return new String[] { instruction.name(), register.getName() };
+  static String[] oneRegister_02(Instruction instruction, byte flags, InstructionSet instructionSet, RegisterSet registerSet) {
+    RegisterReference reference = FlagHelper.oneRegister_02(registerSet, flags);
+    Register register = reference.register();
+
+    return new String[] { instruction.name(), formatRegisterPointer(register, reference.isSelfReference()) };
   }
 
-  static String[] twoRegisters(Instruction instruction, byte flags, InstructionSet instructionSet, RegisterSet registerSet) {
-    boolean useRegisterAddress1 = (flags & 0b00100000) > 0;
-    byte register1Index = (byte) ((flags | 0b11000000) >> 6);
-    Register register1 = registerSet.getRegister(register1Index);
+  static String[] twoRegisters_02_35(Instruction instruction, byte flags, InstructionSet instructionSet, RegisterSet registerSet) {
 
-    boolean useRegisterAddress2 = (flags & 0b00100000) > 0;
-    byte register2Index = (byte) ((flags | 0b11000000) >> 6);
-    Register register2 = registerSet.getRegister(register2Index);
+    RegisterReference[] references = FlagHelper.twoRegisters_02_35(registerSet, flags);
 
-    String registerStr1 = useRegisterAddress1 ? register1.getName() + "*" : register1.getName();
-    String registerStr2 = useRegisterAddress2 ? register2.getName() + "*" : register2.getName();
+    Register register1 = references[0].register();
+    boolean isSelfReference1 = references[0].isSelfReference();
 
-    return new String[] { instruction.name(), registerStr1, registerStr2 };
+    Register register2 = references[1].register();
+    boolean isSelfReference2 = references[1].isSelfReference();
+
+    return new String[] {
+        instruction.name(),
+        formatRegisterPointer(register1, isSelfReference1),
+        formatRegisterPointer(register2, isSelfReference2)
+    };
+  }
+
+  static String[] dFLG(Instruction instruction, byte flags, InstructionSet instructionSet, RegisterSet registerSet) {
+    byte bit = (byte) ((flags & 0b11110000) >> 4);
+    boolean value = ((flags & 0b00001000) >> 3) == 1;
+
+    String operand = "%01x".formatted(bit) + (value ? "+" : "-");
+    return new String[] { instruction.name(), operand };
   }
 }

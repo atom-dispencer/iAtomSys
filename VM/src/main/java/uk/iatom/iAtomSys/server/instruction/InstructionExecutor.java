@@ -1,21 +1,18 @@
 package uk.iatom.iAtomSys.server.instruction;
 
-import uk.iatom.iAtomSys.common.instruction.Instruction;
-import uk.iatom.iAtomSys.common.register.RegisterSet;
+import static uk.iatom.iAtomSys.common.instruction.FlagHelper.oneRegister_02;
+import static uk.iatom.iAtomSys.common.instruction.FlagHelper.twoRegisters_02_35;
+
+import uk.iatom.iAtomSys.common.register.RegisterReference;
 import uk.iatom.iAtomSys.server.IAtomSysVM;
 import uk.iatom.iAtomSys.common.register.Register;
+import uk.iatom.iAtomSys.server.memory.Memory;
 import uk.iatom.iAtomSys.server.stack.ProcessorStack;
-import uk.iatom.iAtomSys.server.stack.ProcessorStackOverflowException;
-import uk.iatom.iAtomSys.server.stack.ProcessorStackUnderflowException;
 
 public interface InstructionExecutor {
 
   void exec(IAtomSysVM vm, byte flags) throws InstructionExecutionException;
 
-  private static Register registerFromFlag_0_3(RegisterSet registerSet, byte flags) {
-    byte registerId = (byte) ((flags | 0xf0) >> 4);
-    return registerSet.getRegister(registerId);
-  }
 
   /**
    * @param ignoredVm The {@link IAtomSysVM} to act on.
@@ -29,7 +26,35 @@ public interface InstructionExecutor {
    * Read an integer value into the given address.
    *
    */
-  static void xMOV(IAtomSysVM vm, byte ignoredFlags) {
+  static void xMOV(IAtomSysVM vm, byte flags) {
+    RegisterReference[] registers = twoRegisters_02_35(vm.getRegisterSet(), flags);
+    Memory memory = vm.getMemory();
+
+    short originAddress = registers[0].get();
+    short destinationAddress = registers[1].get();
+
+    short value = memory.read(originAddress);
+    memory.write(destinationAddress, value);
+  }
+
+  /**
+   * Push the value onto the top of the stack.
+   *
+   * @see #xNOP(IAtomSysVM, byte)
+   */
+  static void xFLG(IAtomSysVM vm, byte flags) {
+    byte bit = (byte) ((flags & 0b11110000) >> 4);
+    int newValue = (flags & 0b00001000) >> 3;
+
+    Register flagRegister = Register.FLG(vm.getRegisterSet());
+    short flagRegisterValue = flagRegister.get();
+
+    // If the given bit is not equal to the new desired value, flip it, so it is
+    if (((flagRegisterValue & 0x8000) >> bit) != newValue) {
+      flagRegisterValue ^= (short) (0x8000 >> bit);
+    }
+
+    flagRegister.set(flagRegisterValue);
   }
 
   /**
@@ -55,7 +80,7 @@ public interface InstructionExecutor {
    * @see #xNOP(IAtomSysVM, byte)
    */
   static void xINC(IAtomSysVM vm, byte flags) {
-    Register register = registerFromFlag_0_3(vm.getRegisterSet(), flags);
+    Register register = oneRegister_02(vm.getRegisterSet(), flags);
     short current = register.get();
     register.set((short) (current + 1));
   }
@@ -67,7 +92,7 @@ public interface InstructionExecutor {
    * @see #xNOP(IAtomSysVM, byte)
    */
   static void xDEC(IAtomSysVM vm, byte flags) {
-    Register register = registerFromFlag_0_3(vm.getRegisterSet(), flags);
+    Register register = oneRegister_02(vm.getRegisterSet(), flags);
     short current = register.get();
     register.set((short) (current - 1));
   }
@@ -80,7 +105,7 @@ public interface InstructionExecutor {
    * @see #xNOP(IAtomSysVM, byte)
    */
   static void xADD(IAtomSysVM vm, byte flags) throws InstructionExecutionException {
-    Register register = registerFromFlag_0_3(vm.getRegisterSet(), flags);
+    Register register = oneRegister_02(vm.getRegisterSet(), flags);
     short target = register.get();
 
     Register ACC = Register.ACC(vm.getRegisterSet());
@@ -114,7 +139,7 @@ public interface InstructionExecutor {
    * @see #xNOP(IAtomSysVM, byte)
    */
   static void xSUB(IAtomSysVM vm, byte flags) throws InstructionExecutionException {
-    Register register = registerFromFlag_0_3(vm.getRegisterSet(), flags);
+    Register register = oneRegister_02(vm.getRegisterSet(), flags);
     short target = register.get();
 
     Register ACC = Register.ACC(vm.getRegisterSet());
@@ -149,7 +174,7 @@ public interface InstructionExecutor {
    * @see #xNOP(IAtomSysVM, byte)
    */
   static void xZRO(IAtomSysVM vm, byte flags) {
-    Register register = registerFromFlag_0_3(vm.getRegisterSet(), flags);
+    Register register = oneRegister_02(vm.getRegisterSet(), flags);
     register.set((short) 0);
   }
 }

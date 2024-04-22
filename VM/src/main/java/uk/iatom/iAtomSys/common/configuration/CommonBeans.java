@@ -22,14 +22,15 @@ public class CommonBeans {
     InstructionSet set = new InstructionSet();
 
     set.createInstruction("NOP", (byte) 0x00, InstructionDisassembler::noFlags, InstructionExecutor::xNOP);
-    set.createInstruction("MOV", (byte) 0x01, InstructionDisassembler::twoRegisters, InstructionExecutor::xMOV);
-    set.createInstruction("PSH", (byte) 0x04, InstructionDisassembler::noFlags, InstructionExecutor::xPSH);
-    set.createInstruction("POP", (byte) 0x05, InstructionDisassembler::noFlags, InstructionExecutor::xPOP);
-    set.createInstruction("INC", (byte) 0x06, InstructionDisassembler::noFlags, InstructionExecutor::xINC);
-    set.createInstruction("DEC", (byte) 0x07, InstructionDisassembler::noFlags, InstructionExecutor::xDEC);
-    set.createInstruction("ADD", (byte) 0x08, InstructionDisassembler::noFlags, InstructionExecutor::xADD);
-    set.createInstruction("SUB", (byte) 0x09, InstructionDisassembler::noFlags, InstructionExecutor::xSUB);
-    set.createInstruction("ZRO", (byte) 0x0a, InstructionDisassembler::noFlags, InstructionExecutor::xZRO);
+    set.createInstruction("MOV", (byte) 0x01, InstructionDisassembler::twoRegisters_02_35, InstructionExecutor::xMOV);
+    set.createInstruction("FLG", (byte) 0x02, InstructionDisassembler::dFLG, InstructionExecutor::xFLG);
+    set.createInstruction("PSH", (byte) 0x04, InstructionDisassembler::oneRegister_02, InstructionExecutor::xPSH);
+    set.createInstruction("POP", (byte) 0x05, InstructionDisassembler::oneRegister_02, InstructionExecutor::xPOP);
+    set.createInstruction("INC", (byte) 0x06, InstructionDisassembler::oneRegister_02, InstructionExecutor::xINC);
+    set.createInstruction("DEC", (byte) 0x07, InstructionDisassembler::oneRegister_02, InstructionExecutor::xDEC);
+    set.createInstruction("ADD", (byte) 0x08, InstructionDisassembler::oneRegister_02, InstructionExecutor::xADD);
+    set.createInstruction("SUB", (byte) 0x09, InstructionDisassembler::oneRegister_02, InstructionExecutor::xSUB);
+    set.createInstruction("ZRO", (byte) 0x0a, InstructionDisassembler::oneRegister_02, InstructionExecutor::xZRO);
 
     return set;
   }
