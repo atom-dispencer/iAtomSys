@@ -8,16 +8,22 @@ import uk.iatom.iAtomSys.server.memory.Memory;
 
 public class RegisterSet {
 
-  private final List<Register> registers = new ArrayList<>();
+  private final Register[] registers = new Register[4];
   private final Map<String, Integer> names = new HashMap<>();
+  private final Memory memory;
   private final short startAddress;
 
-  public RegisterSet(short startAddress) {
+  public RegisterSet(Memory memory, short startAddress) {
+    this.memory = memory;
     this.startAddress = startAddress;
   }
 
-  public void createRegister(String name, Memory memory) throws DuplicateRegisterException {
-    int id = registers.size();
+  public void createRegister(String name, int id) throws DuplicateRegisterException {
+
+    if (id < 0 || id >= registers.length) {
+      throw new IllegalArgumentException("Cannot create Register. ID too large (%d>%d)".formatted(id, registers.length - 1));
+    }
+
     Register register = new Register(name, id, (short) (startAddress + id), memory);
 
     if (names.containsKey(name)) {
@@ -25,7 +31,7 @@ public class RegisterSet {
       throw new DuplicateRegisterException(original, register);
     }
 
-    registers.add(register);
+    registers[id] = register;
     names.put(register.getName(), id);
   }
 
@@ -34,10 +40,10 @@ public class RegisterSet {
   }
 
   public Register getRegister(int id) {
-    if (id < 0 || id >= registers.size())
+    if (id < 0 || id >= registers.length)
       return null;
 
-    return registers.get(id);
+    return registers[id];
   }
 
   public Register getRegister(String name) {
@@ -45,6 +51,6 @@ public class RegisterSet {
       return null;
     int id = names.get(name);
 
-    return registers.get(id);
+    return registers[id];
   }
 }

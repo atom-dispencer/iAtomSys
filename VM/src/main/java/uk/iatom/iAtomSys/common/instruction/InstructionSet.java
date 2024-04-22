@@ -19,14 +19,20 @@ public class InstructionSet {
       InstructionExecutor executor
   )
       throws DuplicateInstructionException {
+
+    // No need to check opcode as is restrained to 0-255 anyway
     Instruction instruction = new Instruction(name, opcode, disassembler, executor);
 
     if (getInstruction(opcode) != null || getOpcode(name) != null) {
       throw new DuplicateInstructionException(getInstruction(opcode), instruction);
     }
 
+    // All good to go!
     names.put(instruction.name(), instruction.opcode());
-    instructions[instruction.opcode()] = instruction;
+
+    // Bytes are signed in Java, but negative indices will error!
+    int index = Byte.toUnsignedInt(instruction.opcode());
+    instructions[index] = instruction;
   }
 
   public Byte getOpcode(String name) {
@@ -34,7 +40,7 @@ public class InstructionSet {
   }
 
   public Instruction getInstruction(byte opcode) {
-    return instructions[opcode];
+    return instructions[Byte.toUnsignedInt(opcode)];
   }
 
 }

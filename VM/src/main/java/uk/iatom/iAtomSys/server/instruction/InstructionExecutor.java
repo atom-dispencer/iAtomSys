@@ -3,11 +3,15 @@ package uk.iatom.iAtomSys.server.instruction;
 import static uk.iatom.iAtomSys.common.instruction.FlagHelper.oneRegister_02;
 import static uk.iatom.iAtomSys.common.instruction.FlagHelper.twoRegisters_02_35;
 
+import lombok.SneakyThrows;
+import uk.iatom.iAtomSys.common.instruction.FlagHelper;
 import uk.iatom.iAtomSys.common.register.RegisterReference;
 import uk.iatom.iAtomSys.server.IAtomSysVM;
 import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.server.memory.Memory;
 import uk.iatom.iAtomSys.server.stack.ProcessorStack;
+import uk.iatom.iAtomSys.server.stack.ProcessorStackOverflowException;
+import uk.iatom.iAtomSys.server.stack.ProcessorStackUnderflowException;
 
 public interface InstructionExecutor {
 
@@ -62,7 +66,12 @@ public interface InstructionExecutor {
    *
    * @see #xNOP(IAtomSysVM, byte)
    */
-  static void xPSH(IAtomSysVM vm, byte ignoredFlags) throws InstructionExecutionException {
+  static void xPSH(IAtomSysVM vm, byte flags) throws ProcessorStackOverflowException {
+    RegisterReference reference = oneRegister_02(vm.getRegisterSet(), flags);
+    short address = reference.get();
+
+    short value = vm.getMemory().read(address);
+    vm.getProcessorStack().push(value);
   }
 
   /**
@@ -70,7 +79,12 @@ public interface InstructionExecutor {
    *
    * @see #xNOP(IAtomSysVM, byte)
    */
-  static void xPOP(IAtomSysVM vm, byte ignoredFlags) throws InstructionExecutionException {
+  static void xPOP(IAtomSysVM vm, byte flags) throws ProcessorStackUnderflowException {
+    RegisterReference reference = oneRegister_02(vm.getRegisterSet(), flags);
+    short address = reference.get();
+
+    short value = vm.getProcessorStack().pop();
+    vm.getMemory().write(address, value);
   }
 
   /**
@@ -80,9 +94,18 @@ public interface InstructionExecutor {
    * @see #xNOP(IAtomSysVM, byte)
    */
   static void xINC(IAtomSysVM vm, byte flags) {
-    Register register = oneRegister_02(vm.getRegisterSet(), flags);
-    short current = register.get();
-    register.set((short) (current + 1));
+    RegisterReference reference = oneRegister_02(vm.getRegisterSet(), flags);
+    short address = reference.get();
+
+    short value = vm.getMemory().read(address);
+    value += 1;
+
+    // If the new value is the minimum value for a short, the operation overflowed
+    if (value == Short.MIN_VALUE) {
+      FlagHelper.setFlag(vm.getRegisterSet(), FlagHelper.CARRY, true);
+    }
+
+    vm.getMemory().write(address, value);
   }
 
   /**
@@ -92,9 +115,18 @@ public interface InstructionExecutor {
    * @see #xNOP(IAtomSysVM, byte)
    */
   static void xDEC(IAtomSysVM vm, byte flags) {
-    Register register = oneRegister_02(vm.getRegisterSet(), flags);
-    short current = register.get();
-    register.set((short) (current - 1));
+    RegisterReference reference = oneRegister_02(vm.getRegisterSet(), flags);
+    short address = reference.get();
+
+    short value = vm.getMemory().read(address);
+    value -= 1;
+
+    // If the new value is the minimum value for a short, the operation overflowed
+    if (value == Short.MAX_VALUE) {
+      FlagHelper.setFlag(vm.getRegisterSet(), FlagHelper.CARRY, false);
+    }
+
+    vm.getMemory().write(address, value);
   }
 
 
@@ -105,30 +137,31 @@ public interface InstructionExecutor {
    * @see #xNOP(IAtomSysVM, byte)
    */
   static void xADD(IAtomSysVM vm, byte flags) throws InstructionExecutionException {
-    Register register = oneRegister_02(vm.getRegisterSet(), flags);
-    short target = register.get();
+    RegisterReference register = oneRegister_02(vm.getRegisterSet(), flags);
+    short address = register.get();
+    short value = vm.getMemory().read(address);
 
     Register ACC = Register.ACC(vm.getRegisterSet());
 
     short accumulator = ACC.get();
-    short sum = (short) (accumulator + target);
+    short sum = (short) (accumulator + value);
 
     short carry = (short) Math.floorDiv(sum, Short.MAX_VALUE);
     short remainder = (short) (sum % Short.MAX_VALUE);
 
     switch (carry) {
       case 0:
-        vm.getFlags().setCarry(false);
+        FlagHelper.setFlag(vm.getRegisterSet(), FlagHelper.CARRY, false);
         ACC.set(remainder);
         break;
       case 1:
-        vm.getFlags().setCarry(true);
+        FlagHelper.setFlag(vm.getRegisterSet(), FlagHelper.CARRY, true);
         ACC.set(remainder);
         break;
       default:
         throw new InstructionExecutionException(null,
             "Excessive CarryCount=%d while adding ACC=%d and NUM=%d".formatted(carry, accumulator,
-                target), null);
+                value), null);
     }
   }
 
@@ -139,30 +172,31 @@ public interface InstructionExecutor {
    * @see #xNOP(IAtomSysVM, byte)
    */
   static void xSUB(IAtomSysVM vm, byte flags) throws InstructionExecutionException {
-    Register register = oneRegister_02(vm.getRegisterSet(), flags);
-    short target = register.get();
+    RegisterReference register = oneRegister_02(vm.getRegisterSet(), flags);
+    short address = register.get();
+    short value = vm.getMemory().read(address);
 
     Register ACC = Register.ACC(vm.getRegisterSet());
 
     short accumulator = ACC.get();
-    short sub = (short) (accumulator - target);
+    short sub = (short) (accumulator - value);
 
     short carry = (short) Math.floorDiv(sub, Short.MAX_VALUE);
     short remainder = (short) (sub % Short.MAX_VALUE);
 
     switch (carry) {
       case 0:
-        vm.getFlags().setCarry(false);
+        FlagHelper.setFlag(vm.getRegisterSet(), FlagHelper.CARRY, false);
         ACC.set(remainder);
         break;
       case -1:
-        vm.getFlags().setCarry(true);
+        FlagHelper.setFlag(vm.getRegisterSet(), FlagHelper.CARRY, true);
         short wrapped = (short) (Short.MAX_VALUE + remainder);
         ACC.set(wrapped);
         break;
       default:
         throw new InstructionExecutionException(null,
-            "Excessive CarryCount=%d while subtracting NUM=%d from ACC=%d".formatted(carry, target,
+            "Excessive CarryCount=%d while subtracting NUM=%d from ACC=%d".formatted(carry, value,
                 accumulator), null);
     }
   }
@@ -174,7 +208,7 @@ public interface InstructionExecutor {
    * @see #xNOP(IAtomSysVM, byte)
    */
   static void xZRO(IAtomSysVM vm, byte flags) {
-    Register register = oneRegister_02(vm.getRegisterSet(), flags);
-    register.set((short) 0);
+    RegisterReference reference = oneRegister_02(vm.getRegisterSet(), flags);
+    vm.getMemory().write(reference.get(), (short) 0);
   }
 }

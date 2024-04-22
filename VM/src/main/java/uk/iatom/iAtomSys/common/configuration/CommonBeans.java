@@ -38,9 +38,17 @@ public class CommonBeans {
   @Bean
   @Scope(BeanDefinition.SCOPE_SINGLETON)
   public RegisterSet registerSet(Memory memory) throws DuplicateRegisterException {
-    RegisterSet set = new RegisterSet((short) 0x000f);
+    RegisterSet set = new RegisterSet(memory, (short) 0x000f);
 
-    set.createRegister("ACC", memory);
+    // Standard registers
+    set.createRegister("ACC", 0);
+    set.createRegister("IDK", 1);
+    set.createRegister("TBH", 2);
+    set.createRegister("LOL", 3);
+
+    // Hidden registers
+    set.createRegister("PCR", 4);
+    set.createRegister("FLG", 5);
 
     return set;
   }

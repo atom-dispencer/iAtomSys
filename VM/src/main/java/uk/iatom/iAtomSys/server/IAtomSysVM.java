@@ -36,9 +36,6 @@ public class IAtomSysVM {
   @Autowired
   private ProcessorStack processorStack;
 
-  @Autowired
-  private Flags flags;
-
   public void processNextCycle() {
     Register PCR = Register.PCR(registerSet);
     short pc = PCR.get();

@@ -28,7 +28,7 @@ public class ProcessorStack {
 
   public short pop() throws ProcessorStackUnderflowException {
     if (writePointer <= 0) {
-      throw new ProcessorStackUnderflowException("ProcessorStack is already empty.");
+      throw new ProcessorStackUnderflowException(this, "ProcessorStack is already empty.", null);
     }
 
     return memory.read(--writePointer);

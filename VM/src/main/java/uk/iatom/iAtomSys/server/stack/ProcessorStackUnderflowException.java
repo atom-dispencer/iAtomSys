@@ -1,12 +1,20 @@
 package uk.iatom.iAtomSys.server.stack;
 
-public class ProcessorStackUnderflowException extends Exception {
+import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
+import uk.iatom.iAtomSys.server.instruction.InstructionExecutionException;
 
-  public ProcessorStackUnderflowException(String message) {
-    this(message, null);
+public class ProcessorStackUnderflowException extends InstructionExecutionException {
+
+  public final ProcessorStack processorStack;
+
+  public ProcessorStackUnderflowException(@NonNull ProcessorStack processorStack, @NonNull String message, @Nullable Throwable cause) {
+    super(null, message, null);
+    this.processorStack = processorStack;
   }
 
-  public ProcessorStackUnderflowException(String message, Throwable cause) {
-    super("ProcessorStack underflowed: %s".formatted(message), cause);
+  @Override
+  public String getMessage() {
+    return "ProcessorStack underflowed. (%s)".formatted(super.getMessage());
   }
 }
