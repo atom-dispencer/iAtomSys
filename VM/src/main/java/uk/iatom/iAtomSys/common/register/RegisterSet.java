@@ -22,6 +22,7 @@ public class RegisterSet {
       throw new IllegalArgumentException("Cannot create Register %s. ID too large (%d>%d)".formatted(name, id, registers.length - 1));
     }
 
+    // TODO Check Short overflow when adding
     Register register = new Register(name, id, (short) (startAddress + id), memory);
 
     if (names.containsKey(name)) {
