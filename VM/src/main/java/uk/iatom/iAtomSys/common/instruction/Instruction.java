@@ -13,10 +13,10 @@ public record Instruction(
 ) {
 
   public static byte extractOpcode(short instruction) {
-    return (byte) ((instruction | 0xff00) >> 8);
+    return (byte) ((instruction & 0xff00) >> 8);
   }
 
   public static byte extractFlags(short instruction) {
-    return (byte) (instruction | 0x00ff);
+    return (byte) (instruction & 0x00ff);
   }
 }

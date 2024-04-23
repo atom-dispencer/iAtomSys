@@ -9,24 +9,24 @@ import uk.iatom.iAtomSys.common.register.Register;
 
 @FunctionalInterface
 public interface InstructionDisassembler {
-  String[] disassemble(Instruction instruction, byte flags, InstructionSet instructionSet, RegisterSet registerSet);
+  String[] disassemble(Instruction instruction, byte flags, RegisterSet registerSet);
 
   private static String formatRegisterPointer(Register register, boolean isSelfReference) {
     return register.getName() + (isSelfReference ? "*" : "");
   }
 
-  static String[] noFlags(Instruction instruction, byte ignoredFlags, InstructionSet ignoredInstructionSet, RegisterSet ignoredRegisterSet) {
+  static String[] noFlags(Instruction instruction, byte ignoredFlags, RegisterSet ignoredRegisterSet) {
     return new String[] { instruction.name() };
   }
 
-  static String[] oneRegister_02(Instruction instruction, byte flags, InstructionSet instructionSet, RegisterSet registerSet) {
+  static String[] oneRegister_02(Instruction instruction, byte flags, RegisterSet registerSet) {
     RegisterReference reference = FlagHelper.oneRegister_02(registerSet, flags);
     Register register = reference.register();
 
     return new String[] { instruction.name(), formatRegisterPointer(register, reference.isSelfReference()) };
   }
 
-  static String[] twoRegisters_02_35(Instruction instruction, byte flags, InstructionSet instructionSet, RegisterSet registerSet) {
+  static String[] twoRegisters_02_35(Instruction instruction, byte flags, RegisterSet registerSet) {
 
     RegisterReference[] references = FlagHelper.twoRegisters_02_35(registerSet, flags);
 
@@ -43,7 +43,7 @@ public interface InstructionDisassembler {
     };
   }
 
-  static String[] dFLG(Instruction instruction, byte flags, InstructionSet instructionSet, RegisterSet registerSet) {
+  static String[] dFLG(Instruction instruction, byte flags, RegisterSet ignoredRegisterSet) {
     byte bit = (byte) ((flags & 0b11110000) >> 4);
     boolean value = ((flags & 0b00001000) >> 3) == 1;
 

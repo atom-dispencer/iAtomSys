@@ -252,9 +252,6 @@ public class ShellDisplay {
   public void draw() {
     assertShellLive();
 
-    String s = null;
-    s.repeat(2);
-
     drawBackground();
     drawMemoryState();
     drawRegisters();
@@ -349,7 +346,20 @@ public class ShellDisplay {
     // Draw the state if it exists
     //
     if (state.getInstructions() != null) {
-      // A single line is around 23 chars minimum
+
+      for (String[] arr : state.getInstructions()) {
+        final int FRAGMENT_WIDTH = 6;
+        final String FORMAT = "%-" + FRAGMENT_WIDTH + "s";
+        final StringBuilder lineBuilder = new StringBuilder(arr.length);
+
+        for (String s: arr) {
+          String formatted = String.format(FORMAT, s).substring(0, FRAGMENT_WIDTH);
+          lineBuilder.append(formatted).append("  ");
+        }
+
+        contents.append(lineBuilder).append(ANSICodes.moveDown(1)).append(ANSICodes.moveLeft(lineBuilder.length()));
+      }
+
     }
     //
     // Otherwise draw a help message
@@ -369,7 +379,7 @@ public class ShellDisplay {
         // Boxes/memory addresses/whatever
         ANSICodes.moveTo(bounds.getLocation()), //
         ANSICodes.moveRight(3), //
-        ANSICodes.moveLeft(3), //
+        ANSICodes.moveDown(2), //
         contents.toString(), //
 
         //

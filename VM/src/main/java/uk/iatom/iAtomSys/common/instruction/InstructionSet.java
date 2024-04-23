@@ -39,7 +39,7 @@ public class InstructionSet {
     return names.getOrDefault(name, null);
   }
 
-  public Instruction getInstruction(byte opcode) {
+  public Instruction getInstruction(byte opcode) throws ArrayIndexOutOfBoundsException {
     return instructions[Byte.toUnsignedInt(opcode)];
   }
 

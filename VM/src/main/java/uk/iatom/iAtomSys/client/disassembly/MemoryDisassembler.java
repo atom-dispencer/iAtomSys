@@ -2,10 +2,14 @@ package uk.iatom.iAtomSys.client.disassembly;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import lombok.Getter;
 import lombok.Setter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 import uk.iatom.iAtomSys.common.instruction.Instruction;
 import uk.iatom.iAtomSys.common.instruction.InstructionSet;
 import uk.iatom.iAtomSys.common.register.RegisterSet;
@@ -14,6 +18,7 @@ import uk.iatom.iAtomSys.common.register.RegisterSet;
 @Component
 public class MemoryDisassembler {
 
+  private static final Logger logger = LoggerFactory.getLogger(MemoryDisassembler.class);
   private final InstructionSet instructionSet;
   private final RegisterSet registerSet;
 
@@ -29,16 +34,35 @@ public class MemoryDisassembler {
   public List<String[]> disassemble(short[] shorts) {
     List<String[]> decoded = new ArrayList<>(shorts.length);
     for (short s : shorts) {
-      decoded.add(disassembleInstruction(s));
+
+      try {
+        decoded.add(disassembleInstruction(s));
+      } catch (InstructionDisassemblyException idx) {
+        logger.error("Error disassembling instruction %04x".formatted(s), idx);
+        decoded.add(new String[] { "err!", "%04x".formatted(s) });
+      }
+
     }
     return decoded;
   }
 
-  public String[] disassembleInstruction(short instructionShort) {
-    byte opcode = Instruction.extractOpcode(instructionShort);
-    byte flags = Instruction.extractFlags(instructionShort);
-    Instruction instruction = instructionSet.getInstruction(opcode);
+  public String[] disassembleInstruction(short instructionShort)
+      throws InstructionDisassemblyException {
 
-    return instruction.disassembler().disassemble(instruction, flags, instructionSet, registerSet);
+    try {
+      byte opcode = Instruction.extractOpcode(instructionShort);
+      byte flags = Instruction.extractFlags(instructionShort);
+
+      Instruction instruction = instructionSet.getInstruction(opcode);
+      Objects.requireNonNull(instruction, "No instruction found for opcode %02X".formatted(opcode));
+
+      String[] fragments = instruction.disassembler().disassemble(instruction, flags, registerSet);
+      Objects.requireNonNull(fragments, "Received null fragment array for %02X,%02X (Instruction: %s)".formatted(opcode, flags, instruction));
+      Assert.isTrue(fragments.length > 0, "Expected > 0 fragments, got %s".formatted(fragments.length));
+
+      return fragments;
+    } catch (Exception e) {
+      throw new InstructionDisassemblyException("Error disassembling Instruction %04X".formatted(instructionShort), e);
+    }
   }
 }
