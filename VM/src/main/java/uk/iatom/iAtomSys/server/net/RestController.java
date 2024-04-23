@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
 import uk.iatom.iAtomSys.common.net.VMStatePacket;
 import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.common.register.RegisterSet;
@@ -45,13 +47,13 @@ public class RestController {
     vm.getMemory().readRange(startAddress, memory);
 
     RegisterSet regs = vm.getRegisterSet();
-    Map<String, Short> registers = Map.of( //
-        "PCR", Register.PCR(regs).get(), //
-        "FLG", Register.FLG(regs).get(), //
-        "ACC", Register.ACC(regs).get(), //
-        "IDK", Register.IDK(regs).get(), //
-        "TBH", Register.TBH(regs).get(), //
-        "LOL", Register.LOL(regs).get() //
+    List<RegisterPacket> registers = List.of( //
+        Register.PCR(regs).toPacket(),
+        Register.FLG(regs).toPacket(),
+        Register.ACC(regs).toPacket(),
+        Register.IDK(regs).toPacket(),
+        Register.TBH(regs).toPacket(),
+        Register.LOL(regs).toPacket()
     );
 
     return new VMStatePacket(memory, registers);

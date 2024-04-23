@@ -9,13 +9,15 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.function.Supplier;
 import lombok.Getter;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.iatom.iAtomSys.client.disassembly.DecodedRegister;
+import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
 
 public class ShellDisplay {
 
@@ -400,8 +402,26 @@ public class ShellDisplay {
     if (state.getRegisters() == null) {
       // Draw defaults
     } else {
-      for (DecodedRegister register : state.getRegisters()) {
-        String content = "%s   %s".formatted(register.name(), register.value());
+
+      String header = " ID  Reg  @Addr   Value";
+      info.append(header).append(ANSICodes.moveDown(1)).append(ANSICodes.moveLeft(header.length()));
+      String dashes = " --  ---  -----   -----";
+      info.append(dashes).append(ANSICodes.moveDown(1)).append(ANSICodes.moveLeft(dashes.length()));
+      String format = "%3d  %-3s  %04X    %04X";
+
+      // Get the list of registers and sort it by ID, ascending
+      List<RegisterPacket> packets = state.getRegisters();
+      packets.sort(Comparator.comparing(RegisterPacket::id));
+
+      for (int i = 0; i < packets.size(); i++) {
+
+        // Add a line break before the hidden registers
+        if (i == 4) {
+          info.append(ANSICodes.moveDown(1));
+        }
+
+        RegisterPacket register = packets.get(i);
+        String content = format.formatted(register.id(), register.name(), register.address(), register.value());
         info.append(content);
         info.append(ANSICodes.moveLeft(content.length()));
         info.append(ANSICodes.moveDown(1));

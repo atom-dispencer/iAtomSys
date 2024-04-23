@@ -2,6 +2,7 @@ package uk.iatom.iAtomSys.common.register;
 
 
 import lombok.Getter;
+import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
 import uk.iatom.iAtomSys.server.memory.Memory;
 
 public class Register {
@@ -43,5 +44,9 @@ public class Register {
 
   public void set(short value) {
     memory.write(this.address, value);
+  }
+
+  public RegisterPacket toPacket() {
+    return new RegisterPacket(name, id, address, get());
   }
 }

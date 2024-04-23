@@ -24,7 +24,7 @@ import org.springframework.shell.standard.ShellOption;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-import uk.iatom.iAtomSys.client.disassembly.DecodedRegister;
+import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
 import uk.iatom.iAtomSys.client.disassembly.MemoryDisassembler;
 import uk.iatom.iAtomSys.common.net.VMStatePacket;
 import uk.iatom.iAtomSys.common.register.Register;
@@ -99,28 +99,16 @@ public class ShellCommands {
       return;
     }
 
+    // TODO What if state packet values are null?
+
     short[] shorts = response.getBody().memory();
     List<String[]> instructions = memoryDisassembler.disassemble(shorts);
 
     // Give flags a default value so it isn't null
-    DecodedRegister flags = new DecodedRegister(Register.FLG(registerSet).getName(), "????");
-
-    List<DecodedRegister> registers = new ArrayList<>();
-    for(Entry<String, Short> entry : response.getBody().registers().entrySet()) {
-      String name = entry.getKey();
-      int value = entry.getValue();
-      DecodedRegister register = new DecodedRegister(name, String.format("%04x", value));
-
-      if (Register.FLG(registerSet).getName().equals(name)) {
-        flags = register;
-      } else {
-        registers.add(register);
-      }
-    }
+    List<RegisterPacket> registers = response.getBody().registers();
 
     display.getState().setInstructions(instructions);
     display.getState().setRegisters(registers);
-    display.getState().setFlags(flags);
   }
 
   @ShellMethod()
