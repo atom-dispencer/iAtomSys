@@ -155,6 +155,8 @@ public class ShellDisplay {
     }
     this.alive = false;
 
+    // Enable System.out for logging
+    enableSysOut();
     if (logger != null)
       logger.info("Deactivating ShellDisplay...");
     else
@@ -170,15 +172,21 @@ public class ShellDisplay {
         System.err.println("Error closing old terminal." + iox);
 
     } finally {
+      // Try to restore the terminal's pre-application state
       print(
           ANSICodes.OLD_BUFFER,
-          "\nExiting app...\n"
+          "\nExiting app...\n\n"
       );
+
+      // Re-enable System.out because #print disables it
+      enableSysOut();
+
+      // Eat any remaining input, so it doesn't mess with the parent terminal
       try {
         int ignored = System.in.read(new byte[System.in.available()]);
       } catch (IOException ignored) {
+        // If it fails, oh well...
       }
-      enableSysOut();
     }
   }
 
@@ -243,6 +251,9 @@ public class ShellDisplay {
    */
   public void draw() {
     assertShellLive();
+
+    String s = null;
+    s.repeat(2);
 
     drawBackground();
     drawMemoryState();
