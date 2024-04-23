@@ -1,14 +1,12 @@
 package uk.iatom.iAtomSys.common.register;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import uk.iatom.iAtomSys.server.memory.Memory;
 
 public class RegisterSet {
 
-  private final Register[] registers = new Register[4];
+  private final Register[] registers = new Register[8];
   private final Map<String, Integer> names = new HashMap<>();
   private final Memory memory;
   private final short startAddress;
@@ -21,7 +19,7 @@ public class RegisterSet {
   public void createRegister(String name, int id) throws DuplicateRegisterException {
 
     if (id < 0 || id >= registers.length) {
-      throw new IllegalArgumentException("Cannot create Register. ID too large (%d>%d)".formatted(id, registers.length - 1));
+      throw new IllegalArgumentException("Cannot create Register %s. ID too large (%d>%d)".formatted(name, id, registers.length - 1));
     }
 
     Register register = new Register(name, id, (short) (startAddress + id), memory);

@@ -1,5 +1,6 @@
 package uk.iatom.iAtomSys.client;
 
+import jakarta.annotation.PreDestroy;
 import jakarta.validation.constraints.NotNull;
 import java.awt.Dimension;
 import java.awt.Point;
@@ -23,7 +24,7 @@ public class ShellDisplay {
   private final Logger logger = LoggerFactory.getLogger(ShellDisplay.class);
   @Getter
   private final ShellDisplayState state = new ShellDisplayState();
-  private final PrintStream sysOutCache = System.out;
+  private PrintStream sysOutCache = System.out;
   private boolean alive;
   private Terminal terminal;
 
@@ -115,7 +116,6 @@ public class ShellDisplay {
     return new Rectangle(origin, dim);
   };
 
-
   public void activate() {
     if (alive) {
       return;
@@ -148,17 +148,27 @@ public class ShellDisplay {
     System.out.println("If you can see this, System.out has not been disabled.");
   }
 
+  @PreDestroy
   public void deactivate() {
     if (!alive) {
       return;
     }
     this.alive = false;
-    logger.info("Deactivating ShellDisplay...");
+
+    if (logger != null)
+      logger.info("Deactivating ShellDisplay...");
+    else
+      System.out.println("Deactivating ShellDisplay...");
 
     try {
       terminal.close();
     } catch (IOException iox) {
-      logger.error("Error closing old terminal.", iox);
+
+      if (logger != null)
+        logger.error("Error closing old terminal.", iox);
+      else
+        System.err.println("Error closing old terminal." + iox);
+
     } finally {
       print(
           ANSICodes.OLD_BUFFER,
@@ -206,10 +216,15 @@ public class ShellDisplay {
   }
 
   private void enableSysOut() {
-    System.setOut(sysOutCache);
+    if (sysOutCache != null) {
+      System.setOut(sysOutCache);
+    }
   }
 
   private void disableSysOut() {
+    if (sysOutCache == null) {
+      sysOutCache = System.out;
+    }
     System.setOut(new PrintStream(new OutputStream() {
       @Override
       public void write(int b) {

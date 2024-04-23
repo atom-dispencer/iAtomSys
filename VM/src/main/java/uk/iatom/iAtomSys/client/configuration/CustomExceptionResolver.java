@@ -31,7 +31,7 @@ public class CustomExceptionResolver implements CommandExceptionResolver {
           targetTypeDescriptor.getType().getSimpleName()
       );
     } else {
-      message = "Uncaught error: %s".formatted(ex.getClass().getSimpleName());
+      message = "Unexpected error: %s".formatted(ex.getClass().getSimpleName());
     }
 
     shellDisplay.getState().setCommandMessage(message);
