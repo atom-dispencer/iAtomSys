@@ -254,12 +254,18 @@ public class ShellDisplay {
   public void draw() {
     assertShellLive();
 
+    long start = System.nanoTime();
+
     drawBackground();
     drawMemoryState();
     drawRegisters();
     drawFlags();
     drawCredits();
     drawCommandInput(state.getCommandMessage());
+
+    long elapsedNanos = System.nanoTime() - start;
+    double elapsedMillis = (elapsedNanos / 1_000_000d);
+    logger.info("Redraw took %.3fms".formatted(elapsedMillis));
   }
 
   public void drawBackground() {
