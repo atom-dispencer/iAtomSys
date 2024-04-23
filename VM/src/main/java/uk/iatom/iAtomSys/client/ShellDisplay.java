@@ -261,7 +261,7 @@ public class ShellDisplay {
     drawRegisters();
     drawFlags();
     drawCredits();
-    drawCommandInput(state.getCommandMessage());
+    drawCommandInput();
 
     long elapsedNanos = System.nanoTime() - start;
     double elapsedMillis = (elapsedNanos / 1_000_000d);
@@ -291,9 +291,11 @@ public class ShellDisplay {
    * input.
    */
   // TODO Make drawCommandInput use printBox
-  public void drawCommandInput(String commandMessage) {
+  public void drawCommandInput() {
     assertShellLive();
     Rectangle rect = COMMAND_RECT.get();
+
+    String commandMessage = state.getCommandMessage();
 
     int length = commandMessage.length();
     String lengthCorrectedMessage = commandMessage;
