@@ -6,14 +6,6 @@ import uk.iatom.iAtomSys.common.register.RegisterSet;
 
 public class FlagHelper {
 
-  public enum Flag {
-    CARRY (0);
-
-    public final int bitIndex;
-    Flag(int bitIndex) {
-      this.bitIndex = bitIndex;
-    }
-  }
   public static final int CARRY = 0;
 
   public static RegisterReference oneRegister_02(RegisterSet registerSet, byte flags) {
@@ -24,7 +16,7 @@ public class FlagHelper {
   }
 
   public static RegisterReference[] twoRegisters_02_35(RegisterSet registerSet, byte flags) {
-    return new RegisterReference[] {
+    return new RegisterReference[]{
         oneRegister_02(registerSet, flags),
         oneRegister_02(registerSet, (byte) (flags << 3))
     };
@@ -41,5 +33,15 @@ public class FlagHelper {
     }
 
     flagRegister.set(flagRegisterValue);
+  }
+
+  public enum Flag {
+    CARRY(0);
+
+    public final int bitIndex;
+
+    Flag(int bitIndex) {
+      this.bitIndex = bitIndex;
+    }
   }
 }

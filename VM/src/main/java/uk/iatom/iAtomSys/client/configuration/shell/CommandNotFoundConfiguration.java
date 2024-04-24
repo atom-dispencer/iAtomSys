@@ -1,4 +1,4 @@
-package uk.iatom.iAtomSys.client.configuration;
+package uk.iatom.iAtomSys.client.configuration.shell;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.result.CommandNotFoundMessageProvider;

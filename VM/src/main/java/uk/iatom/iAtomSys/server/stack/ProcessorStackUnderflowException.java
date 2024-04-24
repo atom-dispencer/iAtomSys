@@ -8,7 +8,8 @@ public class ProcessorStackUnderflowException extends InstructionExecutionExcept
 
   public final ProcessorStack processorStack;
 
-  public ProcessorStackUnderflowException(@NonNull ProcessorStack processorStack, @NonNull String message, @Nullable Throwable cause) {
+  public ProcessorStackUnderflowException(@NonNull ProcessorStack processorStack,
+      @NonNull String message, @Nullable Throwable cause) {
     super(null, message, null);
     this.processorStack = processorStack;
   }

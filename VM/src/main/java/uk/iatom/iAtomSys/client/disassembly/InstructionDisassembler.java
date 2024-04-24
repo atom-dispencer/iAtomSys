@@ -2,28 +2,28 @@ package uk.iatom.iAtomSys.client.disassembly;
 
 import uk.iatom.iAtomSys.common.instruction.FlagHelper;
 import uk.iatom.iAtomSys.common.instruction.Instruction;
-import uk.iatom.iAtomSys.common.instruction.InstructionSet;
+import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.common.register.RegisterReference;
 import uk.iatom.iAtomSys.common.register.RegisterSet;
-import uk.iatom.iAtomSys.common.register.Register;
 
 @FunctionalInterface
 public interface InstructionDisassembler {
-  String[] disassemble(Instruction instruction, byte flags, RegisterSet registerSet);
 
   private static String formatRegisterPointer(Register register, boolean isSelfReference) {
     return register.getName() + (isSelfReference ? "*" : "");
   }
 
-  static String[] noFlags(Instruction instruction, byte ignoredFlags, RegisterSet ignoredRegisterSet) {
-    return new String[] { instruction.name() };
+  static String[] noFlags(Instruction instruction, byte ignoredFlags,
+      RegisterSet ignoredRegisterSet) {
+    return new String[]{instruction.name()};
   }
 
   static String[] oneRegister_02(Instruction instruction, byte flags, RegisterSet registerSet) {
     RegisterReference reference = FlagHelper.oneRegister_02(registerSet, flags);
     Register register = reference.register();
 
-    return new String[] { instruction.name(), formatRegisterPointer(register, reference.isSelfReference()) };
+    return new String[]{instruction.name(),
+        formatRegisterPointer(register, reference.isSelfReference())};
   }
 
   static String[] twoRegisters_02_35(Instruction instruction, byte flags, RegisterSet registerSet) {
@@ -36,7 +36,7 @@ public interface InstructionDisassembler {
     Register register2 = references[1].register();
     boolean isSelfReference2 = references[1].isSelfReference();
 
-    return new String[] {
+    return new String[]{
         instruction.name(),
         formatRegisterPointer(register1, isSelfReference1),
         formatRegisterPointer(register2, isSelfReference2)
@@ -48,6 +48,8 @@ public interface InstructionDisassembler {
     boolean value = ((flags & 0b00001000) >> 3) == 1;
 
     String operand = "%01x".formatted(bit) + (value ? "+" : "-");
-    return new String[] { instruction.name(), operand };
+    return new String[]{instruction.name(), operand};
   }
+
+  String[] disassemble(Instruction instruction, byte flags, RegisterSet registerSet);
 }

@@ -7,8 +7,10 @@ import uk.iatom.iAtomSys.server.memory.Memory;
 public class ProcessorStack {
 
   private final Memory memory;
-  @Getter private final short startAddress;
-  @Getter private final int sizeShorts;
+  @Getter
+  private final short startAddress;
+  @Getter
+  private final int sizeShorts;
   private short writePointer = 0;
 
   public ProcessorStack(Memory memory, short startAddress, int sizeBytes) {

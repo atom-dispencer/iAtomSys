@@ -1,4 +1,4 @@
-package uk.iatom.iAtomSys.client.configuration;
+package uk.iatom.iAtomSys.client.configuration.shell;
 
 import org.jline.utils.AttributedString;
 import org.springframework.context.annotation.Configuration;

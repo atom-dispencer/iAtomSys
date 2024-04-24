@@ -2,10 +2,10 @@ package uk.iatom.iAtomSys.client.disassembly;
 
 import java.util.HashMap;
 
-public class BiMap<K,V> {
+public class BiMap<K, V> {
 
-  HashMap<K,V> map = new HashMap<K, V>();
-  HashMap<V,K> inversedMap = new HashMap<V, K>();
+  HashMap<K, V> map = new HashMap<K, V>();
+  HashMap<V, K> inversedMap = new HashMap<V, K>();
 
   public void put(K k, V v) {
     map.put(k, v);

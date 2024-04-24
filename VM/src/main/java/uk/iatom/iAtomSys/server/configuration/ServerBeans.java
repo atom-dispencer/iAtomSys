@@ -9,7 +9,7 @@ import uk.iatom.iAtomSys.server.memory.Memory;
 import uk.iatom.iAtomSys.server.stack.ProcessorStack;
 
 @Configuration
-public class VMBeans {
+public class ServerBeans {
 
   @Bean
   public VMConfiguration vmConfiguration() {

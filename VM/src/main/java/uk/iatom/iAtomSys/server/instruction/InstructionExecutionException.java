@@ -9,7 +9,8 @@ public class InstructionExecutionException extends Exception {
   public Instruction instruction;
   public String message;
 
-  public InstructionExecutionException(@Nullable Instruction instruction, @NonNull String message, @Nullable Throwable cause) {
+  public InstructionExecutionException(@Nullable Instruction instruction, @NonNull String message,
+      @Nullable Throwable cause) {
     super(cause);
     this.instruction = instruction;
     this.message = message;

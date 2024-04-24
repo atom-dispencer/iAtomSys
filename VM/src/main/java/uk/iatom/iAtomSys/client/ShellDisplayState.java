@@ -11,6 +11,7 @@ import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
 @Data
 @EqualsAndHashCode
 public class ShellDisplayState {
+
   private String commandMessage;
   private List<String[]> instructions;
   private List<RegisterPacket> registers;

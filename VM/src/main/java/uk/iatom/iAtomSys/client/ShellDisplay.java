@@ -26,10 +26,10 @@ public class ShellDisplay {
   private final Logger logger = LoggerFactory.getLogger(ShellDisplay.class);
   @Getter
   private final ShellDisplayState state = new ShellDisplayState();
+  int COMMAND_TRAY_HEIGHT = 4;
   private PrintStream sysOutCache = System.out;
   private boolean alive;
   private Terminal terminal;
-
   private final Supplier<Rectangle> BORDER_RECT = () -> {
     int start = 2;
     Point origin = new Point(start, start);
@@ -39,8 +39,6 @@ public class ShellDisplay {
     );
     return new Rectangle(origin, bounds);
   };
-
-  int COMMAND_TRAY_HEIGHT = 4;
   private final Supplier<Rectangle> CONTENT_RECT = () -> {
     Rectangle bounds = BORDER_RECT.get();
 
@@ -159,19 +157,21 @@ public class ShellDisplay {
 
     // Enable System.out for logging
     enableSysOut();
-    if (logger != null)
+    if (logger != null) {
       logger.info("Deactivating ShellDisplay...");
-    else
+    } else {
       System.out.println("Deactivating ShellDisplay...");
+    }
 
     try {
       terminal.close();
     } catch (IOException iox) {
 
-      if (logger != null)
+      if (logger != null) {
         logger.error("Error closing old terminal.", iox);
-      else
+      } else {
         System.err.println("Error closing old terminal." + iox);
+      }
 
     } finally {
       // Try to restore the terminal's pre-application state
@@ -358,16 +358,17 @@ public class ShellDisplay {
     if (state.getInstructions() != null) {
 
       for (String[] arr : state.getInstructions()) {
-        final int FRAGMENT_WIDTH = 6;
+        final int FRAGMENT_WIDTH = 4;
         final String FORMAT = "%-" + FRAGMENT_WIDTH + "s";
         final StringBuilder lineBuilder = new StringBuilder(arr.length);
 
-        for (String s: arr) {
+        for (String s : arr) {
           String formatted = String.format(FORMAT, s).substring(0, FRAGMENT_WIDTH);
-          lineBuilder.append(formatted).append("  ");
+          lineBuilder.append(formatted).append(" ");
         }
 
-        contents.append(lineBuilder).append(ANSICodes.moveDown(1)).append(ANSICodes.moveLeft(lineBuilder.length()));
+        contents.append(lineBuilder).append(ANSICodes.moveDown(1))
+            .append(ANSICodes.moveLeft(lineBuilder.length()));
       }
 
     }
@@ -429,7 +430,8 @@ public class ShellDisplay {
         }
 
         RegisterPacket register = packets.get(i);
-        String content = format.formatted(register.id(), register.name(), register.address(), register.value());
+        String content = format.formatted(register.id(), register.name(), register.address(),
+            register.value());
         info.append(content);
         info.append(ANSICodes.moveLeft(content.length()));
         info.append(ANSICodes.moveDown(1));

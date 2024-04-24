@@ -19,7 +19,9 @@ public class RegisterSet {
   public void createRegister(String name, int id) throws DuplicateRegisterException {
 
     if (id < 0 || id >= registers.length) {
-      throw new IllegalArgumentException("Cannot create Register %s. ID too large (%d>%d)".formatted(name, id, registers.length - 1));
+      throw new IllegalArgumentException(
+          "Cannot create Register %s. ID too large (%d>%d)".formatted(name, id,
+              registers.length - 1));
     }
 
     // TODO Check Short overflow when adding
@@ -39,15 +41,17 @@ public class RegisterSet {
   }
 
   public Register getRegister(int id) {
-    if (id < 0 || id >= registers.length)
+    if (id < 0 || id >= registers.length) {
       return null;
+    }
 
     return registers[id];
   }
 
   public Register getRegister(String name) {
-    if (!names.containsKey(name))
+    if (!names.containsKey(name)) {
       return null;
+    }
     int id = names.get(name);
 
     return registers[id];

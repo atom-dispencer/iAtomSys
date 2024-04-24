@@ -3,11 +3,10 @@ package uk.iatom.iAtomSys.server.instruction;
 import static uk.iatom.iAtomSys.common.instruction.FlagHelper.oneRegister_02;
 import static uk.iatom.iAtomSys.common.instruction.FlagHelper.twoRegisters_02_35;
 
-import lombok.SneakyThrows;
 import uk.iatom.iAtomSys.common.instruction.FlagHelper;
+import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.common.register.RegisterReference;
 import uk.iatom.iAtomSys.server.IAtomSysVM;
-import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.server.memory.Memory;
 import uk.iatom.iAtomSys.server.stack.ProcessorStack;
 import uk.iatom.iAtomSys.server.stack.ProcessorStackOverflowException;
@@ -15,11 +14,8 @@ import uk.iatom.iAtomSys.server.stack.ProcessorStackUnderflowException;
 
 public interface InstructionExecutor {
 
-  void exec(IAtomSysVM vm, byte flags) throws InstructionExecutionException;
-
-
   /**
-   * @param ignoredVm The {@link IAtomSysVM} to act on.
+   * @param ignoredVm    The {@link IAtomSysVM} to act on.
    * @param ignoredFlags The flags given in the least significant byte of the instruction.
    */
   static void xNOP(IAtomSysVM ignoredVm, byte ignoredFlags) {
@@ -28,7 +24,6 @@ public interface InstructionExecutor {
 
   /**
    * Read an integer value into the given address.
-   *
    */
   static void xMOV(IAtomSysVM vm, byte flags) {
     RegisterReference[] registers = twoRegisters_02_35(vm.getRegisterSet(), flags);
@@ -129,7 +124,6 @@ public interface InstructionExecutor {
     vm.getMemory().write(address, value);
   }
 
-
   /**
    * Add the value in the given {@link Register} onto that in ACC, storing the value in ACC.
    *
@@ -211,4 +205,6 @@ public interface InstructionExecutor {
     RegisterReference reference = oneRegister_02(vm.getRegisterSet(), flags);
     vm.getMemory().write(reference.get(), (short) 0);
   }
+
+  void exec(IAtomSysVM vm, byte flags) throws InstructionExecutionException;
 }

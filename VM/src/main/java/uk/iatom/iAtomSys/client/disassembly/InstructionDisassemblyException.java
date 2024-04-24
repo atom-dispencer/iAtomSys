@@ -1,6 +1,6 @@
 package uk.iatom.iAtomSys.client.disassembly;
 
-import jakarta.annotation.Nullable;
+import org.springframework.lang.Nullable;
 
 public class InstructionDisassemblyException extends Exception {
 
