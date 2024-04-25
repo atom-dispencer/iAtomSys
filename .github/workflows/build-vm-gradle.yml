@@ -3,12 +3,14 @@
 # This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
 
-name: Java CI with Gradle
+name: Java CI Gradle
 
 
 env:
   VM_VERSION_MAJOR: '0'
   VM_VERSION_MINOR: '1'
+  VM_VERSION_FORMAT: 'v{0}.{1}.{2}' # Major version, minor version, run number
+  VM_RELEASE_FORMAT: 'iAtomSys-VM-{0}-v{1}.{2}.{3}' # Branch (github ref_name), vm version
 
 
 on:
@@ -19,7 +21,7 @@ on:
 
 defaults:
   run:
-    working-directory: ./VM
+    working-directory: VM
 
 jobs:
   run-gradle-tasks:
@@ -47,8 +49,21 @@ jobs:
 
     # Run Gradle tasks
     - name: Build with Gradle Wrapper
-      run: ./gradlew build publish -Pversion=${{ format('v{0}.{1}.{2}', env.VM_VERSION_MAJOR, env.VM_VERSION_MINOR, github.RUN_NUMBER) }}
+      run: ./gradlew build publish -Pversion=$VM_VERSION
       env:
+        VM_VERSION: ${{ format(env.VM_VERSION_FORMAT, env.VM_VERSION_MAJOR, env.VM_VERSION_MINOR, github.RUN_NUMBER) }}
         GITHUB_ACTOR: ${{ env.GITHUB_ACTOR }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # Make a GitHub release
+    - name: Make Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ format(env.VM_RELEASE_FORMAT, github.ref_name, env.VM_RELEASE_FORMAT, env.VM_VERSION_MINOR)}}
+          make_latest: true
+          files: |
+            VM/README.md
+            VM/*
+            LICENSE
+            VM/build/libs/* 
 
