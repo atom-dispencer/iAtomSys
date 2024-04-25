@@ -43,6 +43,15 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
     
+    # ZIP the VM-source before filling the environment with build files
+    - name: Zip VM Files
+      uses: vimtor/action-zip@v1.2
+      env:
+        VM_ZIP_NAME: ${{ format(env.VM_ZIP_NAME_FORMAT, github.ref_name, env.VM_VERSION_MAJOR, env.VM_VERSION_MINOR, github.RUN_NUMBER ) }}
+      with:
+        files: VM/ LICENSE
+        dest: ${{ env.VM_ZIP_NAME }}
+          
     # Extra setup with Gradle
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v3 
@@ -58,14 +67,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     # Make a GitHub release
-    - name: Zip VM Files
-      uses: vimtor/action-zip@v1.2
-      env:
-        VM_ZIP_NAME: ${{ format(env.VM_ZIP_NAME_FORMAT, github.ref_name, env.VM_VERSION_MAJOR, env.VM_VERSION_MINOR, github.RUN_NUMBER ) }}
-      with:
-        files: VM/ LICENSE
-        dest: ${{ env.VM_ZIP_NAME }}
-
     - name: Make Release
       uses: ncipollo/release-action@v1
       env:
