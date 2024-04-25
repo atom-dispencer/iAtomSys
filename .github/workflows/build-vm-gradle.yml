@@ -3,14 +3,16 @@
 # This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
 
-name: Java CI Gradle
+name: VM Continuous Integration (Build, Package, Release)
 
 
 env:
   VM_VERSION_MAJOR: '0'
   VM_VERSION_MINOR: '1'
-  VM_VERSION_FORMAT: 'v{0}.{1}.{2}' # Major version, minor version, run number
-  VM_RELEASE_FORMAT: 'iAtomSys-VM-{0}-v{1}.{2}.{3}' # Branch (github ref_name), vm version
+  VM_VERSION_FORMAT: '{0}-v{1}.{2}.{3}' # Major version, minor version, run number
+  VM_RELEASE_FORMAT: 'VM-{0}-v{1}.{2}.{3}' # Branch (github ref_name), Version (as above)
+  VM_ZIP_NAME_FORMAT: 'iAtomSys-VM-{0}-v{1}.{2}.{3}-source.zip' # Release (as above)
+  VM_ZIP_INCLUDE_GLOBS: 'LICENSE,VM/build/libs/*'
 
 
 on:
@@ -24,7 +26,7 @@ defaults:
     working-directory: VM
 
 jobs:
-  run-gradle-tasks:
+  build-package-release:
 
     runs-on: ubuntu-latest
     permissions:
@@ -51,19 +53,27 @@ jobs:
     - name: Build with Gradle Wrapper
       run: ./gradlew build publish -Pversion=$VM_VERSION
       env:
-        VM_VERSION: ${{ format(env.VM_VERSION_FORMAT, env.VM_VERSION_MAJOR, env.VM_VERSION_MINOR, github.RUN_NUMBER) }}
+        VM_VERSION: ${{ format(env.VM_VERSION_FORMAT, github.ref_name, env.VM_VERSION_MAJOR, env.VM_VERSION_MINOR, github.RUN_NUMBER) }}
         GITHUB_ACTOR: ${{ env.GITHUB_ACTOR }}
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     # Make a GitHub release
+    - name: Zip VM Files
+      uses: vimtor/action-zip@v1.2
+      env:
+        VM_ZIP_NAME: ${{ format(env.VM_ZIP_NAME_FORMAT, github.ref_name, env.VM_VERSION_MAJOR, env.VM_VERSION_MINOR, github.RUN_NUMBER ) }}
+      with:
+        files: VM/ LICENSE
+        dest: ${{ env.VM_ZIP_NAME }}
+
     - name: Make Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: ${{ format(env.VM_RELEASE_FORMAT, github.ref_name, env.VM_RELEASE_FORMAT, env.VM_VERSION_MINOR)}}
-          make_latest: true
-          files: |
-            VM/README.md
-            VM/*
-            LICENSE
-            VM/build/libs/* 
+      uses: ncipollo/release-action@v1
+      env:
+        VM_RELEASE: ${{ format(env.VM_RELEASE_FORMAT, github.ref_name, env.VM_VERSION_MAJOR, env.VM_VERSION_MINOR, github.RUN_NUMBER ) }}
+        VM_ZIP_NAME: ${{ format(env.VM_ZIP_NAME_FORMAT, github.ref_name, env.VM_VERSION_MAJOR, env.VM_VERSION_MINOR, github.RUN_NUMBER ) }}
+      with:
+        name: ${{ env.VM_RELEASE }}
+        tag: ${{ env.VM_RELEASE }}
+        makeLatest: true
+        artifacts: ${{ format('{0},{1}', env.VM_ZIP_NAME, env.VM_ZIP_INCLUDE_GLOBS) }} 
 
