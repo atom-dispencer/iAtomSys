@@ -1,6 +1,7 @@
 # iAtomSys
 
-![CodeQL](https://github.com/atom-dispencer/iAtomSys/actions/workflows/codeql.yml/badge.svg)
+[![CodeQL](https://github.com/atom-dispencer/iAtomSys/actions/workflows/codeql.yml/badge.svg)
+
 ![VM Testing/Deployment](https://github.com/atom-dispencer/iAtomSys/actions/workflows/build-vm-gradle.yml/badge.svg)
 
 **iAtomSys** is my reincarnation of the dead [**Crimson-RFASM**](https://github.com/atom-dispencer/Crimson-RFASM) project I worked on a while ago.
