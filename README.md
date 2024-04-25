@@ -1,4 +1,13 @@
 # iAtomSys
+
+[![CodeQL](https://img.shields.io/github/checks-status/atom-dispencer/iAtomSys/main?label=CodeQL)](https://github.com/atom-dispencer/iAtomSys/actions)
+
+![CodeQL](https://github.com/atom-dispencer/iAtomSys/actions/workflows/codeql.yml/badge.svg)
+
+![Random thingy](https://github.com/atom-dispencer/iAtomSys/actions/workflows/randomesadfas.yml/badge.svg)
+
+![VM Testing/Deployment](https://github.com/atom-dispencer/iAtomSys/actions/workflows/build-vm-gradle.yml/badge.svg)
+
 **iAtomSys** is my reincarnation of the dead [**Crimson-RFASM**](https://github.com/atom-dispencer/Crimson-RFASM) project I worked on a while ago.
 It's an ecosystem of a custom stripped-back virtual machine with its own languages to program it.
 This project will, I hope, also act as a sort of portfolio going forward - something I can direct people towards to show my programming skill.
