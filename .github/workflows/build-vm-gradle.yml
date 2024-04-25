@@ -5,6 +5,12 @@
 
 name: Java CI with Gradle
 
+
+env:
+  VM_VERSION_MAJOR: '0'
+  VM_VERSION_MINOR: '1'
+
+
 on:
   push:
     branches: [ "master" ]
@@ -13,16 +19,18 @@ on:
 
 defaults:
   run:
-    working_directory: VM
+    working-directory: ./VM
 
 jobs:
-  build:
+  run-gradle-tasks:
 
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
+      packages: write
 
     steps:
+    # Setup the environment
     - name: Checkout Source
       uses: actions/checkout@v4
     - name: Set up JDK 17
@@ -30,25 +38,17 @@ jobs:
       with:
         java-version: '17'
         distribution: 'temurin'
+    
+    # Extra setup with Gradle
     - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@{latest} 
-    - name: Build with Gradle Wrapper
-      run: ./gradlew build
-
-
-  dependency-submission:
-
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
+      uses: gradle/actions/setup-gradle@v3 
       with:
-        java-version: '17'
-        distribution: 'temurin'
-    - name: Generate and submit dependency graph
-      uses: gradle/actions/dependency-submission@{latest} 
+        dependency-graph: generate-and-submit
+
+    # Run Gradle tasks
+    - name: Build with Gradle Wrapper
+      run: ./gradlew build publish -Pversion=${{ format('v{0}.{1}.{2}', env.VM_VERSION_MAJOR, env.VM_VERSION_MINOR, github.RUN_NUMBER) }}
+      env:
+        GITHUB_ACTOR: ${{ env.GITHUB_ACTOR }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
