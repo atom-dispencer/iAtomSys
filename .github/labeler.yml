@@ -1,0 +1,34 @@
+# Configuration for the Pull Request Labeler
+
+Documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/**/*'
+      - '**/*.md'
+      - '**/docs/**'
+
+VM:
+  - changed-files:
+    -any-glob-to-any-file:
+      - 'VM/**'
+
+Assembler:
+  - changed-files:
+    -any-glob-to-any-file:
+      - 'Assembler/**'
+
+Linker:
+  - changed-files:
+    -any-glob-to-any-file:
+      - 'Linker/**'
+
+Compiler:
+  - changed-files:
+    -any-glob-to-any-file:
+      - 'Compiler/**'
+
+# Add 'release' label to any PR that is opened against the `main` branch
+release:
+ - base-branch: 'master'
+development:
+ - base-branch: 'develop'
