@@ -1,10 +1,6 @@
 # iAtomSys Virtual Machine
 
-[![CodeQL](https://img.shields.io/github/checks-status/atom-dispencer/iAtomSys/main?label=CodeQL)](https://github.com/atom-dispencer/iAtomSys/actions)
-
-![CodeQL](https://github.com/atom-dispencer/iAtomSys/actions/workflows/codeql.yml/badge.svg)
-
-![Random thingy](https://github.com/atom-dispencer/iAtomSys/actions/workflows/randomesadfas.yml/badge.svg)
+[![CodeQL](https://github.com/atom-dispencer/iAtomSys/actions/workflows/codeql.yml/badge.svg)
 
 ![VM Testing/Deployment](https://github.com/atom-dispencer/iAtomSys/actions/workflows/build-vm-gradle.yml/badge.svg)
 
