@@ -1,5 +1,7 @@
 # iAtomSys Virtual Machine
+
 ![CodeQL](https://github.com/atom-dispencer/iAtomSys/actions/workflows/codeql.yml/badge.svg)
+
 ![VM Testing/Deployment](https://github.com/atom-dispencer/iAtomSys/actions/workflows/build-vm-gradle.yml/badge.svg)
 
 | Language | Tools         | Dependencies                       |
