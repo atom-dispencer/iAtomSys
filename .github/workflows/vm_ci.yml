@@ -1,0 +1,136 @@
+#
+# Continous Integration for the 'VM' part of the project
+#
+name: VM CI (all:Build,Test; master:Package,Release)
+
+#
+# Environment Configuration:
+# VERSION: The current version of the VM. Just 'xx.yy' will suffice.
+# VM_ZIP_INCLUDE_GLOBS_FORMAT: In case you need to change which files are included in the generated
+#   VM source code ZIP.
+#
+env:
+  VM_VERSION_MASTER: '0.1'
+  VM_ZIP_INCLUDE_GLOBS_FORMAT: '{0},!tmp/**,!**.zip,LICENSE,VM/**'
+
+
+on:
+  push:
+    paths:
+      - 'VM/**'
+
+defaults:
+  run:
+    working-directory: VM
+
+
+jobs:
+  format-version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ env.VM_VERSION_MASTER }}
+      release: ${{ steps.format-release.outputs.release }}
+      zip-name: ${{ steps.format-zip-name.outputs.zip }}
+      zip-globs: ${{ steps.format-zip-globs.outputs.zip }}
+
+    steps:
+      # Checkout so we can use the shell
+      - name: Checkout Source
+        uses: actions/checkout@v4
+      # Format things
+      - name: Format Release Name
+        id: format-release 
+        run: echo "release=${{ format('VM-{0}', env.VM_VERSION_MASTER ) }}" >> "$GITHUB_OUTPUT"
+      - name: Format Zip Name 
+        id: format-zip-name
+        run: echo "zip-name=${{ format('tmp/iAtomSys-VM-{0}-source.zip', env.VM_VERSION_MASTER ) }}" >> "$GITHUB_OUTPUT"
+      - name: Format Zip Globs 
+        id: format-zip-globs
+        env:
+          ZIP_NAME: ${{ steps.format-zip-name.outputs.zip-name }}
+        run: echo "zip-globs=${{ format( env.VM_ZIP_INCLUDE_GLOBS_FORMAT, env.ZIP_NAME ) }}" >> "$GITHUB_OUTPUT"
+
+
+  build-test:
+    needs: format-version
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    # Setup the environment
+    - name: Checkout Source
+      uses: actions/checkout@v4
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3 
+      with:
+        dependency-graph: generate-and-submit
+    # Run Gradle tasks
+    - name: Build and Test with Gradle Wrapper
+      run: ./gradlew build test -Pversion=$VM_VERSION
+      env:
+        VM_VERSION: ${{ needs.format-version.outputs.version }}
+        GITHUB_ACTOR: ${{ env.GITHUB_ACTOR }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+
+  publish:
+    if: github.ref == 'refs/heads/master'
+    needs: [ format-version, build-test ]
+
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    steps:
+    # Setup the environment
+    - name: Checkout Source
+      uses: actions/checkout@v4
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3 
+      with:
+        dependency-graph: generate-and-submit
+
+    # Run Gradle tasks
+    - name: Publish with Gradle Wrapper
+      env:
+        VM_VERSION: ${{ needs.format-version.outputs.version }}
+        GITHUB_ACTOR: ${{ env.GITHUB_ACTOR }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: ./gradlew publish -Pversion=$VM_VERSION
+
+
+  release:
+    if: github.ref == 'refs/heads/master'
+    needs: [ format-version, build-test ]
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VM_RELEASE: ${{ needs.format-version.outputs.release }}
+      VM_ZIP_NAME: ${{ needs.format-version.outputs.zip-name }}
+      VM_ZIP_GLOBS: ${{ needs.format-version.outputs.zip-globs }} 
+
+    steps:
+    - name: Checkout Source
+      uses: actions/checkout@v4
+    - name: Make Release 
+      uses: ncipollo/release-action@v1
+      with:
+        tag: ${{ needs.format-version.outputs.release }}
+        allowUpdates: false
+        makeLatest: true
+        artifacts: ${{ env.VM_ZIP_GLOBS }} 
+
