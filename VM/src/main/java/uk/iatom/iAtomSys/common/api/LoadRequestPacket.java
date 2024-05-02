@@ -4,12 +4,12 @@ import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public record LoadImageRequestPacket(String imageName) {
+public record LoadRequestPacket(String imageName) {
 
-  private static final Logger logger = LoggerFactory.getLogger(LoadImageRequestPacket.class);
+  private static final Logger logger = LoggerFactory.getLogger(LoadRequestPacket.class);
   private static final int MAX_PATH_LENGTH = 64;
 
-  public LoadImageRequestPacket {
+  public LoadRequestPacket {
 
     if (imageName == null || imageName.isBlank()) {
       String message = "Image name cannot be blank!";

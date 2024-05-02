@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
-import uk.iatom.iAtomSys.common.api.LoadImageRequestPacket;
+import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
 import uk.iatom.iAtomSys.common.api.VMClient;
 import uk.iatom.iAtomSys.common.api.VMStateRequestPacket;
@@ -61,7 +61,7 @@ public class RemoteVMClient implements VMClient {
 
   @Override
   @NonNull
-  public String loadmem(LoadImageRequestPacket packet) {
+  public String loadmem(LoadRequestPacket packet) {
     URI uri = UriComponentsBuilder.fromHttpUrl(host).path("command/loadImage").build().toUri();
 
     try {

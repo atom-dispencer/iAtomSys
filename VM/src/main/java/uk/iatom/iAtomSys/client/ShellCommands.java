@@ -15,21 +15,24 @@ import org.springframework.shell.standard.ShellOption;
 import org.springframework.stereotype.Component;
 import uk.iatom.iAtomSys.client.disassembly.MemoryDisassembler;
 import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
-import uk.iatom.iAtomSys.common.api.LoadImageRequestPacket;
+import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
 import uk.iatom.iAtomSys.common.api.VMClient;
 import uk.iatom.iAtomSys.common.api.VMStateRequestPacket;
 import uk.iatom.iAtomSys.common.api.VMStateResponsePacket;
-import uk.iatom.iAtomSys.common.register.RegisterSet;
 
 
 @ShellComponent
 @Component
 public class ShellCommands {
 
-  public static final String[] HELP_PAGES = new String[]{
-      "[0] Usage: 'help <page>', or check GitHub docs.", "[1] 'hello': Say hi!",
-      "[2] 'step <count>': Execute the next <count> instructions."};
+  public static final String[] HELP_PAGES = new String[]{ //
+      "[0] 'help <page>': Find help! Also check GitHub docs.", //
+      "[1] 'exit': Terminate the application.", //
+      "[2] 'hello': Say hi!", //
+      "[3] 'step <count>': Execute the next <count> instructions.", //
+      "[4] 'load <image_name[.img]>': Load the given memory image." //
+  };
   private final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
   @Autowired
   private VMClient api;
@@ -39,8 +42,6 @@ public class ShellCommands {
   private ShellDisplay display;
   @Autowired
   private MemoryDisassembler memoryDisassembler;
-  @Autowired
-  private RegisterSet registerSet;
 
   @PostConstruct
   public void postConstruct() {
@@ -73,12 +74,6 @@ public class ShellCommands {
   }
 
   @ShellMethod()
-  public void hello() {
-    display.getState().setCommandMessage("Hello!");
-    display.draw();
-  }
-
-  @ShellMethod()
   public String exit() {
     display.getState().setCommandMessage("Shutting down application...");
     display.draw();
@@ -87,35 +82,55 @@ public class ShellCommands {
   }
 
   @ShellMethod()
-  public void help(final @ShellOption(defaultValue = "0") int page) {
-    if (0 <= page && page < HELP_PAGES.length) {
+  public void help(final @ShellOption(defaultValue = "0") String pageStr) {
+
+    try {
+      int page = Integer.parseInt(pageStr);
       display.getState().setCommandMessage(HELP_PAGES[page]);
-    } else {
+
+    } catch (NumberFormatException nfx) {
+      display.getState().setCommandMessage("Input must be an integer. Got %s.".formatted(pageStr));
+    } catch (IndexOutOfBoundsException ibx) {
       display.getState().setCommandMessage(
-          "%d not in range [0,%d], try 'help 0'".formatted(page, HELP_PAGES.length - 1));
+          "%s not in range [0,%d], try 'help 0'".formatted(pageStr, HELP_PAGES.length - 1));
     }
+
+    display.draw();
+  }
+
+  @ShellMethod()
+  public void hello() {
+    display.getState().setCommandMessage("Hello!");
     display.draw();
   }
 
   //TODO Availability methods https://docs.spring.io/spring-shell/reference/commands/availability.html
   @ShellMethod()
   public void step(final @ShellOption(value = "-n", defaultValue = "1") int count) {
-    String message = api.step(new StepRequestPacket(count));
-    display.getState().setCommandMessage(message);
+
+    try {
+      StepRequestPacket packet = new StepRequestPacket(count);
+      String message = api.step(packet);
+      display.getState().setCommandMessage(message);
+    } catch (IllegalArgumentException iax) {
+      help("3");
+    }
 
     updateDisplayVMState();
     display.draw();
   }
 
   @ShellMethod
-  public void loadImage(final @ShellOption(defaultValue = "") String imageName) {
+  public void load(final @ShellOption(defaultValue = "") String imageName) {
 
-    if (imageName.isBlank()) {
-      display.getState().setCommandMessage("Usage: 'loadImage <file name>'.");
+    try {
+      LoadRequestPacket request = new LoadRequestPacket(imageName);
+      String message = api.loadmem(request);
+      display.getState().setCommandMessage(message);
+
+    } catch (IllegalArgumentException e) {
+      help("4");
     }
-
-    String message = api.loadmem(new LoadImageRequestPacket(imageName));
-    display.getState().setCommandMessage(message);
 
     updateDisplayVMState();
     display.draw();

@@ -6,5 +6,5 @@ public interface VMClient {
 
   String step(StepRequestPacket packet);
 
-  String loadmem(LoadImageRequestPacket packet);
+  String loadmem(LoadRequestPacket packet);
 }

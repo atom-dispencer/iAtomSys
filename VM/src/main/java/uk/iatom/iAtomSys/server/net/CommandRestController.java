@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import uk.iatom.iAtomSys.common.api.LoadImageRequestPacket;
+import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
 import uk.iatom.iAtomSys.server.IAtomSysVM;
 
@@ -50,7 +50,7 @@ public class CommandRestController {
 
   //TODO Test, test, test!!
   @PostMapping("/loadImage")
-  public String loadImage(@RequestBody LoadImageRequestPacket packet, HttpServletResponse response) {
+  public String loadImage(@RequestBody LoadRequestPacket packet, HttpServletResponse response) {
 
     String dirtyImageName =
         packet.imageName().endsWith(".img") ? packet.imageName() : packet.imageName() + ".img";
