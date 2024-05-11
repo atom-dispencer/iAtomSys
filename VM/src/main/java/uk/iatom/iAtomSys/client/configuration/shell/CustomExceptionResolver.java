@@ -34,7 +34,7 @@ public class CustomExceptionResolver implements CommandExceptionResolver {
       message = "Unexpected error: %s".formatted(ex.getClass().getSimpleName());
     }
 
-    shellDisplay.getState().setCommandMessage(message);
+    shellDisplay.getDisplayState().setCommandMessage(message);
     shellDisplay.draw();
     return CommandHandlingResult.empty();
   }

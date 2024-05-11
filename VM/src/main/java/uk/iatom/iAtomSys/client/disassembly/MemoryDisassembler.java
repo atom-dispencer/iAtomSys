@@ -46,7 +46,7 @@ public class MemoryDisassembler {
         decoded.add(disassembleInstruction(s));
       } catch (InstructionDisassemblyException idx) {
         logger.error("Error disassembling instruction %04x".formatted(s), idx);
-        decoded.add(new String[]{"?", "%04x".formatted(s), shortToUTF8String(s)});
+        decoded.add(new String[]{"?", "%04x".formatted(s)});
       }
 
     }

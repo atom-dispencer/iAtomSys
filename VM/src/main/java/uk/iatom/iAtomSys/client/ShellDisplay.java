@@ -25,7 +25,7 @@ public class ShellDisplay {
 
   private final Logger logger = LoggerFactory.getLogger(ShellDisplay.class);
   @Getter
-  private final ShellDisplayState state = new ShellDisplayState();
+  private final ShellDisplayState displayState = new ShellDisplayState();
   int COMMAND_TRAY_HEIGHT = 4;
   private PrintStream sysOutCache = System.out;
   private boolean alive;
@@ -142,7 +142,7 @@ public class ShellDisplay {
 
     // disableSysOut();
 
-    state.setCommandMessage("Enter a command below to get started!");
+    displayState.setCommandMessage("Enter a command below to get started!");
     draw();
 
     System.out.println("If you can see this, System.out has not been disabled.");
@@ -295,7 +295,7 @@ public class ShellDisplay {
     assertShellLive();
     Rectangle rect = COMMAND_RECT.get();
 
-    String commandMessage = state.getCommandMessage();
+    String commandMessage = displayState.getCommandMessage();
 
     int length = commandMessage.length();
     String lengthCorrectedMessage = commandMessage;
@@ -355,9 +355,9 @@ public class ShellDisplay {
     //
     // Draw the state if it exists
     //
-    if (state.getInstructions() != null) {
+    if (displayState.getInstructions() != null) {
 
-      for (String[] arr : state.getInstructions()) {
+      for (String[] arr : displayState.getInstructions()) {
         final int FRAGMENT_WIDTH = 4;
         final String FORMAT = "%-" + FRAGMENT_WIDTH + "s";
         final StringBuilder lineBuilder = new StringBuilder(arr.length);
@@ -408,7 +408,7 @@ public class ShellDisplay {
 
     StringBuilder info = new StringBuilder();
 
-    if (state.getRegisters() == null) {
+    if (displayState.getRegisters() == null) {
       // Draw defaults
     } else {
 
@@ -419,7 +419,7 @@ public class ShellDisplay {
       String format = "%3d  %-3s  %04X    %04X";
 
       // Get the list of registers and sort it by ID, ascending
-      List<RegisterPacket> packets = state.getRegisters();
+      List<RegisterPacket> packets = displayState.getRegisters();
       packets.sort(Comparator.comparing(RegisterPacket::id));
 
       for (int i = 0; i < packets.size(); i++) {

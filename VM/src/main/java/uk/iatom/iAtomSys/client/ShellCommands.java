@@ -67,15 +67,15 @@ public class ShellCommands {
 
     short[] shorts = vm.memory();
     List<String[]> instructions = memoryDisassembler.disassemble(shorts);
-    display.getState().setInstructions(instructions);
+    display.getDisplayState().setInstructions(instructions);
 
     List<RegisterPacket> registers = vm.registers();
-    display.getState().setRegisters(registers);
+    display.getDisplayState().setRegisters(registers);
   }
 
   @ShellMethod()
   public String exit() {
-    display.getState().setCommandMessage("Shutting down application...");
+    display.getDisplayState().setCommandMessage("Shutting down application...");
     display.draw();
     ((ConfigurableApplicationContext) applicationContext).close();
     throw new ExitRequest();
@@ -86,12 +86,12 @@ public class ShellCommands {
 
     try {
       int page = Integer.parseInt(pageStr);
-      display.getState().setCommandMessage(HELP_PAGES[page]);
+      display.getDisplayState().setCommandMessage(HELP_PAGES[page]);
 
     } catch (NumberFormatException nfx) {
-      display.getState().setCommandMessage("Input must be an integer. Got %s.".formatted(pageStr));
+      display.getDisplayState().setCommandMessage("Input must be an integer. Got %s.".formatted(pageStr));
     } catch (IndexOutOfBoundsException ibx) {
-      display.getState().setCommandMessage(
+      display.getDisplayState().setCommandMessage(
           "%s not in range [0,%d], try 'help 0'".formatted(pageStr, HELP_PAGES.length - 1));
     }
 
@@ -100,7 +100,7 @@ public class ShellCommands {
 
   @ShellMethod()
   public void hello() {
-    display.getState().setCommandMessage("Hello!");
+    display.getDisplayState().setCommandMessage("Hello!");
     display.draw();
   }
 
@@ -111,7 +111,7 @@ public class ShellCommands {
     try {
       StepRequestPacket packet = new StepRequestPacket(count);
       String message = api.step(packet);
-      display.getState().setCommandMessage(message);
+      display.getDisplayState().setCommandMessage(message);
     } catch (IllegalArgumentException iax) {
       help("3");
     }
@@ -126,7 +126,7 @@ public class ShellCommands {
     try {
       LoadRequestPacket request = new LoadRequestPacket(imageName);
       String message = api.loadmem(request);
-      display.getState().setCommandMessage(message);
+      display.getDisplayState().setCommandMessage(message);
 
     } catch (IllegalArgumentException e) {
       help("4");
