@@ -55,9 +55,10 @@ public class ShellCommands {
 
   private void updateDisplayVMState() {
 
-    VMStateResponsePacket vm = api.getState(new VMStateRequestPacket((short) -8, (short) 17));
+    // TODO Dynamic pcrOffset and sliceWidth
+    VMStateResponsePacket vmStateResponsePacket = api.getState(new VMStateRequestPacket((short) -8, (short) 17));
 
-    if (vm == null) {
+    if (vmStateResponsePacket == null) {
       logger.error("Cannot update display VM state: received null.");
       return;
     }
@@ -65,11 +66,13 @@ public class ShellCommands {
     // TODO Need to handle running/not-running states as each state will display different info!
     // TODO What if state packet values are null?
 
-    short[] shorts = vm.memory();
-    List<String[]> instructions = memoryDisassembler.disassemble(shorts);
-    display.getDisplayState().setInstructions(instructions);
+    display.getDisplayState().setMemorySliceStartAddress(vmStateResponsePacket.memoryStartAddress());
+    short[] memory = vmStateResponsePacket.memory();
+    List<String[]> disassembly = memoryDisassembler.disassemble(memory);
+    display.getDisplayState().setMemory(memory);
+    display.getDisplayState().setDisassembly(disassembly);
 
-    List<RegisterPacket> registers = vm.registers();
+    List<RegisterPacket> registers = vmStateResponsePacket.registers();
     display.getDisplayState().setRegisters(registers);
   }
 

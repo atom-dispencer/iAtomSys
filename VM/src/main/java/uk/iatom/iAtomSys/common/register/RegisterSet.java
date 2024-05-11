@@ -40,6 +40,10 @@ public class RegisterSet {
     return names.getOrDefault(name, null);
   }
 
+  public Register[] getRegisters() {
+    return registers.clone();
+  }
+
   public Register getRegister(int id) {
     if (id < 0 || id >= registers.length) {
       return null;

@@ -355,13 +355,49 @@ public class ShellDisplay {
     //
     // Draw the state if it exists
     //
-    if (displayState.getInstructions() != null) {
+    if (displayState.getDisassembly() != null) {
 
-      for (String[] arr : displayState.getInstructions()) {
+      // Get the value of the program counter
+      short pcr = 0;
+      boolean pcrKnown = false;
+      for (RegisterPacket registerPacket: displayState.getRegisters()){
+        if (registerPacket.name().equals("PCR")) {
+          pcr = registerPacket.value();
+          pcrKnown = true;
+          break;
+        }
+      }
+
+      // Title for the disassembly
+      String TITLE = "Address  Hex  * Operands";
+      String LINE  = "________ ____ _ _____________";
+      contents.append(TITLE).append(ANSICodes.moveDown(1))
+          .append(ANSICodes.moveLeft(TITLE.length()));
+      contents.append(LINE).append(ANSICodes.moveDown(1))
+          .append(ANSICodes.moveLeft(LINE.length()));
+
+      // Format each instruction line
+      for (int i = 0; i < displayState.getDisassembly().size(); i++) {
+        String[] arr = displayState.getDisassembly().get(i);
+
         final int FRAGMENT_WIDTH = 4;
         final String FORMAT = "%-" + FRAGMENT_WIDTH + "s";
         final StringBuilder lineBuilder = new StringBuilder(arr.length);
 
+        // TODO Make sure this doesn't explode with wrapping around or whatever
+        // Instruction's address and hex value
+        int address = displayState.getMemorySliceStartAddress() + i;
+        lineBuilder.append("<0x%04x> ".formatted(address));
+        lineBuilder.append("%04x ".formatted(displayState.getMemory()[i]));
+
+        // Program counter pointer indicator
+        if (!pcrKnown || address == pcr) {
+          lineBuilder.append("* ");
+        } else {
+          lineBuilder.append("  ");
+        }
+
+        // Operands
         for (String s : arr) {
           String formatted = String.format(FORMAT, s).substring(0, FRAGMENT_WIDTH);
           lineBuilder.append(formatted).append(" ");
@@ -412,7 +448,7 @@ public class ShellDisplay {
       // Draw defaults
     } else {
 
-      String header = " ID  Reg  @Addr   Value";
+      String header = " ID  Reg  *Addr   Value";
       info.append(header).append(ANSICodes.moveDown(1)).append(ANSICodes.moveLeft(header.length()));
       String dashes = " --  ---  -----   -----";
       info.append(dashes).append(ANSICodes.moveDown(1)).append(ANSICodes.moveLeft(dashes.length()));

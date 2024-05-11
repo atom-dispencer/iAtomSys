@@ -35,15 +35,13 @@ public class DefaultRestController {
 
     // Prepare memory region
     short pcr = Register.PCR(vm.getRegisterSet()).get();
-
     int width = Math.max(0, packet.sliceWidth());
 
-    int startAddress = pcr + packet.pcrOffset();
-    int endAddress = startAddress + width;
-    int SHORT_MAX = Short.toUnsignedInt(Short.MAX_VALUE);
+    int startAddress = Math.max(0, pcr + packet.pcrOffset());
+    int endAddress = Math.min(Short.MAX_VALUE, startAddress + width);
+    short clampedStartAddress = (short) Math.min(Short.MAX_VALUE, startAddress);
+    short clampedEndAddress = (short) Math.max(endAddress, clampedStartAddress);
 
-    short clampedStartAddress = (short) Math.max(0, Math.min(SHORT_MAX, startAddress));
-    short clampedEndAddress = (short) Math.max(0, Math.min(SHORT_MAX, endAddress));
     short clampedWidth = (short) (clampedEndAddress - clampedStartAddress);
 
     short[] memory = new short[clampedWidth];
@@ -60,6 +58,6 @@ public class DefaultRestController {
         Register.LOL(regs).toPacket()
     );
 
-    return new VMStateResponsePacket(memory, registers);
+    return new VMStateResponsePacket(clampedStartAddress, memory, registers);
   }
 }

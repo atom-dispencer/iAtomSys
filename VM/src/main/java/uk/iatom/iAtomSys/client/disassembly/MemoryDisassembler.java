@@ -1,7 +1,5 @@
 package uk.iatom.iAtomSys.client.disassembly;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -32,12 +30,6 @@ public class MemoryDisassembler {
     this.registerSet = registerSet;
   }
 
-  private static String shortToUTF8String(short s) {
-    byte[] bytes = new byte[]{(byte) (s >> 8), (byte) (s & 0x00ff)};
-    ByteBuffer buffer = ByteBuffer.wrap(bytes);
-    return StandardCharsets.UTF_8.decode(buffer).toString();
-  }
-
   public List<String[]> disassemble(short[] shorts) {
     List<String[]> decoded = new ArrayList<>(shorts.length);
     for (short s : shorts) {
@@ -48,7 +40,6 @@ public class MemoryDisassembler {
         logger.error("Error disassembling instruction %04x".formatted(s), idx);
         decoded.add(new String[]{"?", "%04x".formatted(s)});
       }
-
     }
     return decoded;
   }
@@ -57,11 +48,20 @@ public class MemoryDisassembler {
       throws InstructionDisassemblyException {
 
     try {
+
+      // If odd, treat as a 'load-value' command
+      if (instructionShort % 2 == 1) {
+        String value = "%04x".formatted(instructionShort);
+        return new String[] { ">", value, "IDK" };
+      }
+
       byte opcode = Instruction.extractOpcode(instructionShort);
       byte flags = Instruction.extractFlags(instructionShort);
 
       Instruction instruction = instructionSet.getInstruction(opcode);
-      Objects.requireNonNull(instruction, "No instruction found for opcode %02X".formatted(opcode));
+      if (instruction == null) {
+        return new String[]{"?", "%04x".formatted(instructionShort)};
+      }
 
       String[] fragments = instruction.disassembler().disassemble(instruction, flags, registerSet);
       Objects.requireNonNull(fragments,
@@ -72,15 +72,8 @@ public class MemoryDisassembler {
 
       return fragments;
     } catch (Exception e) {
-
-      String stringVal = "??";
-      try {
-        stringVal = shortToUTF8String(instructionShort);
-      } catch (Exception ignored) {
-      }
-
       throw new InstructionDisassemblyException(
-          "Error disassembling Instruction %04X (%s)".formatted(instructionShort, stringVal), e);
+          "Error disassembling Instruction %04X".formatted(instructionShort), e);
     }
   }
 }
