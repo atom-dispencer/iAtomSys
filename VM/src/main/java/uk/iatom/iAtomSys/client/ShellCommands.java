@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import uk.iatom.iAtomSys.client.disassembly.MemoryDisassembler;
 import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
+import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
 import uk.iatom.iAtomSys.common.api.VMClient;
 import uk.iatom.iAtomSys.common.api.VMStateRequestPacket;
@@ -31,7 +32,8 @@ public class ShellCommands {
       "[1] 'exit': Terminate the application.", //
       "[2] 'hello': Say hi!", //
       "[3] 'step <count>': Execute the next <count> instructions.", //
-      "[4] 'load <image_name[.img]>': Load the given memory image." //
+      "[4] 'load <image_name[.img]>': Load the given memory image.", //
+      "[5] 'set <address> <value>': Set the value at the address." //
   };
   private final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
   @Autowired
@@ -55,9 +57,10 @@ public class ShellCommands {
 
   private void updateDisplayVMState() {
 
-    VMStateResponsePacket vm = api.getState(new VMStateRequestPacket((short) -8, (short) 17));
+    // TODO Dynamic pcrOffset and sliceWidth
+    VMStateResponsePacket vmStateResponsePacket = api.getState(new VMStateRequestPacket((short) -8, (short) 17));
 
-    if (vm == null) {
+    if (vmStateResponsePacket == null) {
       logger.error("Cannot update display VM state: received null.");
       return;
     }
@@ -65,17 +68,19 @@ public class ShellCommands {
     // TODO Need to handle running/not-running states as each state will display different info!
     // TODO What if state packet values are null?
 
-    short[] shorts = vm.memory();
-    List<String[]> instructions = memoryDisassembler.disassemble(shorts);
-    display.getState().setInstructions(instructions);
+    display.getDisplayState().setMemorySliceStartAddress(vmStateResponsePacket.memoryStartAddress());
+    short[] memory = vmStateResponsePacket.memory();
+    List<String[]> disassembly = memoryDisassembler.disassemble(memory);
+    display.getDisplayState().setMemory(memory);
+    display.getDisplayState().setDisassembly(disassembly);
 
-    List<RegisterPacket> registers = vm.registers();
-    display.getState().setRegisters(registers);
+    List<RegisterPacket> registers = vmStateResponsePacket.registers();
+    display.getDisplayState().setRegisters(registers);
   }
 
   @ShellMethod()
   public String exit() {
-    display.getState().setCommandMessage("Shutting down application...");
+    display.getDisplayState().setCommandMessage("Shutting down application...");
     display.draw();
     ((ConfigurableApplicationContext) applicationContext).close();
     throw new ExitRequest();
@@ -86,12 +91,12 @@ public class ShellCommands {
 
     try {
       int page = Integer.parseInt(pageStr);
-      display.getState().setCommandMessage(HELP_PAGES[page]);
+      display.getDisplayState().setCommandMessage(HELP_PAGES[page]);
 
     } catch (NumberFormatException nfx) {
-      display.getState().setCommandMessage("Input must be an integer. Got %s.".formatted(pageStr));
+      display.getDisplayState().setCommandMessage("Input must be an integer. Got %s.".formatted(pageStr));
     } catch (IndexOutOfBoundsException ibx) {
-      display.getState().setCommandMessage(
+      display.getDisplayState().setCommandMessage(
           "%s not in range [0,%d], try 'help 0'".formatted(pageStr, HELP_PAGES.length - 1));
     }
 
@@ -100,7 +105,7 @@ public class ShellCommands {
 
   @ShellMethod()
   public void hello() {
-    display.getState().setCommandMessage("Hello!");
+    display.getDisplayState().setCommandMessage("Hello!");
     display.draw();
   }
 
@@ -111,9 +116,10 @@ public class ShellCommands {
     try {
       StepRequestPacket packet = new StepRequestPacket(count);
       String message = api.step(packet);
-      display.getState().setCommandMessage(message);
+      display.getDisplayState().setCommandMessage(message);
     } catch (IllegalArgumentException iax) {
       help("3");
+      return;
     }
 
     updateDisplayVMState();
@@ -126,10 +132,36 @@ public class ShellCommands {
     try {
       LoadRequestPacket request = new LoadRequestPacket(imageName);
       String message = api.loadmem(request);
-      display.getState().setCommandMessage(message);
+      display.getDisplayState().setCommandMessage(message);
 
     } catch (IllegalArgumentException e) {
       help("4");
+      return;
+    }
+
+    updateDisplayVMState();
+    display.draw();
+  }
+
+  @ShellMethod
+  public void jmp(final @ShellOption(value = "-n", defaultValue = "0") String address) {
+    set("PCR*", address);
+  }
+
+  @ShellMethod
+  public void set(final @ShellOption(defaultValue = "NO_ADDRESS") String address, final @ShellOption(defaultValue = "0") String value) {
+    if (address.equals("NO_ADDRESS")) {
+      help("5");
+      return;
+    }
+
+    try {
+      SetRequestPacket request = new SetRequestPacket(address, value);
+      String message = api.set(request);
+      display.getDisplayState().setCommandMessage(message);
+    } catch (IllegalArgumentException e) {
+      help("5");
+      return;
     }
 
     updateDisplayVMState();

@@ -7,4 +7,6 @@ public interface VMClient {
   String step(StepRequestPacket packet);
 
   String loadmem(LoadRequestPacket packet);
+
+  String set(SetRequestPacket packet);
 }

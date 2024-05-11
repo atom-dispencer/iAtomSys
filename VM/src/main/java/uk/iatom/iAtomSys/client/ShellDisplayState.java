@@ -13,6 +13,8 @@ import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
 public class ShellDisplayState {
 
   private String commandMessage;
-  private List<String[]> instructions;
+  private short memorySliceStartAddress;
+  private short[] memory;
+  private List<String[]> disassembly;
   private List<RegisterPacket> registers;
 }

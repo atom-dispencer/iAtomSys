@@ -54,37 +54,47 @@ public class IAtomSysVM {
   private void executeInstruction(short int16Instruction) {
 
     // Check the MA flag (the least significant bit)
-    // If ON, treat as a memory load command
+    // If treat as a memory load command
     if (int16Instruction % 2 == 1) {
-      // TODO Implement MA instruction value -> IDK loading.
+      Register.IDK(registerSet).set(int16Instruction);
+      return;
     }
 
-    // If OFF, treat as an instruction
-    else {
-      byte opcode = (byte) ((int16Instruction & 0xff00) >> 8);
-      byte flags = (byte) (int16Instruction & 0x00ff);
 
-      Instruction instruction = instructionSet.getInstruction(opcode);
+    // Try to treat it as an instruction
+    byte opcode = (byte) ((int16Instruction & 0xff00) >> 8);
+    byte flags = (byte) (int16Instruction & 0x00ff);
+    Instruction instruction = instructionSet.getInstruction(opcode);
 
-      try {
-        instruction.executor().exec(this, flags);
-      } catch (InstructionExecutionException ixe) {
 
-        if (ixe.instruction == null) {
-          ixe.instruction = instruction;
-        }
+    // If the instruction was not understood...
+    if (instruction == null) {
+      logger.error("Could not decode instruction 0x%04x (skipping).".formatted(int16Instruction));
+      return;
+    }
 
-        String extraInformation;
-        try {
-          Register PCR = Register.PCR(registerSet);
-          extraInformation = "PC:%d".formatted(PCR.get());
-        } catch (Exception e) {
-          logger.error("Error generating extra information for error.");
-          extraInformation = "(Error generating extra information.)";
-        }
 
-        logger.error("Error executing instruction. %s".formatted(extraInformation), ixe);
+    // Let's give it a go!
+    try {
+      instruction.executor().exec(this, flags);
+    } catch (InstructionExecutionException ixe) {
+
+      // So that the instruction doesn't need to be passed
+      //   to the executor.
+      if (ixe.instruction == null) {
+        ixe.instruction = instruction;
       }
+
+      String extraInformation;
+      try {
+        Register PCR = Register.PCR(registerSet);
+        extraInformation = "PC:%d".formatted(PCR.get());
+      } catch (Exception e) {
+        logger.error("Error generating extra information for error.");
+        extraInformation = "(Error generating extra information.)";
+      }
+
+      logger.error("Error executing instruction. %s".formatted(extraInformation), ixe);
     }
   }
 }

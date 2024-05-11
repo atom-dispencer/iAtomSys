@@ -2,6 +2,7 @@ package uk.iatom.iAtomSys.common.instruction;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.lang.Nullable;
 import uk.iatom.iAtomSys.client.disassembly.InstructionDisassembler;
 import uk.iatom.iAtomSys.server.instruction.InstructionExecutor;
 
@@ -35,11 +36,11 @@ public class InstructionSet {
     instructions[index] = instruction;
   }
 
-  public Byte getOpcode(String name) {
+  public @Nullable Byte getOpcode(String name) {
     return names.getOrDefault(name, null);
   }
 
-  public Instruction getInstruction(byte opcode) throws ArrayIndexOutOfBoundsException {
+  public @Nullable Instruction getInstruction(byte opcode) throws ArrayIndexOutOfBoundsException {
     return instructions[Byte.toUnsignedInt(opcode)];
   }
 

@@ -11,6 +11,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
+import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
 import uk.iatom.iAtomSys.common.api.VMClient;
 import uk.iatom.iAtomSys.common.api.VMStateRequestPacket;
@@ -72,6 +73,23 @@ public class RemoteVMClient implements VMClient {
 
     } catch (RestClientException rce) {
       logger.error("Error executing loadmem command: %s".formatted(uri), rce);
+      return "Request error: %s".formatted(rce.getClass().getSimpleName());
+    }
+  }
+
+  @Override
+  @NonNull
+  public String set(SetRequestPacket packet) {
+    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("command/set").build().toUri();
+
+    try {
+      RestTemplate restTemplate = new RestTemplate();
+      ResponseEntity<String> responseEntity = restTemplate.postForEntity(uri, packet, String.class);
+      String body = responseEntity.getBody();
+      return body == null ? "<Null response>" : body;
+
+    } catch (RestClientException rce) {
+      logger.error("Error executing set command: %s".formatted(uri), rce);
       return "Request error: %s".formatted(rce.getClass().getSimpleName());
     }
   }
