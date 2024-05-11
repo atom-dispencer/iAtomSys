@@ -31,6 +31,19 @@ ext {
 	set('springShellVersion', "3.2.2")
 }
 
+
+// Add properties from the CI/CD pipeline into the built resources
+ext.generatedSourcesOutputDir = file("$buildDir/iatom-generated")
+tasks.register('generateCicdProperties') {
+	ext.outputFile = file("$generatedSourcesOutputDir/ci-cd.properties")
+	outputs.file(outputFile)
+	doLast {
+		outputFile.text = "CICD_VERSION=$version"
+	}
+}
+sourceSets.main.output.dir(generatedSourcesOutputDir, builtBy: generateCicdProperties)
+
+
 dependencies {
 	implementation ('org.springframework.shell:spring-shell-starter') {
 		exclude(group: 'org.springframework.shell', module: 'spring-shell-standard-commands')
