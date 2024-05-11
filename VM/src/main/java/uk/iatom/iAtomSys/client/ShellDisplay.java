@@ -17,6 +17,7 @@ import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.iatom.iAtomSys.IAtomSysApplication;
 import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
 
 public class ShellDisplay {
@@ -327,7 +328,8 @@ public class ShellDisplay {
     Point startPoint = CREDITS_POS.get();
 
     // TODO Add license information to credits
-    String line1 = "iAtomSysVM v0 - https://github.com/atom-dispencer/iAtomSys";
+    String line1 = "iAtomSysVM %s - https://github.com/atom-dispencer/iAtomSys"
+        .formatted(IAtomSysApplication.getCicdVersion());
     String line2 = "Copyright © Adam Spencer 2024";
 
     print(

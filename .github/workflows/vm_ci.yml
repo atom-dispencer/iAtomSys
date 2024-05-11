@@ -10,7 +10,7 @@ name: VM CI (all:Build,Test; master:Package,Release)
 #   VM source code ZIP.
 #
 env:
-  VM_VERSION_MASTER: '0.2'
+  VM_VERSION_MASTER: '0.3'
   VM_ZIP_INCLUDE_GLOBS_FORMAT: '{0},!tmp/**,!**.zip,LICENSE,VM/**'
 
 
