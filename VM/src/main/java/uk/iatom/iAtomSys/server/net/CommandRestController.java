@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
+import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
 import uk.iatom.iAtomSys.server.IAtomSysVM;
 
@@ -105,5 +106,34 @@ public class CommandRestController {
 
     response.setStatus(HttpStatus.OK.value());
     return "Loaded %s".formatted(cleanFile);
+  }
+
+  @PostMapping("/set")
+  public String set(@RequestBody SetRequestPacket request) {
+    String addressStr = request.address();
+    String valueStr = request.value();
+
+    // Parse address
+    short address;
+    try {
+      address = Short.parseShort(addressStr, 16);
+    } catch (NumberFormatException nfx) {
+      return "Not a hex int-16: %s".formatted(addressStr);
+    }
+
+    // Parse value
+    short value;
+    try {
+      value = Short.parseShort(valueStr, 16);
+    } catch (NumberFormatException nfx) {
+      return "Not a hex int-16: %s".formatted(valueStr);
+    }
+
+    // Write value and finish up
+    vm.getMemory().write(address, value);
+
+    String message = "Set %s to %s.".formatted(addressStr, valueStr);
+    logger.info(message);
+    return message;
   }
 }

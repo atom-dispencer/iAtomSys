@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import uk.iatom.iAtomSys.client.disassembly.MemoryDisassembler;
 import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
+import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
 import uk.iatom.iAtomSys.common.api.VMClient;
 import uk.iatom.iAtomSys.common.api.VMStateRequestPacket;
@@ -31,7 +32,8 @@ public class ShellCommands {
       "[1] 'exit': Terminate the application.", //
       "[2] 'hello': Say hi!", //
       "[3] 'step <count>': Execute the next <count> instructions.", //
-      "[4] 'load <image_name[.img]>': Load the given memory image." //
+      "[4] 'load <image_name[.img]>': Load the given memory image.", //
+      "[5] 'set <address> <value>': Set the value at the address." //
   };
   private final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
   @Autowired
@@ -117,6 +119,7 @@ public class ShellCommands {
       display.getDisplayState().setCommandMessage(message);
     } catch (IllegalArgumentException iax) {
       help("3");
+      return;
     }
 
     updateDisplayVMState();
@@ -133,6 +136,32 @@ public class ShellCommands {
 
     } catch (IllegalArgumentException e) {
       help("4");
+      return;
+    }
+
+    updateDisplayVMState();
+    display.draw();
+  }
+
+  @ShellMethod
+  public void jmp(final @ShellOption(value = "-n", defaultValue = "0") String address) {
+    set("PCR*", address);
+  }
+
+  @ShellMethod
+  public void set(final @ShellOption(defaultValue = "NO_ADDRESS") String address, final @ShellOption(defaultValue = "0") String value) {
+    if (address.equals("NO_ADDRESS")) {
+      help("5");
+      return;
+    }
+
+    try {
+      SetRequestPacket request = new SetRequestPacket(address, value);
+      String message = api.set(request);
+      display.getDisplayState().setCommandMessage(message);
+    } catch (IllegalArgumentException e) {
+      help("5");
+      return;
     }
 
     updateDisplayVMState();
