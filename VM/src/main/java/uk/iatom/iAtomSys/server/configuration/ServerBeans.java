@@ -5,6 +5,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import uk.iatom.iAtomSys.common.register.RegisterSet;
+import uk.iatom.iAtomSys.server.device.Device;
+import uk.iatom.iAtomSys.server.device.BufferedIODevice;
 import uk.iatom.iAtomSys.server.memory.Memory;
 import uk.iatom.iAtomSys.server.stack.ProcessorStack;
 
@@ -29,7 +31,7 @@ public class ServerBeans {
     return new ProcessorStack(
         memory,
         (short) 1000,
-        vmConfiguration.processorStackSizeIntegers * 2
+        vmConfiguration.getProcessorStackSizeIntegers() * 2
     );
   }
 }

@@ -7,10 +7,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import uk.iatom.iAtomSys.common.instruction.FlagHelper;
+import uk.iatom.iAtomSys.common.instruction.FlagHelper.Flag;
 import uk.iatom.iAtomSys.common.instruction.Instruction;
 import uk.iatom.iAtomSys.common.instruction.InstructionSet;
 import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.common.register.RegisterSet;
+import uk.iatom.iAtomSys.server.configuration.VMConfiguration;
+import uk.iatom.iAtomSys.server.device.BufferedIODevice;
+import uk.iatom.iAtomSys.server.device.Device;
 import uk.iatom.iAtomSys.server.instruction.InstructionExecutionException;
 import uk.iatom.iAtomSys.server.memory.Memory;
 import uk.iatom.iAtomSys.server.stack.ProcessorStack;
@@ -35,6 +40,23 @@ public class IAtomSysVM {
   @Autowired
   private ProcessorStack processorStack;
 
+  @Autowired
+  private VMConfiguration vmConfiguration;
+
+  @Autowired
+  private final Device[] devices = new Device[] {
+      new BufferedIODevice(),
+      new BufferedIODevice(),
+      new BufferedIODevice(),
+      new BufferedIODevice()
+  };
+
+  public void setDevice(int id, Device device) {
+    if(0 < id && id <= 3) {
+      devices[id] = device;
+    }
+  }
+
   public void processNextCycle() {
     Register PCR = Register.PCR(registerSet);
     short pc = PCR.get();
@@ -42,6 +64,24 @@ public class IAtomSysVM {
     short instruction = memory.read(pc);
     executeInstruction(instruction);
 
+    // Process devices
+    Flag[] deviceFlags = new Flag[] { Flag.DEV_0, Flag.DEV_1, Flag.DEV_2, Flag.DEV_3 };
+    int deviceId = 0;
+    for (Flag flag: deviceFlags) {
+      // TODO Check for out of range?
+      short address = (short) (vmConfiguration.getDevicesRangeStartAddress() + deviceId++);
+
+      if (!FlagHelper.getFlag(registerSet, flag.bitIndex))
+        continue;
+
+      Device device = devices[deviceId];
+      short writeValue = memory.read(address);
+      device.deviceWrite(writeValue);
+      short readValue = device.deviceRead();
+      memory.write(address, readValue);
+    }
+
+    // Try to increment the program counter
     int newPc = pc + 1;
     if (newPc >= Short.toUnsignedInt(Short.MAX_VALUE)) {
       logger.info("PC is at max value %d".formatted(newPc));

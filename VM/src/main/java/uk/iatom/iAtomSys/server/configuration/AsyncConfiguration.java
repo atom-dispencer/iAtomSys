@@ -18,7 +18,7 @@ public class AsyncConfiguration {
 
   @Scheduled(fixedRateString = "#{@vmConfiguration.millisPerCycle}")
   public void processNextCycle() {
-    if (vmConfiguration.running) {
+    if (vmConfiguration.isRunning()) {
       iAtomSysVM.processNextCycle();
     }
   }

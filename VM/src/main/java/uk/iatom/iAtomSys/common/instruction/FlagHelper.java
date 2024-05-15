@@ -22,21 +22,31 @@ public class FlagHelper {
     };
   }
 
-  public static void setFlag(RegisterSet registerSet, int bit, boolean value) {
-
+  public static void setFlag(RegisterSet registerSet, int flagId, boolean value) {
     Register flagRegister = Register.FLG(registerSet);
     short flagRegisterValue = flagRegister.get();
 
     // If the given bit is not equal to the new desired value, flip it, so it is
-    if (((flagRegisterValue & 0x8000) >> bit) == 1 != value) {
-      flagRegisterValue ^= (short) (0x8000 >> bit);
+    if (((flagRegisterValue & 0x8000) >> flagId) == 1 != value) {
+      flagRegisterValue ^= (short) (0x8000 >> flagId);
     }
 
     flagRegister.set(flagRegisterValue);
   }
 
+  public static boolean getFlag(RegisterSet registerSet, int flagId) {
+    Register flagRegister = Register.FLG(registerSet);
+    int flagRegisterValue = flagRegister.get(); // Implicit upcast to int
+
+    return (flagRegisterValue & (0x8000 >> flagId)) > 0;
+  }
+
   public enum Flag {
-    CARRY(0);
+    CARRY(0),
+    DEV_0(8),
+    DEV_1(9),
+    DEV_2(10),
+    DEV_3(11);
 
     public final int bitIndex;
 
