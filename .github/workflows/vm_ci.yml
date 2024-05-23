@@ -18,6 +18,8 @@ on:
   push:
     paths:
       - 'VM/**'
+  workflow_dispatch:
+    
 
 defaults:
   run:
