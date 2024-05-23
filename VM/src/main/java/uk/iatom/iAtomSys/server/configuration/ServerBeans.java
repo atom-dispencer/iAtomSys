@@ -33,9 +33,4 @@ public class ServerBeans {
         vmConfiguration.getProcessorStackSizeIntegers() * 2
     );
   }
-
-  @Bean
-  public IOPort vmConsole() {
-    return new IOPort();
-  }
 }
