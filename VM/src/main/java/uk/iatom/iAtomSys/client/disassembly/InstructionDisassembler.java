@@ -51,5 +51,10 @@ public interface InstructionDisassembler {
     return new String[]{instruction.name(), operand};
   }
 
+  static String[] ioPort(Instruction ignored, byte flags, RegisterSet ignoredRegisterSet) {
+    int port = (flags & 0b11000000) >> 6;
+    return new String[]{"IO%d".formatted(port)};
+  }
+
   String[] disassemble(Instruction instruction, byte flags, RegisterSet registerSet);
 }

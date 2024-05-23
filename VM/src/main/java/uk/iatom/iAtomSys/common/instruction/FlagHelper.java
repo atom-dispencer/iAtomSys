@@ -43,10 +43,10 @@ public class FlagHelper {
 
   public enum Flag {
     CARRY(0),
-    DEV_0(8),
-    DEV_1(9),
-    DEV_2(10),
-    DEV_3(11);
+    IO0(8),
+    IO1(9),
+    IO2(10),
+    IO3(11);
 
     public final int bitIndex;
 

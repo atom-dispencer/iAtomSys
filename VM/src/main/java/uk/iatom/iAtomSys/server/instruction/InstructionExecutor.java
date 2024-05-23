@@ -7,14 +7,19 @@ import uk.iatom.iAtomSys.common.instruction.FlagHelper;
 import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.common.register.RegisterReference;
 import uk.iatom.iAtomSys.server.IAtomSysVM;
+import uk.iatom.iAtomSys.server.device.IOPort;
 import uk.iatom.iAtomSys.server.memory.Memory;
 import uk.iatom.iAtomSys.server.stack.ProcessorStack;
 import uk.iatom.iAtomSys.server.stack.ProcessorStackOverflowException;
 import uk.iatom.iAtomSys.server.stack.ProcessorStackUnderflowException;
+import uk.iatom.iAtomSys.common.instruction.Instruction;
 
 public interface InstructionExecutor {
 
   /**
+   * <h4>No Operation</h4>
+   * What it says on the tin.
+   *
    * @param ignoredVm    The {@link IAtomSysVM} to act on.
    * @param ignoredFlags The flags given in the least significant byte of the instruction.
    */
@@ -23,7 +28,10 @@ public interface InstructionExecutor {
   }
 
   /**
+   * <h4>Move</h4>
    * Read an integer value into the given address.
+   *
+   * @see #xNOP(IAtomSysVM, byte)
    */
   static void xMOV(IAtomSysVM vm, byte flags) {
     RegisterReference[] registers = twoRegisters_02_35(vm.getRegisterSet(), flags);
@@ -37,6 +45,7 @@ public interface InstructionExecutor {
   }
 
   /**
+   * <h4>Set CPU Flag</h4>
    * Push the value onto the top of the stack.
    *
    * @see #xNOP(IAtomSysVM, byte)
@@ -57,6 +66,7 @@ public interface InstructionExecutor {
   }
 
   /**
+   * <h4>Push to Stack</h4>
    * Push the value onto the top of the stack.
    *
    * @see #xNOP(IAtomSysVM, byte)
@@ -70,6 +80,7 @@ public interface InstructionExecutor {
   }
 
   /**
+   * <h4>Pop from Stack</h4>
    * Pop the integer currently on top of the {@link ProcessorStack}.
    *
    * @see #xNOP(IAtomSysVM, byte)
@@ -83,6 +94,7 @@ public interface InstructionExecutor {
   }
 
   /**
+   * <h4>Increment</h4>
    * Increment the value.
    *
    * @param flags 0-3: Register to increment.
@@ -104,6 +116,7 @@ public interface InstructionExecutor {
   }
 
   /**
+   * <h4>Decrement</h4>
    * Decrement the register given by flags 0-3.
    *
    * @param flags 0-3: Register to increment.
@@ -125,6 +138,7 @@ public interface InstructionExecutor {
   }
 
   /**
+   * <h4>Add</h4>
    * Add the value in the given {@link Register} onto that in ACC, storing the value in ACC.
    *
    * @param flags 0-3: Register to add the value of to ACC.
@@ -160,6 +174,7 @@ public interface InstructionExecutor {
   }
 
   /**
+   * <h4>Subtract</h4>
    * Subtract the value in the given {@link Register} from that in ACC, storing the value in ACC.
    *
    * @param flags 0-3: Register to subtract the value of from ACC.
@@ -196,6 +211,7 @@ public interface InstructionExecutor {
   }
 
   /**
+   * <h4>Zero</h4>
    * Set the value in the given Register to zero.
    *
    * @param flags 0-3: Register to subtract the value of from ACC.
@@ -206,5 +222,39 @@ public interface InstructionExecutor {
     vm.getMemory().write(reference.get(), (short) 0);
   }
 
+  /**
+   * <h4>IO-Port Input-Shuffle</h4>
+   * Command the given {@link IOPort} to perform a read operation.
+   *
+   * @param flags 0-1: The ID of the {@link IOPort}.
+   * @see #xNOP(IAtomSysVM, byte)
+   */
+  static void xPIS(IAtomSysVM vm, byte flags) {
+    int index = (flags & 0b11000000) >> 6;
+    IOPort port = vm.getPorts()[index];
+    port.shuffleInput();
+  }
+
+  /**
+   * <h4>IO-Port Output-Shuffle</h4>
+   * Command the given {@link IOPort} to perform a write operation.
+   *
+   * @param flags 0-1: The ID of the {@link IOPort}.
+   * @see #xNOP(IAtomSysVM, byte)
+   */
+  static void xPOS(IAtomSysVM vm, byte flags) {
+    int index = (flags & 0b11000000) >> 6;
+    IOPort port = vm.getPorts()[index];
+    port.shuffleOutput();
+  }
+
+  /**
+   * Perform the steps to execute the instruction with which this {@link InstructionExecutor} is
+   *  associated.
+   *
+   * @param vm The {@link IAtomSysVM} requesting the execution of the associated {@link Instruction}.
+   * @param flags The flag-byte for this {@link Instruction}, from the VM's memory.
+   * @throws InstructionExecutionException In case of <i>anticipated</i> errors.
+   */
   void exec(IAtomSysVM vm, byte flags) throws InstructionExecutionException;
 }
