@@ -53,18 +53,20 @@ If the integer is even, it will be interpreted as one of the instructions denote
 Many `Register` flags are followed by a `Register*` flag. If the `Register*` flag is enabled, the
   true 16-bit memory address of the register should be used, rather than the register's contents.
 
-| Instruction    | Assembly | Opcode | Flags                                                                | Function                                                                |
-|----------------|----------|--------|----------------------------------------------------------------------|-------------------------------------------------------------------------|
-| No Operation   | NOP      | 00     |                                                                      | Does nothing (effectively a 1-cycle pause).                             | 
-| Move           | MOV      |        | `0-1: Register1`, `2: Register1*`, `3-4: Register2`, `5: Register2*` | Move the value at `Address1` into `Address2`.                           |
-| Set Flag       | FLG      |        | `0-3: 4-bit ID`, `4: On/Off`                                         | Set the given bit (0-15) in the FLG hidden-register to the given value. |
-| Push to Stack  | PSH      |        | `0-1: Register`, `2: Register*`                                      | Push the value at the given address onto the top of the CPU stack.      |
-| Pop from Stack | POP      |        | `0-1: Register`, `2: Register*`                                      | Pop the value off the top of the stack into the given address.          |
-| Increment      | INC      |        | `0-1: Register`, `2: Register*`                                      | Increment the integer stored at the given address by 1.                 |
-| Decrement      | DEC      |        | `0-1: Register`, `2: Register*`                                      | Decrement the integer stored at the given address by 1.                 |
-| Add            | ADD      |        | `0-1: Register`, `2: Register*`                                      | Add the value at the given address to `ACC`.                            |
-| Subtract       | SUB      |        | `0-1: Register`, `2: Register*`                                      | Subtract the value at the given address from `ACC`.                     |
-| Zero           | ZRO      |        | `0-1: Register`, `2: Register*`                                      | Set the value at the given address to 0.                                |
+| Instruction            | Assembly | Opcode | Flags                                                                | Function                                                                |
+|------------------------|----------|--------|----------------------------------------------------------------------|-------------------------------------------------------------------------|
+| No Operation           | NOP      | 00     |                                                                      | Does nothing (effectively a 1-cycle pause).                             | 
+| Move                   | MOV      |        | `0-1: Register1`, `2: Register1*`, `3-4: Register2`, `5: Register2*` | Move the value at `Address1` into `Address2`.                           |
+| Set CPU Flag           | FLG      |        | `0-3: 4-bit ID`, `4: On/Off`                                         | Set the given bit (0-15) in the FLG hidden-register to the given value. |
+| Push to Stack          | PSH      |        | `0-1: Register`, `2: Register*`                                      | Push the value at the given address onto the top of the CPU stack.      |
+| Pop from Stack         | POP      |        | `0-1: Register`, `2: Register*`                                      | Pop the value off the top of the stack into the given address.          |
+| Increment              | INC      |        | `0-1: Register`, `2: Register*`                                      | Increment the integer stored at the given address by 1.                 |
+| Decrement              | DEC      |        | `0-1: Register`, `2: Register*`                                      | Decrement the integer stored at the given address by 1.                 |
+| Add                    | ADD      |        | `0-1: Register`, `2: Register*`                                      | Add the value at the given address to `ACC`.                            |
+| Subtract               | SUB      |        | `0-1: Register`, `2: Register*`                                      | Subtract the value at the given address from `ACC`.                     |
+| Zero                   | ZRO      |        | `0-1: Register`, `2: Register*`                                      | Set the value at the given address to 0.                                |
+| IO-Port Input-Shuffle  | PIS      |        | `0-1: 2-bit ID`                                                      | Force the given `IOPort` to read immediately.                           |
+| IO-Port Output-Shuffle | POS      |        | `0-1: 2-bit ID`                                                      | Force the given `IOPort` to write immediately.                          |
 
 ## Registers
 
@@ -97,6 +99,22 @@ CPU flags are stored in the invisible register FLG.
 |-------|-----|------|----------------------------------------------------------------|
 | Carry | 1   | 0001 | Active when the accumulator has carried a bit during addition. |
 
+## IO-Ports (External Communication)
+The VM can communicate via its four `IOPorts`, which behave somewhat like UARTs.
+Each `IOPort` is bound to a memory address and a CPU flag, and will passively receive and buffer
+  input from external sources, and will not change the VM state until commanded to perform an input-
+  or output-shuffle operation.
+*(See the `PIS` and `POS` instructions)*
+
+At the end of every CPU cycle, each `IOPort` will set its bound CPU flag **HIGH** if its input 
+  buffer has outstanding data, otherwise it will set it **LOW**.
+
+### Operations
+- Read:
+  - Copy the next value from internal input buffer to the bound address.
+  - If there is no data in the input buffer, the copied value will be zero.
+- Write:
+  - Copy the value at the bound address into its internal output buffer.
 
 ## Example Programs
 ```

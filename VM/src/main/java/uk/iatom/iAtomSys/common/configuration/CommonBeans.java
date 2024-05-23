@@ -41,6 +41,10 @@ public class CommonBeans {
         InstructionExecutor::xSUB);
     set.createInstruction("ZRO", (byte) 0x0a, InstructionDisassembler::oneRegister_02,
         InstructionExecutor::xZRO);
+    set.createInstruction("PIS", (byte) 0x0b, InstructionDisassembler::ioPort,
+        InstructionExecutor::xPIS);
+    set.createInstruction("POS", (byte) 0x0c, InstructionDisassembler::ioPort,
+        InstructionExecutor::xPOS);
 
     return set;
   }
