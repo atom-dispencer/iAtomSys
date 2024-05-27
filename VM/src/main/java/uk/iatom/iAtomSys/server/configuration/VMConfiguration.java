@@ -17,5 +17,5 @@ public class VMConfiguration {
 
   private boolean running = false;
 
-  private short devicesRangeStartAddress = 0x0010;
+  private short portsRangeStartAddress = 0x0010;
 }
