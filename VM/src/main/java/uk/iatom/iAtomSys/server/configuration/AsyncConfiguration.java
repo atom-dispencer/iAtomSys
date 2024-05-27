@@ -11,7 +11,7 @@ import uk.iatom.iAtomSys.server.IAtomSysVM;
 public class AsyncConfiguration {
 
   @Autowired
-  private VMConfiguration vmConfiguration;
+  private VmConfiguration vmConfiguration;
 
   @Autowired
   private IAtomSysVM iAtomSysVM;

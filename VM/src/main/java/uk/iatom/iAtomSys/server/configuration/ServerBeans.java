@@ -14,8 +14,8 @@ import uk.iatom.iAtomSys.server.stack.ProcessorStack;
 public class ServerBeans {
 
   @Bean
-  public VMConfiguration vmConfiguration() {
-    return new VMConfiguration();
+  public VmConfiguration vmConfiguration() {
+    return new VmConfiguration();
   }
 
   @Bean
@@ -26,7 +26,7 @@ public class ServerBeans {
 
   @Bean
   @Scope(BeanDefinition.SCOPE_SINGLETON)
-  public ProcessorStack processorStack(VMConfiguration vmConfiguration, RegisterSet registerSet,
+  public ProcessorStack processorStack(VmConfiguration vmConfiguration, RegisterSet registerSet,
       Memory memory) {
     return new ProcessorStack(
         memory,
@@ -37,7 +37,7 @@ public class ServerBeans {
 
   @Bean
   @Scope(BeanDefinition.SCOPE_SINGLETON)
-  public IOPort[] ports (VMConfiguration vmConfiguration, RegisterSet registerSet, Memory memory) {
+  public IOPort[] ports (VmConfiguration vmConfiguration, RegisterSet registerSet, Memory memory) {
     return new IOPort[]{
       new IOPort(vmConfiguration.getPortsRangeStartAddress(), Flag.IO0, registerSet, memory),
       new IOPort((short) (vmConfiguration.getPortsRangeStartAddress() + 1), Flag.IO1, registerSet, memory),

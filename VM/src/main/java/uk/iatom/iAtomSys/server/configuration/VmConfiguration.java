@@ -9,7 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @Data
 @ConfigurationProperties("iatomsys.vm")
-public class VMConfiguration {
+public class VmConfiguration {
 
   private int millisPerCycle = 1000;
 

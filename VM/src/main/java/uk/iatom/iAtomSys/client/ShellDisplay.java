@@ -8,6 +8,7 @@ import java.awt.Rectangle;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -78,9 +79,11 @@ public class ShellDisplay {
   private final Supplier<Rectangle> MEMORY_RECT = () -> {
     Rectangle content = CONTENT_RECT.get();
 
+    int width = (int) Math.floor(content.width * 0.375);
+
     Point origin = content.getLocation();
     Dimension dimension = new Dimension(
-        61,
+        width,
         content.height
     );
     return new Rectangle(origin, dimension);
@@ -371,12 +374,22 @@ public class ShellDisplay {
       }
 
       // Title for the disassembly
+      StringBuilder titleBuilder = new StringBuilder();
       String TITLE = "Address  Hex  * Operands";
       String LINE  = "________ ____ _ _____________";
-      contents.append(TITLE).append(ANSICodes.moveDown(1))
+      titleBuilder.append(TITLE).append(ANSICodes.moveDown(1))
           .append(ANSICodes.moveLeft(TITLE.length()));
-      contents.append(LINE).append(ANSICodes.moveDown(1))
+      titleBuilder.append(LINE).append(ANSICodes.moveDown(1))
           .append(ANSICodes.moveLeft(LINE.length()));
+
+      int widthPadding = 3;
+      int slimColumnWidth = LINE.length();
+      int paddedColumnWidth = slimColumnWidth + 2*widthPadding;
+      int columns = bounds.width / paddedColumnWidth;
+      int availableRows = bounds.height - 6;
+      int spareWidth = bounds.width - columns*paddedColumnWidth;
+
+      List<String> formattedLines = new ArrayList<>();
 
       // Format each instruction line
       for (int i = 0; i < displayState.getDisassembly().size(); i++) {
@@ -405,8 +418,33 @@ public class ShellDisplay {
           lineBuilder.append(formatted).append(" ");
         }
 
-        contents.append(lineBuilder).append(ANSICodes.moveDown(1))
-            .append(ANSICodes.moveLeft(lineBuilder.length()));
+        formattedLines.add(lineBuilder.toString());
+      }
+
+      // Build the lines into columns
+      StringBuilder[] columnBuilders = new StringBuilder[columns];
+      for (int i = 0; i < formattedLines.size() && i < columns*availableRows; i++) {
+        int column = Math.floorDiv(i, availableRows);
+        if (columnBuilders[column] == null) {
+          StringBuilder newColumnBuilder = new StringBuilder();
+
+          // Go to the starting location before drawing title
+          Point start = new Point(bounds.getLocation().x, bounds.getLocation().y);
+          start.translate(widthPadding + spareWidth/2 + column*paddedColumnWidth, 2);
+          newColumnBuilder.append(ANSICodes.moveTo(start));
+
+          newColumnBuilder.append(titleBuilder);
+          columnBuilders[column] = newColumnBuilder;
+        }
+        StringBuilder columnBuilder = columnBuilders[column];
+        String line = formattedLines.get(i);
+        columnBuilder.append(line);
+        columnBuilder.append(ANSICodes.moveDown(1)).append(ANSICodes.moveLeft(line.length()));
+      }
+
+      // String the columns together
+      for (StringBuilder column: columnBuilders) {
+        contents.append(column);
       }
 
     }
