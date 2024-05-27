@@ -80,7 +80,7 @@ public class ShellDisplay {
 
     Point origin = content.getLocation();
     Dimension dimension = new Dimension(
-        60,
+        61,
         content.height
     );
     return new Rectangle(origin, dimension);
@@ -89,7 +89,7 @@ public class ShellDisplay {
   private final Supplier<Rectangle> REGISTERS_RECT = () -> {
     Rectangle content = CONTENT_RECT.get();
 
-    int REGISTER_FLAG_WIDTH = 40;
+    int REGISTER_FLAG_WIDTH = 32;
 
     Point origin = new Point(
         (int) content.getMaxX() - REGISTER_FLAG_WIDTH,
@@ -411,10 +411,21 @@ public class ShellDisplay {
 
     }
     //
-    // Otherwise draw a help message
+    // If no disassembly state, draw a help message
     //
     else {
+      String[] lines = new String[] {
+          "No memory state loaded.",
+          "To load a memory state: load <image_name>"
+      };
 
+      for (int i = 0; i < lines.length; i++) {
+        String line = lines[i];
+        contents.append(ANSICodes.moveTo(MEMORY_RECT.get().getLocation()));
+        contents.append(ANSICodes.moveDown(3 + i));
+        contents.append(ANSICodes.moveRight(bounds.width / 2 - line.length() / 2));
+        contents.append(line);
+      }
     }
 
     print( //
@@ -482,7 +493,7 @@ public class ShellDisplay {
         ANSICodes.moveRight(Math.floorDiv(rect.width, 2) - Math.floorDiv(title.length(), 2)), //
         title, //
         ANSICodes.moveTo(rect.getLocation()), //
-        ANSICodes.moveRight(2), //
+        ANSICodes.moveRight(4), //
         ANSICodes.moveDown(2), //
         info.toString(), //
         ANSICodes.POP_CURSOR_POS //
