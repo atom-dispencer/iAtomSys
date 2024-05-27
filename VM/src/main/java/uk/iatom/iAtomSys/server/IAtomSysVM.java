@@ -42,12 +42,7 @@ public class IAtomSysVM {
   private VMConfiguration vmConfiguration;
 
   @Autowired
-  private final IOPort[] ports = new IOPort[] {
-      new IOPort(getVmConfiguration().getDevicesRangeStartAddress(), Flag.IO0, registerSet, memory),
-      new IOPort((short) (getVmConfiguration().getDevicesRangeStartAddress() + 1), Flag.IO1, registerSet, memory),
-      new IOPort((short) (getVmConfiguration().getDevicesRangeStartAddress() + 2), Flag.IO2, registerSet, memory),
-      new IOPort((short) (getVmConfiguration().getDevicesRangeStartAddress() + 3), Flag.IO3, registerSet, memory),
-  };
+  private IOPort[] ports;
 
   public void processNextCycle() {
     Register PCR = Register.PCR(registerSet);
