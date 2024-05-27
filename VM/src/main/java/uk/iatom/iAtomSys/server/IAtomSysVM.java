@@ -7,12 +7,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-import uk.iatom.iAtomSys.common.instruction.FlagHelper.Flag;
 import uk.iatom.iAtomSys.common.instruction.Instruction;
 import uk.iatom.iAtomSys.common.instruction.InstructionSet;
 import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.common.register.RegisterSet;
-import uk.iatom.iAtomSys.server.configuration.VMConfiguration;
+import uk.iatom.iAtomSys.server.configuration.VmConfiguration;
 import uk.iatom.iAtomSys.server.device.IOPort;
 import uk.iatom.iAtomSys.server.instruction.InstructionExecutionException;
 import uk.iatom.iAtomSys.server.memory.Memory;
@@ -39,7 +38,7 @@ public class IAtomSysVM {
   private ProcessorStack processorStack;
 
   @Autowired
-  private VMConfiguration vmConfiguration;
+  private VmConfiguration vmConfiguration;
 
   @Autowired
   private IOPort[] ports;

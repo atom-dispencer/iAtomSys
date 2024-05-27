@@ -13,6 +13,7 @@ import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 import org.springframework.stereotype.Component;
+import uk.iatom.iAtomSys.client.configuration.ApiClientConfiguration;
 import uk.iatom.iAtomSys.client.disassembly.MemoryDisassembler;
 import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
@@ -21,6 +22,7 @@ import uk.iatom.iAtomSys.common.api.StepRequestPacket;
 import uk.iatom.iAtomSys.common.api.VMClient;
 import uk.iatom.iAtomSys.common.api.VMStateRequestPacket;
 import uk.iatom.iAtomSys.common.api.VMStateResponsePacket;
+import uk.iatom.iAtomSys.server.configuration.VmConfiguration;
 
 
 @ShellComponent
@@ -44,6 +46,8 @@ public class ShellCommands {
   private ShellDisplay display;
   @Autowired
   private MemoryDisassembler memoryDisassembler;
+  @Autowired
+  private ApiClientConfiguration apiClientConfiguration;
 
   @PostConstruct
   public void postConstruct() {
@@ -57,8 +61,11 @@ public class ShellCommands {
 
   private void updateDisplayVMState() {
 
-    // TODO Dynamic pcrOffset and sliceWidth
-    VMStateResponsePacket vmStateResponsePacket = api.getState(new VMStateRequestPacket((short) -8, (short) 17));
+    // TODO (Solved?) Dynamic pcrOffset and sliceWidth
+    VMStateResponsePacket vmStateResponsePacket = api.getState(new VMStateRequestPacket(
+        apiClientConfiguration.getVmStateRequestPcrOffset(),
+        apiClientConfiguration.getVmStateRequestSliceWidth()
+    ));
 
     if (vmStateResponsePacket == null) {
       logger.error("Cannot update display VM state: received null.");
