@@ -12,6 +12,7 @@ import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
 @EqualsAndHashCode
 public class ShellDisplayState {
 
+  private boolean running;
   private String commandMessage;
   private short memorySliceStartAddress;
   private short[] memory;
