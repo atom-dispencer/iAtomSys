@@ -76,7 +76,7 @@ public class ShellDisplay {
     return startPoint;
   };
 
-  private final Supplier<Rectangle> MEMORY_RECT = () -> {
+  private final Supplier<Rectangle> MEMORY_RUNDATA_RECT = () -> {
     Rectangle content = CONTENT_RECT.get();
 
     int width = (int) Math.floor(content.width * 0.375);
@@ -261,9 +261,15 @@ public class ShellDisplay {
     long start = System.nanoTime();
 
     drawBackground();
-    drawMemoryState();
-    drawRegisters();
-    drawFlags();
+
+    // TODO Perhaps show available saves somehow?
+    if (displayState.isRunning()) {
+      drawRunningData();
+    } else {
+      drawMemoryState();
+      drawRegisters();
+      drawFlags();
+    }
     drawCredits();
     drawCommandInput();
 
@@ -272,6 +278,9 @@ public class ShellDisplay {
     logger.info("Redraw took %.3fms".formatted(elapsedMillis));
   }
 
+  /**
+   * Draw the background of the GUI, including the title and frame, without clearing the insides.
+   */
   public void drawBackground() {
     assertShellLive();
     int preHeadingWidth = 10;
@@ -326,6 +335,10 @@ public class ShellDisplay {
     );
   }
 
+  /**
+   * Draw a cute little message so that everyone knows who made this <3.
+   * Oh, and the GitHub help message as well.
+   */
   public void drawCredits() {
     assertShellLive();
     Point startPoint = CREDITS_POS.get();
@@ -345,8 +358,11 @@ public class ShellDisplay {
     );
   }
 
+  /**
+   * Draw the memory state of the running VM, including breakpoints and the current PCR position.
+   */
   public void drawMemoryState() {
-    Rectangle bounds = MEMORY_RECT.get();
+    Rectangle bounds = MEMORY_RUNDATA_RECT.get();
     printBox(bounds, '+', true);
 
     //
@@ -459,7 +475,7 @@ public class ShellDisplay {
 
       for (int i = 0; i < lines.length; i++) {
         String line = lines[i];
-        contents.append(ANSICodes.moveTo(MEMORY_RECT.get().getLocation()));
+        contents.append(ANSICodes.moveTo(MEMORY_RUNDATA_RECT.get().getLocation()));
         contents.append(ANSICodes.moveDown(3 + i));
         contents.append(ANSICodes.moveRight(bounds.width / 2 - line.length() / 2));
         contents.append(line);
@@ -485,6 +501,39 @@ public class ShellDisplay {
     );
   }
 
+  /**
+   * When the VM is running, display data about said runtime, such as times a breakpoint is hit or uptime.
+   */
+  public void drawRunningData() {
+    Rectangle bounds = MEMORY_RUNDATA_RECT.get();
+    printBox(bounds, '+', true);
+    StringBuilder contents = new StringBuilder();
+
+    String title = " VM is running... ";
+    int titleStart = Math.floorDiv(bounds.width, 2) - Math.floorDiv(title.length(), 2);
+
+    print( //
+        ANSICodes.PUSH_CURSOR_POS, //
+
+        // Title
+        ANSICodes.moveTo(bounds.getLocation()), //
+        ANSICodes.moveRight(titleStart), //
+        title, //
+
+        // Boxes/memory addresses/whatever
+        ANSICodes.moveTo(bounds.getLocation()), //
+        ANSICodes.moveRight(3), //
+        ANSICodes.moveDown(2), //
+        contents.toString(), //
+
+        //
+        ANSICodes.POP_CURSOR_POS //
+    );
+  }
+
+  /**
+   * Draw the values of the VM registers, including their names, addresses and values.
+   */
   public void drawRegisters() {
     assertShellLive();
 
