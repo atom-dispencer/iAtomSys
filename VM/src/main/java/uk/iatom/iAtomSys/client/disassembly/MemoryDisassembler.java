@@ -52,7 +52,7 @@ public class MemoryDisassembler {
       // If odd, treat as a 'load-value' command
       if (instructionShort % 2 == 1) {
         String value = "%04x".formatted(instructionShort);
-        return new String[] { ">", value, "IDK" };
+        return new String[]{">", value, "IDK"};
       }
 
       byte opcode = Instruction.extractOpcode(instructionShort);

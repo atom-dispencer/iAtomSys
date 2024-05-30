@@ -37,12 +37,15 @@ public class ServerBeans {
 
   @Bean
   @Scope(BeanDefinition.SCOPE_SINGLETON)
-  public IOPort[] ports (VmConfiguration vmConfiguration, RegisterSet registerSet, Memory memory) {
+  public IOPort[] ports(VmConfiguration vmConfiguration, RegisterSet registerSet, Memory memory) {
     return new IOPort[]{
-      new IOPort(vmConfiguration.getPortsRangeStartAddress(), Flag.IO0, registerSet, memory),
-      new IOPort((short) (vmConfiguration.getPortsRangeStartAddress() + 1), Flag.IO1, registerSet, memory),
-      new IOPort((short) (vmConfiguration.getPortsRangeStartAddress() + 2), Flag.IO2, registerSet, memory),
-      new IOPort((short) (vmConfiguration.getPortsRangeStartAddress() + 3), Flag.IO3, registerSet, memory),
+        new IOPort(vmConfiguration.getPortsRangeStartAddress(), Flag.IO0, registerSet, memory),
+        new IOPort((short) (vmConfiguration.getPortsRangeStartAddress() + 1), Flag.IO1, registerSet,
+            memory),
+        new IOPort((short) (vmConfiguration.getPortsRangeStartAddress() + 2), Flag.IO2, registerSet,
+            memory),
+        new IOPort((short) (vmConfiguration.getPortsRangeStartAddress() + 3), Flag.IO3, registerSet,
+            memory),
     };
   }
 }

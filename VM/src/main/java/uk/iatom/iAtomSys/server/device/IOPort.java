@@ -17,8 +17,8 @@ public class IOPort {
   private final Memory memory;
 
   private final ArrayList<Short> outputBuffer = new ArrayList<>();
-  private int outputPointer = 0;
   private final ArrayList<Short> inputBuffer = new ArrayList<>();
+  private int outputPointer = 0;
   private int inputPointer = 0;
 
 
@@ -90,6 +90,6 @@ public class IOPort {
 
   public List<Short> readAllOutput() {
     inputPointer = inputBuffer.size() - 1;
-    return outputBuffer.subList(0, outputBuffer.size() - 1) ;
+    return outputBuffer.subList(0, outputBuffer.size() - 1);
   }
 }

@@ -50,8 +50,7 @@ public class IAtomSysVM {
     short instruction = memory.read(pc);
     executeInstruction(instruction);
 
-
-    for (IOPort port: ports) {
+    for (IOPort port : ports) {
       port.updateFlag();
     }
 
@@ -74,19 +73,16 @@ public class IAtomSysVM {
       return;
     }
 
-
     // Try to treat it as an instruction
     byte opcode = (byte) ((int16Instruction & 0xff00) >> 8);
     byte flags = (byte) (int16Instruction & 0x00ff);
     Instruction instruction = instructionSet.getInstruction(opcode);
-
 
     // If the instruction was not understood...
     if (instruction == null) {
       logger.error("Could not decode instruction 0x%04x (skipping).".formatted(int16Instruction));
       return;
     }
-
 
     // Let's give it a go!
     try {
