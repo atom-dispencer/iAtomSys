@@ -7,7 +7,8 @@ public record VMStateResponsePacket(
     List<String> availableImages,
     short memoryStartAddress,
     short[] memory,
-    List<RegisterPacket> registers
+    List<RegisterPacket> registers,
+    List<Short> orderedPortAddresses
 ) {
 
 }

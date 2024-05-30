@@ -85,6 +85,9 @@ public class ShellCommands {
 
     List<RegisterPacket> registers = vmStateResponsePacket.registers();
     display.getDisplayState().setRegisters(registers);
+
+    List<Short> orderedPortAddresses = vmStateResponsePacket.orderedPortAddresses();
+    display.getDisplayState().setPortAddresses(orderedPortAddresses);
   }
 
   @ShellMethod()
