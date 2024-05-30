@@ -18,6 +18,7 @@ import uk.iatom.iAtomSys.common.api.VMStateResponsePacket;
 import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.common.register.RegisterSet;
 import uk.iatom.iAtomSys.server.IAtomSysVM;
+import uk.iatom.iAtomSys.server.device.IOPort;
 
 @RestController
 @RequestMapping("")
@@ -69,6 +70,9 @@ public class DefaultRestController {
         Register.LOL(regs).toPacket()
     );
 
-    return new VMStateResponsePacket(imageNames, clampedStartAddress, memory, registers);
+    // Get port addresses, in order of port ID
+    List<Short> orderedPortAddresses = Arrays.stream(vm.getPorts()).map(IOPort::getAddress).toList();
+
+    return new VMStateResponsePacket(imageNames, clampedStartAddress, memory, registers, orderedPortAddresses);
   }
 }

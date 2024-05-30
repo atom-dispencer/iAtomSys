@@ -2,13 +2,16 @@ package uk.iatom.iAtomSys.server.device;
 
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 import uk.iatom.iAtomSys.common.instruction.FlagHelper;
 import uk.iatom.iAtomSys.common.register.RegisterSet;
 import uk.iatom.iAtomSys.server.memory.Memory;
 
 public class IOPort {
 
+  @Getter
   private final short address;
+  @Getter
   private final FlagHelper.Flag flag;
   private final RegisterSet registerSet;
   private final Memory memory;

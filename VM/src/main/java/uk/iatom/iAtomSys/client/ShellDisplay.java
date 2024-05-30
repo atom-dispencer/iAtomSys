@@ -11,7 +11,9 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 import lombok.Getter;
 import org.jline.terminal.Terminal;
@@ -262,7 +264,7 @@ public class ShellDisplay {
 
     drawBackground();
 
-    // TODO Perhaps show available saves somehow?
+    // TODO Display values in ports (near registers/flags?)
     if (displayState.isRunning()) {
       drawRunningData();
     } else {
@@ -407,6 +409,8 @@ public class ShellDisplay {
 
       List<String> formattedLines = new ArrayList<>();
 
+      Map<Integer, String> reservedAddresses = displayState.getReservedAddresses();
+
       // Format each instruction line
       for (int i = 0; i < displayState.getDisassembly().size(); i++) {
         String[] arr = displayState.getDisassembly().get(i);
@@ -418,7 +422,13 @@ public class ShellDisplay {
         // TODO Make sure this doesn't explode with wrapping around or whatever
         // Instruction's address and hex value
         int address = displayState.getMemorySliceStartAddress() + i;
-        lineBuilder.append("<0x%04x> ".formatted(address));
+        if (reservedAddresses.containsKey(address)) {
+          String name = reservedAddresses.get(address);
+          name = name.length() <= 3 ? name : name.substring(0, 3);
+          lineBuilder.append("< %s  > ".formatted(name));
+        } else {
+          lineBuilder.append("<0x%04x> ".formatted(address));
+        }
         lineBuilder.append("%04x ".formatted(displayState.getMemory()[i]));
 
         // Program counter pointer indicator
@@ -516,6 +526,7 @@ public class ShellDisplay {
         ANSICodes.POP_CURSOR_POS //
     );
   }
+
 
   /**
    * When the VM is running, display data about said runtime, such as times a breakpoint is hit or uptime.
