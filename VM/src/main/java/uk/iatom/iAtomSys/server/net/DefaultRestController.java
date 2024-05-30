@@ -1,5 +1,8 @@
 package uk.iatom.iAtomSys.server.net;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +36,14 @@ public class DefaultRestController {
   @PostMapping("/state")
   public VMStateResponsePacket state(@RequestBody VMStateRequestPacket packet) {
 
+    // Collect the names of available memory images
+    File imagesDirectory = new File("images/");
+    String[] imageFileNames = imagesDirectory.list((file, name) -> name.endsWith(".img"));
+    List<String> imageNames = new ArrayList<>();
+    if (imageFileNames != null) {
+      imageNames = Arrays.stream(imageFileNames).map((name) -> name.substring(0, name.length() - 5)).toList();
+    }
+
     // Prepare memory region
     short pcr = Register.PCR(vm.getRegisterSet()).get();
     int width = Math.max(0, packet.sliceWidth());
@@ -58,6 +69,6 @@ public class DefaultRestController {
         Register.LOL(regs).toPacket()
     );
 
-    return new VMStateResponsePacket(clampedStartAddress, memory, registers);
+    return new VMStateResponsePacket(imageNames, clampedStartAddress, memory, registers);
   }
 }

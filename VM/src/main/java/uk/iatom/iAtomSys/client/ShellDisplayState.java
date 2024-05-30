@@ -14,6 +14,7 @@ public class ShellDisplayState {
 
   private boolean running;
   private String commandMessage;
+  private List<String> availableImages;
   private short memorySliceStartAddress;
   private short[] memory;
   private List<String[]> disassembly;

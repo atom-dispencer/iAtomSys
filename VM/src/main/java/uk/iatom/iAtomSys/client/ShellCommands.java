@@ -75,6 +75,8 @@ public class ShellCommands {
     // TODO Need to handle running/not-running states as each state will display different info!
     // TODO What if state packet values are null?
 
+    display.getDisplayState().setAvailableImages(vmStateResponsePacket.availableImages());
+
     display.getDisplayState().setMemorySliceStartAddress(vmStateResponsePacket.memoryStartAddress());
     short[] memory = vmStateResponsePacket.memory();
     List<String[]> disassembly = memoryDisassembler.disassemble(memory);
