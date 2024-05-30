@@ -1,14 +1,10 @@
 package uk.iatom.iAtomSys;
 
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.Properties;
-import java.util.ResourceBundle;
 import lombok.Getter;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 @SpringBootApplication
 public class IAtomSysApplication {

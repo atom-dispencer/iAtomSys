@@ -11,7 +11,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -338,8 +337,8 @@ public class ShellDisplay {
   }
 
   /**
-   * Draw a cute little message so that everyone knows who made this <3.
-   * Oh, and the GitHub help message as well.
+   * Draw a cute little message so that everyone knows who made this <3. Oh, and the GitHub help
+   * message as well.
    */
   public void drawCredits() {
     assertShellLive();
@@ -383,7 +382,7 @@ public class ShellDisplay {
       // Get the value of the program counter
       short pcr = 0;
       boolean pcrKnown = false;
-      for (RegisterPacket registerPacket: displayState.getRegisters()){
+      for (RegisterPacket registerPacket : displayState.getRegisters()) {
         if (registerPacket.name().equals("PCR")) {
           pcr = registerPacket.value();
           pcrKnown = true;
@@ -394,7 +393,7 @@ public class ShellDisplay {
       // Title for the disassembly
       StringBuilder titleBuilder = new StringBuilder();
       String TITLE = "Address  Hex  * Operands";
-      String LINE  = "________ ____ _ _____________";
+      String LINE = "________ ____ _ _____________";
       titleBuilder.append(TITLE).append(ANSICodes.moveDown(1))
           .append(ANSICodes.moveLeft(TITLE.length()));
       titleBuilder.append(LINE).append(ANSICodes.moveDown(1))
@@ -402,10 +401,10 @@ public class ShellDisplay {
 
       int widthPadding = 3;
       int slimColumnWidth = LINE.length();
-      int paddedColumnWidth = slimColumnWidth + 2*widthPadding;
+      int paddedColumnWidth = slimColumnWidth + 2 * widthPadding;
       int columns = bounds.width / paddedColumnWidth;
       int availableRows = bounds.height - 6;
-      int spareWidth = bounds.width - columns*paddedColumnWidth;
+      int spareWidth = bounds.width - columns * paddedColumnWidth;
 
       List<String> formattedLines = new ArrayList<>();
 
@@ -449,14 +448,14 @@ public class ShellDisplay {
 
       // Build the lines into columns
       StringBuilder[] columnBuilders = new StringBuilder[columns];
-      for (int i = 0; i < formattedLines.size() && i < columns*availableRows; i++) {
+      for (int i = 0; i < formattedLines.size() && i < columns * availableRows; i++) {
         int column = Math.floorDiv(i, availableRows);
         if (columnBuilders[column] == null) {
           StringBuilder newColumnBuilder = new StringBuilder();
 
           // Go to the starting location before drawing title
           Point start = new Point(bounds.getLocation().x, bounds.getLocation().y);
-          start.translate(widthPadding + spareWidth/2 + column*paddedColumnWidth, 2);
+          start.translate(widthPadding + spareWidth / 2 + column * paddedColumnWidth, 2);
           newColumnBuilder.append(ANSICodes.moveTo(start));
 
           newColumnBuilder.append(titleBuilder);
@@ -529,7 +528,8 @@ public class ShellDisplay {
 
 
   /**
-   * When the VM is running, display data about said runtime, such as times a breakpoint is hit or uptime.
+   * When the VM is running, display data about said runtime, such as times a breakpoint is hit or
+   * uptime.
    */
   public void drawRunningData() {
     Rectangle bounds = MEMORY_RUNDATA_RECT.get();

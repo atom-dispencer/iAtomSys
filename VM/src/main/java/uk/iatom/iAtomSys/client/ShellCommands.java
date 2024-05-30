@@ -22,7 +22,6 @@ import uk.iatom.iAtomSys.common.api.StepRequestPacket;
 import uk.iatom.iAtomSys.common.api.VMClient;
 import uk.iatom.iAtomSys.common.api.VMStateRequestPacket;
 import uk.iatom.iAtomSys.common.api.VMStateResponsePacket;
-import uk.iatom.iAtomSys.server.configuration.VmConfiguration;
 
 
 @ShellComponent
@@ -77,7 +76,8 @@ public class ShellCommands {
 
     display.getDisplayState().setAvailableImages(vmStateResponsePacket.availableImages());
 
-    display.getDisplayState().setMemorySliceStartAddress(vmStateResponsePacket.memoryStartAddress());
+    display.getDisplayState()
+        .setMemorySliceStartAddress(vmStateResponsePacket.memoryStartAddress());
     short[] memory = vmStateResponsePacket.memory();
     List<String[]> disassembly = memoryDisassembler.disassemble(memory);
     display.getDisplayState().setMemory(memory);
@@ -106,7 +106,8 @@ public class ShellCommands {
       display.getDisplayState().setCommandMessage(HELP_PAGES[page]);
 
     } catch (NumberFormatException nfx) {
-      display.getDisplayState().setCommandMessage("Input must be an integer. Got %s.".formatted(pageStr));
+      display.getDisplayState()
+          .setCommandMessage("Input must be an integer. Got %s.".formatted(pageStr));
     } catch (IndexOutOfBoundsException ibx) {
       display.getDisplayState().setCommandMessage(
           "%s not in range [0,%d], try 'help 0'".formatted(pageStr, HELP_PAGES.length - 1));
@@ -161,7 +162,8 @@ public class ShellCommands {
   }
 
   @ShellMethod
-  public void set(final @ShellOption(defaultValue = "NO_ADDRESS") String address, final @ShellOption(defaultValue = "0") String value) {
+  public void set(final @ShellOption(defaultValue = "NO_ADDRESS") String address,
+      final @ShellOption(defaultValue = "0") String value) {
     if (address.equals("NO_ADDRESS")) {
       help("5");
       return;

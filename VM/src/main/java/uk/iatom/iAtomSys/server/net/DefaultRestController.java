@@ -42,7 +42,8 @@ public class DefaultRestController {
     String[] imageFileNames = imagesDirectory.list((file, name) -> name.endsWith(".img"));
     List<String> imageNames = new ArrayList<>();
     if (imageFileNames != null) {
-      imageNames = Arrays.stream(imageFileNames).map((name) -> name.substring(0, name.length() - 5)).toList();
+      imageNames = Arrays.stream(imageFileNames).map((name) -> name.substring(0, name.length() - 5))
+          .toList();
     }
 
     // Prepare memory region
@@ -71,8 +72,10 @@ public class DefaultRestController {
     );
 
     // Get port addresses, in order of port ID
-    List<Short> orderedPortAddresses = Arrays.stream(vm.getPorts()).map(IOPort::getAddress).toList();
+    List<Short> orderedPortAddresses = Arrays.stream(vm.getPorts()).map(IOPort::getAddress)
+        .toList();
 
-    return new VMStateResponsePacket(imageNames, clampedStartAddress, memory, registers, orderedPortAddresses);
+    return new VMStateResponsePacket(imageNames, clampedStartAddress, memory, registers,
+        orderedPortAddresses);
   }
 }
