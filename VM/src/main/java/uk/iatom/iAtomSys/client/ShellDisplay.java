@@ -468,13 +468,22 @@ public class ShellDisplay {
     // If no disassembly state, draw a help message
     //
     else {
-      String[] lines = new String[] {
-          "No memory state loaded.",
-          "To load a memory state: load <image_name>"
-      };
+      List<String> availableImages = displayState.getAvailableImages();
 
-      for (int i = 0; i < lines.length; i++) {
-        String line = lines[i];
+      List<String> lines = new ArrayList<>();
+      lines.add("No memory state loaded.");
+      lines.add("To load a memory state: load <image_name>");
+      lines.add("");
+
+      if (availableImages == null) {
+        lines.add("No memory images in ./images/");
+      } else {
+        lines.add("Available images:");
+        lines.addAll(availableImages);
+      }
+
+      for (int i = 0; i < lines.size(); i++) {
+        String line = lines.get(i);
         contents.append(ANSICodes.moveTo(MEMORY_RUNDATA_RECT.get().getLocation()));
         contents.append(ANSICodes.moveDown(3 + i));
         contents.append(ANSICodes.moveRight(bounds.width / 2 - line.length() / 2));
