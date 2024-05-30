@@ -459,8 +459,15 @@ public class ShellDisplay {
       }
 
       // String the columns together
-      for (StringBuilder column: columnBuilders) {
-        contents.append(column);
+      if (columnBuilders.length > 0) {
+        for (StringBuilder column : columnBuilders) {
+          contents.append(column);
+        }
+      } else {
+        contents.append("Help!").append(ANSICodes.moveDown(2)).append(ANSICodes.moveLeft(5));
+        contents.append("You're").append(ANSICodes.moveDown(1)).append(ANSICodes.moveLeft(6));
+        contents.append("squishing").append(ANSICodes.moveDown(1)).append(ANSICodes.moveLeft(9));
+        contents.append("me!").append(ANSICodes.moveDown(1)).append(ANSICodes.moveLeft(9));
       }
 
     }
