@@ -1,8 +1,10 @@
 package uk.iatom.iAtomSys.common.api;
 
-public interface VMClient {
+public interface VmClient {
 
-  VMStateResponsePacket getState(VMStateRequestPacket packet);
+  VmStatus getStatus();
+
+  MemoryResponsePacket getMemory(MemoryRequestPacket packet);
 
   String step(StepRequestPacket packet);
 

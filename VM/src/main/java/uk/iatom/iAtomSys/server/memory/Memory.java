@@ -16,7 +16,7 @@ public class Memory {
     // Can't return anything if addressBytes out of bounds
     if (unsignedAddress >= getSize()) {
       throw new IndexOutOfBoundsException(
-          "The given address %d is outside the memory space %d".formatted(unsignedAddress,
+          "The given address %d is outside the memorySlice space %d".formatted(unsignedAddress,
               Short.toUnsignedInt(Short.MAX_VALUE)));
     }
 
@@ -34,7 +34,7 @@ public class Memory {
     // endAddress >= startAddress, so only need to check end
     if (u32_endAddress >= getSize()) {
       throw new IndexOutOfBoundsException(
-          "Some or all of the write region [%d,%d] lies outside the memory space %d".formatted(
+          "Some or all of the write region [%d,%d] lies outside the memorySlice space %d".formatted(
               u32_startAddress, u32_endAddress, Short.toUnsignedInt(Short.MAX_VALUE)));
     }
 
@@ -52,7 +52,7 @@ public class Memory {
     // endAddress >= startAddress, so only need to check end
     if (u32_endAddress >= getSize()) {
       throw new IndexOutOfBoundsException(
-          "Some or all of the write region [%d,%d] lies outside the memory space %d".formatted(
+          "Some or all of the write region [%d,%d] lies outside the memorySlice space %d".formatted(
               u32_startAddress, u32_endAddress, Short.toUnsignedInt(Short.MAX_VALUE)));
     }
 

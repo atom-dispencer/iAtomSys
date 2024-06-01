@@ -19,16 +19,21 @@ import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import uk.iatom.iAtomSys.IAtomSysApplication;
 import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
+import uk.iatom.iAtomSys.common.api.VmClient;
 
 public class ShellDisplay {
 
+  private final Logger logger = LoggerFactory.getLogger(ShellDisplay.class);
+
+  @Getter
+  @Autowired
+  private ShellDisplayState displayState;
+
   public static final int COMMAND_MAX_WIDTH = 64;
 
-  private final Logger logger = LoggerFactory.getLogger(ShellDisplay.class);
-  @Getter
-  private final ShellDisplayState displayState = new ShellDisplayState();
   int COMMAND_TRAY_HEIGHT = 4;
   private PrintStream sysOutCache = System.out;
   private boolean alive;
@@ -197,6 +202,7 @@ public class ShellDisplay {
     }
   }
 
+
   private void print(@NotNull final String... messages) {
     enableSysOut();
     String joined = String.join("", messages);
@@ -360,7 +366,7 @@ public class ShellDisplay {
   }
 
   /**
-   * Draw the memory state of the running VM, including breakpoints and the current PCR position.
+   * Draw the memorySlice state of the running VM, including breakpoints and the current PCR position.
    */
   public void drawMemoryState() {
     Rectangle bounds = MEMORY_RUNDATA_RECT.get();
@@ -487,12 +493,12 @@ public class ShellDisplay {
       List<String> availableImages = displayState.getAvailableImages();
 
       List<String> lines = new ArrayList<>();
-      lines.add("No memory state loaded.");
-      lines.add("To load a memory state: load <image_name>");
+      lines.add("No memorySlice state loaded.");
+      lines.add("To load a memorySlice state: load <image_name>");
       lines.add("");
 
       if (availableImages == null) {
-        lines.add("No memory images in ./images/");
+        lines.add("No memorySlice images in ./images/");
       } else {
         lines.add("Available images:");
         lines.addAll(availableImages);
@@ -515,7 +521,7 @@ public class ShellDisplay {
         ANSICodes.moveRight(titleStart), //
         title, //
 
-        // Boxes/memory addresses/whatever
+        // Boxes/memorySlice addresses/whatever
         ANSICodes.moveTo(bounds.getLocation()), //
         ANSICodes.moveRight(3), //
         ANSICodes.moveDown(2), //
@@ -547,7 +553,7 @@ public class ShellDisplay {
         ANSICodes.moveRight(titleStart), //
         title, //
 
-        // Boxes/memory addresses/whatever
+        // Boxes/memorySlice addresses/whatever
         ANSICodes.moveTo(bounds.getLocation()), //
         ANSICodes.moveRight(3), //
         ANSICodes.moveDown(2), //

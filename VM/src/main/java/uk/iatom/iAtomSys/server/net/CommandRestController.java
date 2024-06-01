@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,6 +35,11 @@ public class CommandRestController {
 
   @Autowired
   private IAtomSysVM vm;
+
+  @GetMapping("/hello")
+  public String hello() {
+    return "World";
+  }
 
   @PostMapping("/step")
   public String step(@RequestBody StepRequestPacket requestPacket) {
@@ -60,16 +66,16 @@ public class CommandRestController {
     File cleanFile = new File(cleanName);
 
     logger.info(
-        "Attempting to load memory image '%s' (%s)".formatted(cleanFile, dirtyFile));
+        "Attempting to load memorySlice image '%s' (%s)".formatted(cleanFile, dirtyFile));
 
     try (FileInputStream stream = new FileInputStream(cleanFile)) {
       int memorySize = vm.getMemory().getSize();
 
       long fileLength = cleanFile.length();
       if (fileLength > memorySize) {
-        logger.error("File length %d > memory size %d".formatted(fileLength, memorySize));
+        logger.error("File length %d > memorySlice size %d".formatted(fileLength, memorySize));
         response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
-        return "Requested file larger than VM memory.";
+        return "Requested file larger than VM memorySlice.";
       }
 
       byte[] byteArr = stream.readAllBytes();
@@ -86,9 +92,9 @@ public class CommandRestController {
       shortBuffer.get(buffer);
 
       if (buffer.length > memorySize) {
-        logger.error("New buffer size %d > memory size %d".formatted(fileLength, memorySize));
+        logger.error("New buffer size %d > memorySlice size %d".formatted(fileLength, memorySize));
         response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
-        return "Requested file would overflow VM memory.";
+        return "Requested file would overflow VM memorySlice.";
       } else if (buffer.length < memorySize) {
         logger.info("Inflating image from %d to %d bytes".formatted(buffer.length, memorySize));
         buffer = Arrays.copyOf(buffer, memorySize);
@@ -102,7 +108,7 @@ public class CommandRestController {
       return "Cannot access file '%s'".formatted(cleanName);
     }
 
-    logger.info("Finished loading new memory image!");
+    logger.info("Finished loading new memorySlice image!");
 
     response.setStatus(HttpStatus.OK.value());
     return "Loaded %s".formatted(cleanFile);
