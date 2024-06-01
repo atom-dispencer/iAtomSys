@@ -13,40 +13,59 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
-import uk.iatom.iAtomSys.common.api.VMStateRequestPacket;
-import uk.iatom.iAtomSys.common.api.VMStateResponsePacket;
+import uk.iatom.iAtomSys.common.api.MemoryRequestPacket;
+import uk.iatom.iAtomSys.common.api.MemoryResponsePacket;
 import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.common.register.RegisterSet;
 import uk.iatom.iAtomSys.server.IAtomSysVM;
 import uk.iatom.iAtomSys.server.device.IOPort;
 
 @RestController
-@RequestMapping("")
-public class DefaultRestController {
+@RequestMapping("/state")
+public class StateRestController {
 
-  private final Logger logger = LoggerFactory.getLogger(DefaultRestController.class);
+  private final Logger logger = LoggerFactory.getLogger(StateRestController.class);
 
   @Autowired
   private IAtomSysVM vm;
 
-  @GetMapping("/hello")
-  public String hello() {
-    return "World";
-  }
+  @GetMapping("/images")
+  public List<String> images() {
 
-  @PostMapping("/state")
-  public VMStateResponsePacket state(@RequestBody VMStateRequestPacket packet) {
-
-    // Collect the names of available memory images
     File imagesDirectory = new File("images/");
     String[] imageFileNames = imagesDirectory.list((file, name) -> name.endsWith(".img"));
-    List<String> imageNames = new ArrayList<>();
-    if (imageFileNames != null) {
-      imageNames = Arrays.stream(imageFileNames).map((name) -> name.substring(0, name.length() - 5))
-          .toList();
+
+    if (imageFileNames == null) {
+      return new ArrayList<>();
     }
 
-    // Prepare memory region
+    return Arrays.stream(imageFileNames).map((name) -> name.substring(0, name.length() - 5)).toList();
+  }
+
+  @GetMapping("/registers")
+  public List<RegisterPacket> registers() {
+
+    RegisterSet regs = vm.getRegisterSet();
+    return List.of( //
+        Register.PCR(regs).toPacket(),
+        Register.FLG(regs).toPacket(),
+        Register.ACC(regs).toPacket(),
+        Register.IDK(regs).toPacket(),
+        Register.TBH(regs).toPacket(),
+        Register.LOL(regs).toPacket()
+    );
+  }
+
+  @GetMapping("/ports")
+  public List<Short> ports() {
+    // Get port addresses, in order of port ID
+    return Arrays.stream(vm.getPorts()).map(IOPort::getAddress).toList();
+  }
+
+  @PostMapping("/memory")
+  public MemoryResponsePacket memory(@RequestBody MemoryRequestPacket packet) {
+
+    // Prepare memorySlice region
     short pcr = Register.PCR(vm.getRegisterSet()).get();
     int width = Math.max(0, packet.sliceWidth());
 
@@ -60,22 +79,6 @@ public class DefaultRestController {
     short[] memory = new short[clampedWidth];
     vm.getMemory().readRange(clampedStartAddress, memory);
 
-    // Prepare registers
-    RegisterSet regs = vm.getRegisterSet();
-    List<RegisterPacket> registers = List.of( //
-        Register.PCR(regs).toPacket(),
-        Register.FLG(regs).toPacket(),
-        Register.ACC(regs).toPacket(),
-        Register.IDK(regs).toPacket(),
-        Register.TBH(regs).toPacket(),
-        Register.LOL(regs).toPacket()
-    );
-
-    // Get port addresses, in order of port ID
-    List<Short> orderedPortAddresses = Arrays.stream(vm.getPorts()).map(IOPort::getAddress)
-        .toList();
-
-    return new VMStateResponsePacket(imageNames, clampedStartAddress, memory, registers,
-        orderedPortAddresses);
+    return new MemoryResponsePacket(clampedStartAddress, memory);
   }
 }

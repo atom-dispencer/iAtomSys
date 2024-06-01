@@ -9,6 +9,9 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.shell.style.Theme;
 import org.springframework.shell.style.ThemeSettings;
 import uk.iatom.iAtomSys.client.ShellDisplay;
+import uk.iatom.iAtomSys.client.ShellDisplayState;
+import uk.iatom.iAtomSys.client.disassembly.MemoryDisassembler;
+import uk.iatom.iAtomSys.common.api.VmClient;
 
 @Configuration
 public class ShellBeans {
@@ -21,6 +24,11 @@ public class ShellBeans {
     return new ShellDisplay();
   }
 
+  @Bean
+  @Scope(BeanDefinition.SCOPE_PROTOTYPE)
+  public ShellDisplayState shellDisplayStateFactory(VmClient api, MemoryDisassembler memoryDisassembler) {
+    return new ShellDisplayState();
+  }
 
   @Bean(name = "shellTheme")
   public Theme shellTheme() {

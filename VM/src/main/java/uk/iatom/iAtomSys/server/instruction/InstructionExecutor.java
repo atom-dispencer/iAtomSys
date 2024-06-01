@@ -254,7 +254,7 @@ public interface InstructionExecutor {
    *
    * @param vm    The {@link IAtomSysVM} requesting the execution of the associated
    *              {@link Instruction}.
-   * @param flags The flag-byte for this {@link Instruction}, from the VM's memory.
+   * @param flags The flag-byte for this {@link Instruction}, from the VM's memorySlice.
    * @throws InstructionExecutionException In case of <i>anticipated</i> errors.
    */
   void exec(IAtomSysVM vm, byte flags) throws InstructionExecutionException;

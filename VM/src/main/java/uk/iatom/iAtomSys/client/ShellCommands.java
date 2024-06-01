@@ -2,7 +2,6 @@ package uk.iatom.iAtomSys.client;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,13 +14,10 @@ import org.springframework.shell.standard.ShellOption;
 import org.springframework.stereotype.Component;
 import uk.iatom.iAtomSys.client.configuration.ApiClientConfiguration;
 import uk.iatom.iAtomSys.client.disassembly.MemoryDisassembler;
-import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
-import uk.iatom.iAtomSys.common.api.VMClient;
-import uk.iatom.iAtomSys.common.api.VMStateRequestPacket;
-import uk.iatom.iAtomSys.common.api.VMStateResponsePacket;
+import uk.iatom.iAtomSys.common.api.VmClient;
 
 
 @ShellComponent
@@ -33,12 +29,12 @@ public class ShellCommands {
       "[1] 'exit': Terminate the application.", //
       "[2] 'hello': Say hi!", //
       "[3] 'step <count>': Execute the next <count> instructions.", //
-      "[4] 'load <image_name[.img]>': Load the given memory image.", //
+      "[4] 'load <image_name[.img]>': Load the given memorySlice image.", //
       "[5] 'set <address> <value>': Set the value at the address." //
   };
-  private final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
+
   @Autowired
-  private VMClient api;
+  private VmClient api;
   @Autowired
   private ApplicationContext applicationContext;
   @Autowired
@@ -58,37 +54,6 @@ public class ShellCommands {
     display.deactivate();
   }
 
-  private void updateDisplayVMState() {
-
-    // TODO (Solved?) Dynamic pcrOffset and sliceWidth
-    VMStateResponsePacket vmStateResponsePacket = api.getState(new VMStateRequestPacket(
-        apiClientConfiguration.getVmStateRequestPcrOffset(),
-        apiClientConfiguration.getVmStateRequestSliceWidth()
-    ));
-
-    if (vmStateResponsePacket == null) {
-      logger.error("Cannot update display VM state: received null.");
-      return;
-    }
-
-    // TODO Need to handle running/not-running states as each state will display different info!
-    // TODO What if state packet values are null?
-
-    display.getDisplayState().setAvailableImages(vmStateResponsePacket.availableImages());
-
-    display.getDisplayState()
-        .setMemorySliceStartAddress(vmStateResponsePacket.memoryStartAddress());
-    short[] memory = vmStateResponsePacket.memory();
-    List<String[]> disassembly = memoryDisassembler.disassemble(memory);
-    display.getDisplayState().setMemory(memory);
-    display.getDisplayState().setDisassembly(disassembly);
-
-    List<RegisterPacket> registers = vmStateResponsePacket.registers();
-    display.getDisplayState().setRegisters(registers);
-
-    List<Short> orderedPortAddresses = vmStateResponsePacket.orderedPortAddresses();
-    display.getDisplayState().setPortAddresses(orderedPortAddresses);
-  }
 
   @ShellMethod()
   public String exit() {
@@ -135,7 +100,7 @@ public class ShellCommands {
       return;
     }
 
-    updateDisplayVMState();
+    display.getDisplayState().update();
     display.draw();
   }
 
@@ -152,7 +117,7 @@ public class ShellCommands {
       return;
     }
 
-    updateDisplayVMState();
+    display.getDisplayState().update();
     display.draw();
   }
 
@@ -178,7 +143,7 @@ public class ShellCommands {
       return;
     }
 
-    updateDisplayVMState();
+    display.getDisplayState().update();
     display.draw();
   }
 }

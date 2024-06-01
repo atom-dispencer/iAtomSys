@@ -13,12 +13,13 @@ import org.springframework.web.util.UriComponentsBuilder;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
-import uk.iatom.iAtomSys.common.api.VMClient;
-import uk.iatom.iAtomSys.common.api.VMStateRequestPacket;
-import uk.iatom.iAtomSys.common.api.VMStateResponsePacket;
+import uk.iatom.iAtomSys.common.api.VmClient;
+import uk.iatom.iAtomSys.common.api.MemoryRequestPacket;
+import uk.iatom.iAtomSys.common.api.MemoryResponsePacket;
+import uk.iatom.iAtomSys.common.api.VmStatus;
 
 @Component
-public class RemoteVMClient implements VMClient {
+public class RemoteVMClient implements VmClient {
 
   private static final Logger logger = LoggerFactory.getLogger(RemoteVMClient.class);
 
@@ -30,12 +31,27 @@ public class RemoteVMClient implements VMClient {
 
   @Override
   @Nullable
-  public VMStateResponsePacket getState(VMStateRequestPacket packet) {
-    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("state").build().toUri();
+  public VmStatus getStatus() {
+    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("state/status").build().toUri();
 
     try {
       RestTemplate restTemplate = new RestTemplate();
-      return restTemplate.postForEntity(uri, packet, VMStateResponsePacket.class).getBody();
+      return restTemplate.getForObject(uri, VmStatus.class);
+
+    } catch (RestClientException rce) {
+      logger.error("Error fetching remote VM status from %s".formatted(uri), rce);
+      return null;
+    }
+  }
+
+  @Override
+  @Nullable
+  public MemoryResponsePacket getMemory(MemoryRequestPacket packet) {
+    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("state/memory").build().toUri();
+
+    try {
+      RestTemplate restTemplate = new RestTemplate();
+      return restTemplate.postForEntity(uri, packet, MemoryResponsePacket.class).getBody();
 
     } catch (RestClientException rce) {
       logger.error("Error fetching remote VM state from %s".formatted(uri), rce);

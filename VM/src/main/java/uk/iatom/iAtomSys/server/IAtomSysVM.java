@@ -67,7 +67,7 @@ public class IAtomSysVM {
   private void executeInstruction(short int16Instruction) {
 
     // Check the MA flag (the least significant bit)
-    // If treat as a memory load command
+    // If treat as a memorySlice load command
     if (int16Instruction % 2 == 1) {
       Register.IDK(registerSet).set(int16Instruction);
       return;
