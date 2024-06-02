@@ -3,7 +3,6 @@ package uk.iatom.iAtomSys.client;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.LogManager;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.slf4j.Logger;
@@ -11,9 +10,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.iatom.iAtomSys.client.configuration.ApiClientConfiguration;
 import uk.iatom.iAtomSys.client.disassembly.MemoryDisassembler;
-import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
+import uk.iatom.iAtomSys.common.api.RegisterPacket;
+import uk.iatom.iAtomSys.common.api.DebugSymbols;
 import uk.iatom.iAtomSys.common.api.MemoryRequestPacket;
 import uk.iatom.iAtomSys.common.api.MemoryResponsePacket;
+import uk.iatom.iAtomSys.common.api.PortPacket;
 import uk.iatom.iAtomSys.common.api.VmClient;
 import uk.iatom.iAtomSys.common.api.VmStatus;
 
@@ -40,10 +41,15 @@ public class ShellDisplayState {
   private short memorySliceStartAddress;
   private short[] memory;
   private List<String[]> disassembly;
+  private DebugSymbols debugSymbols;
   private List<RegisterPacket> registers;
-  private List<Short> portAddresses;
+  private List<PortPacket> portAddresses;
 
 
+  /**
+   * Use {@link DebugSymbols#getReservedAddresses()} instead.
+   */
+  @Deprecated
   public Map<Integer, String> getReservedAddresses() {
     Map<Integer, String> reservedAddresses = new HashMap<>();
 
