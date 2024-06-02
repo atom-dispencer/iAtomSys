@@ -3,7 +3,9 @@ package uk.iatom.iAtomSys.server.net;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,10 +86,26 @@ public class StateRestController {
     return new MemoryResponsePacket(clampedStartAddress, memory);
   }
 
-  @GetMapping("/debugsymbols")
+  @GetMapping("/debug_symbols")
   public DebugSymbols debugSymbols(@RequestBody DebugSymbolsRequestPacket packet) {
+
+    Map<Integer, String> reservedAddresses = new HashMap<>();
+
+    if (getRegisters() != null) {
+      for (RegisterPacket registerPacket : getRegisters()) {
+        reservedAddresses.put((int) registerPacket.address(), registerPacket.name());
+      }
+    }
+
+    if (getPortAddresses() != null) {
+      for (int portNum = 0; portNum < getPortAddresses().size(); portNum++) {
+        Short portAddress = getPortAddresses().get(portNum);
+        reservedAddresses.put(portAddress.intValue(), "IO" + portNum);
+      }
+    }
+
     // TODO StateRestController needs to generate/fetch correct DebugSymbols (from JSON? from file?)
-    DebugSymbols currentDebugSymbols = null;
+    DebugSymbols currentDebugSymbols = vm.getDebugSymbols();
     return currentDebugSymbols.takeRelevant(packet.startAddress(), packet.endAddress());
   }
 }
