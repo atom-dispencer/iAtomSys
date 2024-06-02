@@ -43,7 +43,7 @@ public class ShellDisplayState {
   private List<String[]> disassembly;
   private DebugSymbols debugSymbols;
   private List<RegisterPacket> registers;
-  private List<PortPacket> portAddresses;
+  private List<PortPacket> ports;
 
 
   /**
@@ -59,9 +59,9 @@ public class ShellDisplayState {
       }
     }
 
-    if (getPortAddresses() != null) {
-      for (int portNum = 0; portNum < getPortAddresses().size(); portNum++) {
-        Short portAddress = getPortAddresses().get(portNum);
+    if (getPorts() != null) {
+      for (int portNum = 0; portNum < getPorts().size(); portNum++) {
+        Short portAddress = getPorts().get(portNum);
         reservedAddresses.put(portAddress.intValue(), "IO" + portNum);
       }
     }
@@ -87,12 +87,14 @@ public class ShellDisplayState {
     }
   }
 
+  /**
+   * Update the VM in its {@link VmStatus#PAUSED} state.
+   * Fetches the current memory state, register and ports, as well as relevant debug symbols.
+   */
   private void updatePaused() {
     if (status != VmStatus.PAUSED) {
       throw new IllegalStateException("Cannot update display state assuming PAUSED status if state is actually " + status);
     }
-    // Show debug info like debug symbols, register values, memory disassembly
-    // TODO If the VM is reaches the end of memory, it stops, but does that set a PAUSE or STOP state?
 
     // TODO (Solved?) Dynamic pcrOffset and sliceWidth
     // Update memory slice and disassembly
@@ -113,14 +115,18 @@ public class ShellDisplayState {
     setDisassembly(disassembly);
 
     // Update register values
-    // TODO Register addresses for display should come from debug symbols, not register packets.
-    List<RegisterPacket> registers = ;
+    List<RegisterPacket> registers = api.getRegisters();
+    if (registers == null) {
+      logger.error("Registers are null. Continuing with incomplete data.");
+    }
     setRegisters(registers);
 
     // Update the values of ports
-    // TODO Should ports be only part of debug symbols?
-    List<Short> orderedPortAddresses = ;
-    setPortAddresses(orderedPortAddresses);
+    List<PortPacket> ports = api.getPorts();
+    if (ports == null) {
+      logger.error("Ports are null. Continuing with incomplete data.");
+    }
+    setPorts(ports);
   }
 
   private void updateRunning() {

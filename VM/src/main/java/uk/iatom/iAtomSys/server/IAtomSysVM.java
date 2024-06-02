@@ -1,12 +1,17 @@
 package uk.iatom.iAtomSys.server;
 
+import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import uk.iatom.iAtomSys.common.api.DebugSymbols;
+import uk.iatom.iAtomSys.common.api.VmClient;
+import uk.iatom.iAtomSys.common.api.VmStatus;
 import uk.iatom.iAtomSys.common.instruction.Instruction;
 import uk.iatom.iAtomSys.common.instruction.InstructionSet;
 import uk.iatom.iAtomSys.common.register.Register;
@@ -24,6 +29,7 @@ public class IAtomSysVM {
 
   private final Logger logger = LoggerFactory.getLogger(IAtomSysVM.class);
 
+  private VmStatus status = VmStatus.STOPPED;
 
   @Autowired
   private Memory memory;
@@ -43,6 +49,9 @@ public class IAtomSysVM {
   @Autowired
   private IOPort[] ports;
 
+  @Setter
+  private DebugSymbols debugSymbols;
+
   public void processNextCycle() {
     Register PCR = Register.PCR(registerSet);
     short pc = PCR.get();
@@ -54,10 +63,12 @@ public class IAtomSysVM {
       port.updateFlag();
     }
 
+    // TODO Suspicious stopping logic. Will this keep executing the final instruction forever?
     // Try to increment the program counter
     int newPc = pc + 1;
     if (newPc >= Short.toUnsignedInt(Short.MAX_VALUE)) {
       logger.info("PC is at max value %d".formatted(newPc));
+      status = VmStatus.PAUSED;
       return;
     }
 
