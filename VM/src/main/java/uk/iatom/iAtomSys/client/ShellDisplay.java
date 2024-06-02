@@ -21,8 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.iatom.iAtomSys.IAtomSysApplication;
-import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
-import uk.iatom.iAtomSys.common.api.VmClient;
+import uk.iatom.iAtomSys.common.api.RegisterPacket;
 
 public class ShellDisplay {
 
@@ -268,14 +267,18 @@ public class ShellDisplay {
     long start = System.nanoTime();
 
     drawBackground();
-
-    // TODO Display values in ports (near registers/flags?)
-    if (displayState.isRunning()) {
-      drawRunningData();
-    } else {
-      drawMemoryState();
-      drawRegisters();
-      drawFlags();
+    switch (displayState.getStatus()) {
+      case STOPPED:
+        break;
+      case PAUSED:
+        drawMemoryState();
+        drawRegisters();
+        drawFlags();
+        // TODO Display values in ports (near registers/flags?)
+        break;
+      case RUNNING:
+        drawRunningData();
+        break;
     }
     drawCredits();
     drawCommandInput();
@@ -414,7 +417,7 @@ public class ShellDisplay {
 
       List<String> formattedLines = new ArrayList<>();
 
-      Map<Integer, String> reservedAddresses = displayState.getReservedAddresses();
+      Map<Integer, String> reservedAddresses = displayState.getDebugSymbols().getReservedAddresses();
 
       // Format each instruction line
       for (int i = 0; i < displayState.getDisassembly().size(); i++) {

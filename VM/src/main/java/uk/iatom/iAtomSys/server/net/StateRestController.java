@@ -12,7 +12,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
+import uk.iatom.iAtomSys.common.api.DebugSymbols;
+import uk.iatom.iAtomSys.common.api.DebugSymbolsRequestPacket;
+import uk.iatom.iAtomSys.common.api.RegisterPacket;
 import uk.iatom.iAtomSys.common.api.MemoryRequestPacket;
 import uk.iatom.iAtomSys.common.api.MemoryResponsePacket;
 import uk.iatom.iAtomSys.common.register.Register;
@@ -80,5 +82,12 @@ public class StateRestController {
     vm.getMemory().readRange(clampedStartAddress, memory);
 
     return new MemoryResponsePacket(clampedStartAddress, memory);
+  }
+
+  @GetMapping("/debugsymbols")
+  public DebugSymbols debugSymbols(@RequestBody DebugSymbolsRequestPacket packet) {
+    // TODO StateRestController needs to generate/fetch correct DebugSymbols (from JSON? from file?)
+    DebugSymbols currentDebugSymbols = null;
+    return currentDebugSymbols.takeRelevant(packet.startAddress(), packet.endAddress());
   }
 }
