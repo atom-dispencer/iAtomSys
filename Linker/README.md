@@ -1,3 +1,5 @@
 # iAtomSys Linker
 
-x64 assembly.
+NASM x86-64 Assembly
+WinAPI
+GCC (But no C libraries in sight!)
