@@ -1,7 +1,5 @@
 package uk.iatom.iAtomSys.common.api;
 
-import java.util.List;
-
 public interface VmClient {
 
   // Queries
@@ -9,9 +7,9 @@ public interface VmClient {
 
   MemoryResponsePacket getMemory(MemoryRequestPacket packet);
 
-  List<RegisterPacket> getRegisters();
+  RegisterPacket[] getRegisters();
 
-  List<PortPacket> getPorts();
+  PortPacket[] getPorts();
 
   // Commands
   String step(StepRequestPacket packet);

@@ -4,14 +4,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,11 +17,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import uk.iatom.iAtomSys.common.api.DebugSymbols;
 import uk.iatom.iAtomSys.common.api.DebugSymbolsRequestPacket;
-import uk.iatom.iAtomSys.common.api.GetPortResponsePacket;
-import uk.iatom.iAtomSys.common.api.PostPortRequestPacket;
-import uk.iatom.iAtomSys.common.api.RegisterPacket;
 import uk.iatom.iAtomSys.common.api.MemoryRequestPacket;
 import uk.iatom.iAtomSys.common.api.MemoryResponsePacket;
+import uk.iatom.iAtomSys.common.api.PortOutputResponsePacket;
+import uk.iatom.iAtomSys.common.api.PortPacket;
+import uk.iatom.iAtomSys.common.api.PortWriteRequestPacket;
+import uk.iatom.iAtomSys.common.api.RegisterPacket;
 import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.common.register.RegisterSet;
 import uk.iatom.iAtomSys.server.IAtomSysVM;
@@ -49,21 +47,22 @@ public class StateRestController {
       return new ArrayList<>();
     }
 
-    return Arrays.stream(imageFileNames).map((name) -> name.substring(0, name.length() - 5)).toList();
+    return Arrays.stream(imageFileNames).map((name) -> name.substring(0, name.length() - 5))
+        .toList();
   }
 
   @GetMapping("/registers")
-  public List<RegisterPacket> registers() {
+  public RegisterPacket[] registers() {
 
     RegisterSet regs = vm.getRegisterSet();
-    return List.of( //
+    return new RegisterPacket[]{
         Register.PCR(regs).toPacket(),
         Register.FLG(regs).toPacket(),
         Register.ACC(regs).toPacket(),
         Register.IDK(regs).toPacket(),
         Register.TBH(regs).toPacket(),
         Register.LOL(regs).toPacket()
-    );
+    };
   }
 
   @PostMapping("/memory")
@@ -93,12 +92,17 @@ public class StateRestController {
     return currentDebugSymbols.takeRelevant(packet.startAddress(), packet.endAddress());
   }
 
-  /**
-   * Get port addresses, in order of port ID.
-   */
-  @GetMapping("/ports/addresses")
-  public List<Short> ports() {
-    return Arrays.stream(vm.getPorts()).map(IOPort::getAddress).toList();
+  @GetMapping("/ports")
+  public PortPacket[] ports() {
+    IOPort[] ports = vm.getPorts();
+    PortPacket[] destination = new PortPacket[ports.length];
+
+    for (int i = 0; i < ports.length; i++) {
+      IOPort p = ports[i];
+      destination[i] = new PortPacket(i, p.getAddress(), p.peek(), p.getFlag());
+    }
+
+    return destination;
   }
 
   /**
@@ -107,14 +111,14 @@ public class StateRestController {
    * @param id The numeric ID of the {@link IOPort} to read from.
    */
   @GetMapping("/ports/{id}/output")
-  public GetPortResponsePacket getPort(@PathVariable("id") int id) {
+  public PortOutputResponsePacket getPort(@PathVariable("id") int id) {
     IOPort[] ports = vm.getPorts();
     if (id < 0 || id >= ports.length) {
       return null;
     }
     IOPort port = vm.getPorts()[id];
 
-    return new GetPortResponsePacket(port.readUnreadOutput());
+    return new PortOutputResponsePacket(port.readUnreadOutput());
   }
 
   /**
@@ -123,7 +127,8 @@ public class StateRestController {
    * @param id The numeric ID of the {@link IOPort} to write to.
    */
   @PostMapping("/ports/{id}/input")
-  public void postPort(@RequestBody PostPortRequestPacket packet, @PathVariable("id") int id, HttpServletResponse response) {
+  public void postPort(@RequestBody PortWriteRequestPacket packet, @PathVariable("id") int id,
+      HttpServletResponse response) {
     IOPort[] ports = vm.getPorts();
     if (id < 0 || id >= ports.length) {
       response.setStatus(HttpStatus.NOT_FOUND.value());

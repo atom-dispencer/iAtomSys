@@ -25,15 +25,12 @@ import uk.iatom.iAtomSys.common.api.RegisterPacket;
 
 public class ShellDisplay {
 
+  public static final int COMMAND_MAX_WIDTH = 64;
   private final Logger logger = LoggerFactory.getLogger(ShellDisplay.class);
-
+  int COMMAND_TRAY_HEIGHT = 4;
   @Getter
   @Autowired
   private ShellDisplayState displayState;
-
-  public static final int COMMAND_MAX_WIDTH = 64;
-
-  int COMMAND_TRAY_HEIGHT = 4;
   private PrintStream sysOutCache = System.out;
   private boolean alive;
   private Terminal terminal;
@@ -369,7 +366,8 @@ public class ShellDisplay {
   }
 
   /**
-   * Draw the memorySlice state of the running VM, including breakpoints and the current PCR position.
+   * Draw the memorySlice state of the running VM, including breakpoints and the current PCR
+   * position.
    */
   public void drawMemoryState() {
     Rectangle bounds = MEMORY_RUNDATA_RECT.get();
@@ -417,7 +415,7 @@ public class ShellDisplay {
 
       List<String> formattedLines = new ArrayList<>();
 
-      Map<Integer, String> reservedAddresses = displayState.getDebugSymbols().getReservedAddresses();
+      Map<Integer, String> reservedAddresses = displayState.getNamedAddresses();
 
       // Format each instruction line
       for (int i = 0; i < displayState.getDisassembly().size(); i++) {
@@ -591,7 +589,7 @@ public class ShellDisplay {
       String format = "%3d  %-3s  %04X    %04X";
 
       // Get the list of registers and sort it by ID, ascending
-      List<RegisterPacket> packets = displayState.getRegisters();
+      List<RegisterPacket> packets = List.of(displayState.getRegisters());
       packets.sort(Comparator.comparing(RegisterPacket::id));
 
       for (int i = 0; i < packets.size(); i++) {

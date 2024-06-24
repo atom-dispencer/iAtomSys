@@ -10,11 +10,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import uk.iatom.iAtomSys.client.configuration.ApiClientConfiguration;
 import uk.iatom.iAtomSys.client.disassembly.MemoryDisassembler;
-import uk.iatom.iAtomSys.common.api.RegisterPacket;
 import uk.iatom.iAtomSys.common.api.DebugSymbols;
 import uk.iatom.iAtomSys.common.api.MemoryRequestPacket;
 import uk.iatom.iAtomSys.common.api.MemoryResponsePacket;
 import uk.iatom.iAtomSys.common.api.PortPacket;
+import uk.iatom.iAtomSys.common.api.RegisterPacket;
 import uk.iatom.iAtomSys.common.api.VmClient;
 import uk.iatom.iAtomSys.common.api.VmStatus;
 
@@ -42,32 +42,8 @@ public class ShellDisplayState {
   private short[] memory;
   private List<String[]> disassembly;
   private DebugSymbols debugSymbols;
-  private List<RegisterPacket> registers;
-  private List<PortPacket> ports;
-
-
-  /**
-   * Use {@link DebugSymbols#getReservedAddresses()} instead.
-   */
-  @Deprecated
-  public Map<Integer, String> getReservedAddresses() {
-    Map<Integer, String> reservedAddresses = new HashMap<>();
-
-    if (getRegisters() != null) {
-      for (RegisterPacket registerPacket : getRegisters()) {
-        reservedAddresses.put((int) registerPacket.address(), registerPacket.name());
-      }
-    }
-
-    if (getPorts() != null) {
-      for (int portNum = 0; portNum < getPorts().size(); portNum++) {
-        Short portAddress = getPorts().get(portNum);
-        reservedAddresses.put(portAddress.intValue(), "IO" + portNum);
-      }
-    }
-
-    return reservedAddresses;
-  }
+  private RegisterPacket[] registers;
+  private PortPacket[] ports;
 
   public void update() {
 
@@ -83,17 +59,19 @@ public class ShellDisplayState {
 
   private void updateStopped() {
     if (status != VmStatus.STOPPED) {
-      throw new IllegalStateException("Cannot update display state assuming STOPPED status if state is actually " + status);
+      throw new IllegalStateException(
+          "Cannot update display state assuming STOPPED status if state is actually " + status);
     }
   }
 
   /**
-   * Update the VM in its {@link VmStatus#PAUSED} state.
-   * Fetches the current memory state, register and ports, as well as relevant debug symbols.
+   * Update the VM in its {@link VmStatus#PAUSED} state. Fetches the current memory state, register
+   * and ports, as well as relevant debug symbols.
    */
   private void updatePaused() {
     if (status != VmStatus.PAUSED) {
-      throw new IllegalStateException("Cannot update display state assuming PAUSED status if state is actually " + status);
+      throw new IllegalStateException(
+          "Cannot update display state assuming PAUSED status if state is actually " + status);
     }
 
     // TODO (Solved?) Dynamic pcrOffset and sliceWidth
@@ -115,14 +93,14 @@ public class ShellDisplayState {
     setDisassembly(disassembly);
 
     // Update register values
-    List<RegisterPacket> registers = api.getRegisters();
+    RegisterPacket[] registers = api.getRegisters();
     if (registers == null) {
       logger.error("Registers are null. Continuing with incomplete data.");
     }
     setRegisters(registers);
 
     // Update the values of ports
-    List<PortPacket> ports = api.getPorts();
+    PortPacket[] ports = api.getPorts();
     if (ports == null) {
       logger.error("Ports are null. Continuing with incomplete data.");
     }
@@ -131,8 +109,28 @@ public class ShellDisplayState {
 
   private void updateRunning() {
     if (status != VmStatus.RUNNING) {
-      throw new IllegalStateException("Cannot update display state assuming RUNNING status if state is actually " + status);
+      throw new IllegalStateException(
+          "Cannot update display state assuming RUNNING status if state is actually " + status);
     }
-    // Get uptime and FUN data like that!
+    //TODO Get uptime and FUN data like that!
+  }
+
+  /**
+   * @return A map of all the memory addresses named by the VM, including
+   * {@link uk.iatom.iAtomSys.common.register.Register}s and
+   * {@link uk.iatom.iAtomSys.server.device.IOPort}s.
+   */
+  public Map<Integer, String> getNamedAddresses() {
+    Map<Integer, String> addresses = new HashMap<>();
+
+    for (RegisterPacket packet : registers) {
+      addresses.putIfAbsent((int) packet.address(), packet.name());
+    }
+
+    for (PortPacket packet : ports) {
+      addresses.putIfAbsent((int) packet.address(), Integer.toString(packet.id()));
+    }
+
+    return addresses;
   }
 }
