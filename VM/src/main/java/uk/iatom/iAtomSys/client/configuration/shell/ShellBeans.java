@@ -26,7 +26,8 @@ public class ShellBeans {
 
   @Bean
   @Scope(BeanDefinition.SCOPE_PROTOTYPE)
-  public ShellDisplayState shellDisplayStateFactory(VmClient api, MemoryDisassembler memoryDisassembler) {
+  public ShellDisplayState shellDisplayStateFactory(VmClient api,
+      MemoryDisassembler memoryDisassembler) {
     return new ShellDisplayState();
   }
 

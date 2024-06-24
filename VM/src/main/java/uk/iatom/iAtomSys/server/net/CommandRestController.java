@@ -60,15 +60,13 @@ public class CommandRestController {
   //TODO Test, test, test!!
 
   /**
-   *
-   * Load the image "name.img" to memory.
-   * If present, also load "name.img.json" as debug symbols.
+   * Load the image "name.img" to memory. If present, also load "name.img.json" as debug symbols.
    *
    * @param packet
    * @param response
    * @return
    */
-  @PostMapping("/loadImage")
+  @PostMapping("/load_image")
   public String loadImage(@RequestBody LoadRequestPacket packet, HttpServletResponse response) {
 
     String dirtyImageName =

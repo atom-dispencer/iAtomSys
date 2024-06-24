@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.logging.LogManager;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -46,9 +45,12 @@ public record DebugSymbols(
   }
 
   public DebugSymbols takeRelevant(short startAddress, short endAddress) {
-    Predicate<Entry<Integer, String>> addressFilter = entry -> entry.getKey() >= startAddress && entry.getKey() <= endAddress;
-    Collector<Entry<Integer, String>, ?, Map<Integer, String>> mapCollector = Collectors.toMap(Entry::getKey, Entry::getValue);
-    Function<Map<Integer, String>, Map<Integer, String>> selector = (input) -> input.entrySet().stream().filter(addressFilter).collect(mapCollector);
+    Predicate<Entry<Integer, String>> addressFilter = entry -> entry.getKey() >= startAddress
+        && entry.getKey() <= endAddress;
+    Collector<Entry<Integer, String>, ?, Map<Integer, String>> mapCollector = Collectors.toMap(
+        Entry::getKey, Entry::getValue);
+    Function<Map<Integer, String>, Map<Integer, String>> selector = (input) -> input.entrySet()
+        .stream().filter(addressFilter).collect(mapCollector);
 
     Map<Integer, String> labelsRelevant = selector.apply(labels);
     Map<Integer, String> functionsRelevant = selector.apply(functions);
@@ -56,5 +58,4 @@ public record DebugSymbols(
 
     return new DebugSymbols(labelsRelevant, functionsRelevant, commentsRelevant);
   }
-
 }

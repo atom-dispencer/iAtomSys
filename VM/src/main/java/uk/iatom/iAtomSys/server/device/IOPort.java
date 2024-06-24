@@ -49,6 +49,12 @@ public class IOPort {
     }
   }
 
+  /**
+   * @return The value at {@link IOPort#address}
+   */
+  public short peek() {
+    return memory.read(address);
+  }
 
   /**
    * Shuffle the next value from the {@link IOPort#inputBuffer} into the bound

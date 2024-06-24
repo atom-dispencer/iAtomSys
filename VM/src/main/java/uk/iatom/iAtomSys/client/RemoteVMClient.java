@@ -11,11 +11,13 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
+import uk.iatom.iAtomSys.common.api.MemoryRequestPacket;
+import uk.iatom.iAtomSys.common.api.MemoryResponsePacket;
+import uk.iatom.iAtomSys.common.api.PortPacket;
+import uk.iatom.iAtomSys.common.api.RegisterPacket;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
 import uk.iatom.iAtomSys.common.api.VmClient;
-import uk.iatom.iAtomSys.common.api.MemoryRequestPacket;
-import uk.iatom.iAtomSys.common.api.MemoryResponsePacket;
 import uk.iatom.iAtomSys.common.api.VmStatus;
 
 @Component
@@ -60,6 +62,34 @@ public class RemoteVMClient implements VmClient {
   }
 
   @Override
+  public RegisterPacket[] getRegisters() {
+    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("state/registers").build().toUri();
+
+    try {
+      RestTemplate restTemplate = new RestTemplate();
+      return restTemplate.getForEntity(uri, RegisterPacket[].class).getBody();
+
+    } catch (RestClientException rce) {
+      logger.error("Error fetching remote VM state from %s".formatted(uri), rce);
+      return null;
+    }
+  }
+
+  @Override
+  public PortPacket[] getPorts() {
+    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("state/ports").build().toUri();
+
+    try {
+      RestTemplate restTemplate = new RestTemplate();
+      return restTemplate.getForEntity(uri, PortPacket[].class).getBody();
+
+    } catch (RestClientException rce) {
+      logger.error("Error fetching remote VM state from %s".formatted(uri), rce);
+      return null;
+    }
+  }
+
+  @Override
   @NonNull
   public String step(StepRequestPacket packet) {
     URI uri = UriComponentsBuilder.fromHttpUrl(host).path("command/step").build().toUri();
@@ -79,7 +109,7 @@ public class RemoteVMClient implements VmClient {
   @Override
   @NonNull
   public String loadmem(LoadRequestPacket packet) {
-    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("command/loadImage").build().toUri();
+    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("command/load_image").build().toUri();
 
     try {
       RestTemplate restTemplate = new RestTemplate();
