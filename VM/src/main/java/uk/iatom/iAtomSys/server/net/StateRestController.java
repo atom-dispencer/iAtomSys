@@ -1,5 +1,6 @@
 package uk.iatom.iAtomSys.server.net;
 
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,13 +10,18 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import uk.iatom.iAtomSys.common.api.DebugSymbols;
 import uk.iatom.iAtomSys.common.api.DebugSymbolsRequestPacket;
+import uk.iatom.iAtomSys.common.api.GetPortResponsePacket;
+import uk.iatom.iAtomSys.common.api.PostPortRequestPacket;
 import uk.iatom.iAtomSys.common.api.RegisterPacket;
 import uk.iatom.iAtomSys.common.api.MemoryRequestPacket;
 import uk.iatom.iAtomSys.common.api.MemoryResponsePacket;
@@ -60,12 +66,6 @@ public class StateRestController {
     );
   }
 
-  @GetMapping("/ports")
-  public List<Short> ports() {
-    // Get port addresses, in order of port ID
-    return Arrays.stream(vm.getPorts()).map(IOPort::getAddress).toList();
-  }
-
   @PostMapping("/memory")
   public MemoryResponsePacket memory(@RequestBody MemoryRequestPacket packet) {
 
@@ -88,24 +88,50 @@ public class StateRestController {
 
   @GetMapping("/debug_symbols")
   public DebugSymbols debugSymbols(@RequestBody DebugSymbolsRequestPacket packet) {
-
-    Map<Integer, String> reservedAddresses = new HashMap<>();
-
-    if (getRegisters() != null) {
-      for (RegisterPacket registerPacket : getRegisters()) {
-        reservedAddresses.put((int) registerPacket.address(), registerPacket.name());
-      }
-    }
-
-    if (getPortAddresses() != null) {
-      for (int portNum = 0; portNum < getPortAddresses().size(); portNum++) {
-        Short portAddress = getPortAddresses().get(portNum);
-        reservedAddresses.put(portAddress.intValue(), "IO" + portNum);
-      }
-    }
-
     // TODO StateRestController needs to generate/fetch correct DebugSymbols (from JSON? from file?)
     DebugSymbols currentDebugSymbols = vm.getDebugSymbols();
     return currentDebugSymbols.takeRelevant(packet.startAddress(), packet.endAddress());
+  }
+
+  /**
+   * Get port addresses, in order of port ID.
+   */
+  @GetMapping("/ports/addresses")
+  public List<Short> ports() {
+    return Arrays.stream(vm.getPorts()).map(IOPort::getAddress).toList();
+  }
+
+  /**
+   * Read any as-yet unread output data from the given {@link IOPort}.
+   *
+   * @param id The numeric ID of the {@link IOPort} to read from.
+   */
+  @GetMapping("/ports/{id}/output")
+  public GetPortResponsePacket getPort(@PathVariable("id") int id) {
+    IOPort[] ports = vm.getPorts();
+    if (id < 0 || id >= ports.length) {
+      return null;
+    }
+    IOPort port = vm.getPorts()[id];
+
+    return new GetPortResponsePacket(port.readUnreadOutput());
+  }
+
+  /**
+   * Provide input data to the given {@link IOPort}.
+   *
+   * @param id The numeric ID of the {@link IOPort} to write to.
+   */
+  @PostMapping("/ports/{id}/input")
+  public void postPort(@RequestBody PostPortRequestPacket packet, @PathVariable("id") int id, HttpServletResponse response) {
+    IOPort[] ports = vm.getPorts();
+    if (id < 0 || id >= ports.length) {
+      response.setStatus(HttpStatus.NOT_FOUND.value());
+      return;
+    }
+    IOPort port = vm.getPorts()[id];
+
+    port.writeInput(packet.data());
+    response.setStatus(HttpStatus.OK.value());
   }
 }

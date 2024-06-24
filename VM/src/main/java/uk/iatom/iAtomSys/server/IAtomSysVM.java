@@ -50,7 +50,7 @@ public class IAtomSysVM {
   private IOPort[] ports;
 
   @Setter
-  private DebugSymbols debugSymbols;
+  private DebugSymbols debugSymbols = DebugSymbols.empty();
 
   public void processNextCycle() {
     Register PCR = Register.PCR(registerSet);

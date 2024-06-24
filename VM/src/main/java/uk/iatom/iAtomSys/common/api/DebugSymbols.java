@@ -1,12 +1,19 @@
 package uk.iatom.iAtomSys.common.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.logging.LogManager;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.lang.Nullable;
 
 /**
  * Extra information which a developer debugging the VM may need to know, such as function names.
@@ -16,36 +23,38 @@ import java.util.stream.Stream;
  * @param labels
  */
 public record DebugSymbols(
-//    Map<Integer, String> portAddresses,
-//    Map<Integer, String> registerAddresses,
     Map<Integer, String> labels,
     Map<Integer, String> functions,
     Map<Integer, String> comments
 ) {
 
-//  public Map<Integer, String> getReservedAddresses() {
-//    Stream<Entry<Integer, String>> combinedStream = Stream.concat(
-//        portAddresses.entrySet().stream(),
-//        registerAddresses.entrySet().stream()
-//    );
-//    // TODO What if there's a duplicate entry?
-//    return combinedStream.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-//  }
+  private static final Logger logger = LoggerFactory.getLogger(DebugSymbols.class);
 
-  public DebugSymbols takeRelevant(short startAddress, short endAddress) {
-    Predicate<Entry<Integer, String>> filter = entry -> entry.getKey() >= startAddress && entry.getKey() <= endAddress;
-    Collector<Entry<Integer, String>, ?, Map<Integer, String>> map = Collectors.toMap(Entry::getKey, Entry::getValue);
-    Function<Map<Integer, String>, Map<Integer, String>> relevantificator = (input) -> input.entrySet().stream().filter(filter).collect(map);
-
-//    Map<Integer, String> portsRelevant = relevantificator.apply(portAddresses);
-//    Map<Integer, String> registersRelevant = relevantificator.apply(registerAddresses);
-    Map<Integer, String> labelsRelevant = relevantificator.apply(labels);
-
-    return new DebugSymbols( /* portsRelevant, registersRelevant, */ labelsRelevant);
+  public static DebugSymbols empty() {
+    return new DebugSymbols(new HashMap<>(), new HashMap<>(), new HashMap<>());
   }
 
-  public static DebugSymbols fromJson() {
+  public static @Nullable DebugSymbols fromJson(InputStream stream) {
+    ObjectMapper mapper = new ObjectMapper();
 
+    try {
+      return mapper.readValue(stream, DebugSymbols.class);
+    } catch (IOException e) {
+      logger.error("Error parsing DebugSymbols JSON", e);
+      return null;
+    }
+  }
+
+  public DebugSymbols takeRelevant(short startAddress, short endAddress) {
+    Predicate<Entry<Integer, String>> addressFilter = entry -> entry.getKey() >= startAddress && entry.getKey() <= endAddress;
+    Collector<Entry<Integer, String>, ?, Map<Integer, String>> mapCollector = Collectors.toMap(Entry::getKey, Entry::getValue);
+    Function<Map<Integer, String>, Map<Integer, String>> selector = (input) -> input.entrySet().stream().filter(addressFilter).collect(mapCollector);
+
+    Map<Integer, String> labelsRelevant = selector.apply(labels);
+    Map<Integer, String> functionsRelevant = selector.apply(functions);
+    Map<Integer, String> commentsRelevant = selector.apply(comments);
+
+    return new DebugSymbols(labelsRelevant, functionsRelevant, commentsRelevant);
   }
 
 }
