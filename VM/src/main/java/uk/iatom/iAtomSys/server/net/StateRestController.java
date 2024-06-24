@@ -87,7 +87,6 @@ public class StateRestController {
 
   @GetMapping("/debug_symbols")
   public DebugSymbols debugSymbols(@RequestBody DebugSymbolsRequestPacket packet) {
-    // TODO StateRestController needs to generate/fetch correct DebugSymbols (from JSON? from file?)
     DebugSymbols currentDebugSymbols = vm.getDebugSymbols();
     return currentDebugSymbols.takeRelevant(packet.startAddress(), packet.endAddress());
   }

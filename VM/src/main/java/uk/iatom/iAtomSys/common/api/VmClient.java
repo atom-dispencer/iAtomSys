@@ -17,4 +17,6 @@ public interface VmClient {
   String loadmem(LoadRequestPacket packet);
 
   String set(SetRequestPacket packet);
+
+  String dropDebug();
 }

@@ -139,4 +139,20 @@ public class RemoteVMClient implements VmClient {
       return "Request error: %s".formatted(rce.getClass().getSimpleName());
     }
   }
+
+  @Override
+  public String dropDebug() {
+    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("command/drop_debug").build().toUri();
+
+    try {
+      RestTemplate restTemplate = new RestTemplate();
+      ResponseEntity<String> responseEntity = restTemplate.postForEntity(uri, null, String.class);
+      String body = responseEntity.getBody();
+      return body == null ? "<Null response>" : body;
+
+    } catch (RestClientException rce) {
+      logger.error("Error executing dropDebug command: %s".formatted(uri), rce);
+      return "Request error: %s".formatted(rce.getClass().getSimpleName());
+    }
+  }
 }

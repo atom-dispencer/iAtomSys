@@ -28,7 +28,9 @@ public class ShellCommands {
       "[2] 'hello': Say hi!", //
       "[3] 'step <count>': Execute the next <count> instructions.", //
       "[4] 'load <image_name[.img]>': Load the given memorySlice image.", //
-      "[5] 'set <address> <value>': Set the value at the address." //
+      "[5] 'jmp <address>': (Shorthand) PCR* <address>.", //
+      "[6] 'set <address> <value>': Set the value at the address.", //
+      "[7] 'dropDebug': Reset the loaded debug symbols." //
   };
 
   @Autowired
@@ -137,8 +139,21 @@ public class ShellCommands {
       String message = api.set(request);
       display.getDisplayState().setCommandMessage(message);
     } catch (IllegalArgumentException e) {
-      help("5");
+      help("6");
       return;
+    }
+
+    display.getDisplayState().update();
+    display.draw();
+  }
+
+  @ShellMethod
+  public void dropDebug() {
+    try {
+      String message = api.dropDebug();
+      display.getDisplayState().setCommandMessage(message);
+    } catch (IllegalArgumentException e) {
+      help("7");
     }
 
     display.getDisplayState().update();

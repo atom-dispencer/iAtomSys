@@ -1,5 +1,6 @@
 package uk.iatom.iAtomSys.common.api;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,6 +23,7 @@ import org.springframework.lang.Nullable;
  * @param labels
  */
 public record DebugSymbols(
+    @JsonIgnore String sourceName,
     Map<Integer, String> labels,
     Map<Integer, String> functions,
     Map<Integer, String> comments
@@ -30,14 +32,16 @@ public record DebugSymbols(
   private static final Logger logger = LoggerFactory.getLogger(DebugSymbols.class);
 
   public static DebugSymbols empty() {
-    return new DebugSymbols(new HashMap<>(), new HashMap<>(), new HashMap<>());
+    return new DebugSymbols("empty", new HashMap<>(), new HashMap<>(), new HashMap<>());
   }
 
-  public static @Nullable DebugSymbols fromJson(InputStream stream) {
+  public static @Nullable DebugSymbols fromJson(String sourceName, InputStream stream) {
     ObjectMapper mapper = new ObjectMapper();
 
     try {
-      return mapper.readValue(stream, DebugSymbols.class);
+      // TODO Needs testing - make sure name is properly ignored, then set
+      DebugSymbols unnamed = mapper.readValue(stream, DebugSymbols.class);
+      return new DebugSymbols(sourceName, unnamed.labels, unnamed.functions, unnamed.comments);
     } catch (IOException e) {
       logger.error("Error parsing DebugSymbols JSON", e);
       return null;
@@ -56,6 +60,6 @@ public record DebugSymbols(
     Map<Integer, String> functionsRelevant = selector.apply(functions);
     Map<Integer, String> commentsRelevant = selector.apply(comments);
 
-    return new DebugSymbols(labelsRelevant, functionsRelevant, commentsRelevant);
+    return new DebugSymbols(this.sourceName(), labelsRelevant, functionsRelevant, commentsRelevant);
   }
 }
