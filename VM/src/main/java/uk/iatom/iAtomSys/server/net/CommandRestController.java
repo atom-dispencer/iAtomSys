@@ -115,7 +115,7 @@ public class CommandRestController {
 
       File debugSymbolsFile = new File(cleanFile.getAbsolutePath() + ".json");
       try (FileInputStream fis = new FileInputStream(debugSymbolsFile)) {
-        DebugSymbols debugSymbols = DebugSymbols.fromJson(fis);
+        DebugSymbols debugSymbols = DebugSymbols.fromJson(debugSymbolsFile.getName(), fis);
 
         if (debugSymbols == null) {
           logger.warn("Debug symbols could not be parsed: {}", debugSymbolsFile.getAbsolutePath());
@@ -168,5 +168,12 @@ public class CommandRestController {
     String message = "Set %s to %s.".formatted(addressStr, valueStr);
     logger.info(message);
     return message;
+  }
+
+  @PostMapping("/drop_debug")
+  public String dropDebug() {
+    String name = vm.getDebugSymbols().sourceName();
+    vm.setDebugSymbols(DebugSymbols.empty());
+    return "Dropped debug symbols: " + name;
   }
 }
