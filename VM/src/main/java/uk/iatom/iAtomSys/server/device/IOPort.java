@@ -84,12 +84,13 @@ public class IOPort {
   }
 
   public List<Short> readUnreadOutput() {
-    inputPointer = inputBuffer.size() - 1;
-    return inputBuffer.subList(inputPointer, inputBuffer.size() - 1);
+    List<Short> result = outputBuffer.subList(outputPointer, outputBuffer.size() - 1);
+    outputPointer = outputBuffer.size() - 1;
+    return result;
   }
 
   public List<Short> readAllOutput() {
-    inputPointer = inputBuffer.size() - 1;
+    outputPointer = outputBuffer.size() - 1;
     return outputBuffer.subList(0, outputBuffer.size() - 1);
   }
 }

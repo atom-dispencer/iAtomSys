@@ -3,6 +3,7 @@ package uk.iatom.iAtomSys.server.net;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import uk.iatom.iAtomSys.common.api.DebugSymbols;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
@@ -56,6 +58,16 @@ public class CommandRestController {
   }
 
   //TODO Test, test, test!!
+
+  /**
+   *
+   * Load the image "name.img" to memory.
+   * If present, also load "name.img.json" as debug symbols.
+   *
+   * @param packet
+   * @param response
+   * @return
+   */
   @PostMapping("/loadImage")
   public String loadImage(@RequestBody LoadRequestPacket packet, HttpServletResponse response) {
 
@@ -103,9 +115,26 @@ public class CommandRestController {
       logger.info("Writing image... (%d bytes)".formatted(buffer.length));
       vm.getMemory().write((short) 0, buffer);
 
+      File debugSymbolsFile = new File(cleanFile.getAbsolutePath() + ".json");
+      try (FileInputStream fis = new FileInputStream(debugSymbolsFile)) {
+        DebugSymbols debugSymbols = DebugSymbols.fromJson(fis);
+
+        if (debugSymbols == null) {
+          logger.warn("Debug symbols could not be parsed: {}", debugSymbolsFile.getAbsolutePath());
+          response.setStatus(HttpStatus.OK.value());
+          return "Loaded image but debug symbols unparsable";
+        }
+
+        vm.setDebugSymbols(debugSymbols);
+      } catch (FileNotFoundException fnfx) {
+        logger.warn("No debug symbols found: {}", fnfx.getMessage());
+        response.setStatus(HttpStatus.OK.value());
+        return "Loaded image but debug symbols not found";
+      }
+
     } catch (IOException ioException) {
       response.setStatus(HttpStatus.FORBIDDEN.value());
-      return "Cannot access file '%s'".formatted(cleanName);
+      return "Error reading file '%s'".formatted(cleanName);
     }
 
     logger.info("Finished loading new memorySlice image!");
