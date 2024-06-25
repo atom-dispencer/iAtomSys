@@ -15,6 +15,7 @@ import uk.iatom.iAtomSys.common.api.MemoryRequestPacket;
 import uk.iatom.iAtomSys.common.api.MemoryResponsePacket;
 import uk.iatom.iAtomSys.common.api.PortPacket;
 import uk.iatom.iAtomSys.common.api.RegisterPacket;
+import uk.iatom.iAtomSys.common.api.RunRequestPacket;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
 import uk.iatom.iAtomSys.common.api.VmClient;
@@ -152,6 +153,22 @@ public class RemoteVMClient implements VmClient {
 
     } catch (RestClientException rce) {
       logger.error("Error executing dropDebug command: %s".formatted(uri), rce);
+      return "Request error: %s".formatted(rce.getClass().getSimpleName());
+    }
+  }
+
+  @Override
+  public String run(RunRequestPacket packet) {
+    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("command/run").build().toUri();
+
+    try {
+      RestTemplate restTemplate = new RestTemplate();
+      ResponseEntity<String> responseEntity = restTemplate.postForEntity(uri, packet, String.class);
+      String body = responseEntity.getBody();
+      return body == null ? "<Null response>" : body;
+
+    } catch (RestClientException rce) {
+      logger.error("Error executing run command: %s".formatted(uri), rce);
       return "Request error: %s".formatted(rce.getClass().getSimpleName());
     }
   }

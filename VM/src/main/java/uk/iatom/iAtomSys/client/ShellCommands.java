@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import uk.iatom.iAtomSys.client.configuration.ApiClientConfiguration;
 import uk.iatom.iAtomSys.client.disassembly.MemoryDisassembler;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
+import uk.iatom.iAtomSys.common.api.RunRequestPacket;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
 import uk.iatom.iAtomSys.common.api.VmClient;
@@ -30,7 +31,8 @@ public class ShellCommands {
       "[4] 'load <image_name[.img]>': Load the given memorySlice image.", //
       "[5] 'jmp <address>': (Shorthand) PCR* <address>.", //
       "[6] 'set <address> <value>': Set the value at the address.", //
-      "[7] 'dropDebug': Reset the loaded debug symbols." //
+      "[7] 'dropDebug': Reset the loaded debug symbols.", //
+      "[8] 'run <x|start> <end?>': Execute between the addresses." //
   };
 
   @Autowired
@@ -130,7 +132,7 @@ public class ShellCommands {
   public void set(final @ShellOption(defaultValue = "NO_ADDRESS") String address,
       final @ShellOption(defaultValue = "0") String value) {
     if (address.equals("NO_ADDRESS")) {
-      help("5");
+      help("6");
       return;
     }
 
@@ -154,6 +156,21 @@ public class ShellCommands {
       display.getDisplayState().setCommandMessage(message);
     } catch (IllegalArgumentException e) {
       help("7");
+    }
+
+    display.getDisplayState().update();
+    display.draw();
+  }
+
+  @ShellMethod
+  public void run(final @ShellOption(defaultValue = "here") String startAddressStr) {
+
+    try {
+      RunRequestPacket packet = new RunRequestPacket(startAddressStr);
+      String message = api.run(packet);
+      display.getDisplayState().setCommandMessage(message);
+    } catch (IllegalArgumentException e) {
+      help("8");
     }
 
     display.getDisplayState().update();

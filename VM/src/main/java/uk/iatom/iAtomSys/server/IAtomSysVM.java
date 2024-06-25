@@ -51,6 +51,19 @@ public class IAtomSysVM {
   @Setter
   private DebugSymbols debugSymbols = DebugSymbols.empty();
 
+  /**
+   * A hook for {@link uk.iatom.iAtomSys.server.configuration.AsyncConfiguration} to call into the
+   * VM.
+   */
+  public void scheduledNextCycle() {
+    if (status == VmStatus.RUNNING) {
+      processNextCycle();
+    }
+  }
+
+  /**
+   * Perform a single fetch-execute cycle, incrementing the program counter.
+   */
   public void processNextCycle() {
     Register PCR = Register.PCR(registerSet);
     short pc = PCR.get();
@@ -62,16 +75,12 @@ public class IAtomSysVM {
       port.updateFlag();
     }
 
-    // TODO Suspicious stopping logic. Will this keep executing the final instruction forever?
-    // Try to increment the program counter
-    int newPc = pc + 1;
-    if (newPc >= Short.toUnsignedInt(Short.MAX_VALUE)) {
-      logger.info("PC is at max value %d".formatted(newPc));
+    if (pc == Short.MAX_VALUE) {
+      logger.info("PC is at max value %d, pausing.".formatted(pc));
       status = VmStatus.PAUSED;
-      return;
+    } else {
+      PCR.set((short) (pc + 1));
     }
-
-    PCR.set((short) (pc + 1));
   }
 
   private void executeInstruction(short int16Instruction) {

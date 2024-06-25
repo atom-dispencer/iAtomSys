@@ -19,4 +19,6 @@ public interface VmClient {
   String set(SetRequestPacket packet);
 
   String dropDebug();
+
+  String run(RunRequestPacket runRequestPacket);
 }
