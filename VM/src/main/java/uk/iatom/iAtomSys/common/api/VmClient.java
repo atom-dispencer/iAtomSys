@@ -13,14 +13,18 @@ public interface VmClient {
 
   PortPacket[] getPorts();
 
+  RunningDataPacket getRunningData();
+
   // Commands
   String step(StepRequestPacket packet);
 
-  String loadmem(LoadRequestPacket packet);
+  String load(LoadRequestPacket packet);
 
   String set(SetRequestPacket packet);
 
-  String dropDebug();
+  String drop_debug();
 
   String run(RunRequestPacket runRequestPacket);
+
+  String pause();
 }

@@ -11,8 +11,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties("iatomsys.vm")
 public class VmConfiguration {
 
-  private int millisPerCycle = 1000;
-
   private int processorStackSizeIntegers = 256;
 
   private short portsRangeStartAddress = 0x000a;

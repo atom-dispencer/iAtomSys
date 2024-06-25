@@ -1,7 +1,7 @@
 package uk.iatom.iAtomSys.client;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +17,7 @@ import uk.iatom.iAtomSys.common.api.MemoryRequestPacket;
 import uk.iatom.iAtomSys.common.api.MemoryResponsePacket;
 import uk.iatom.iAtomSys.common.api.PortPacket;
 import uk.iatom.iAtomSys.common.api.RegisterPacket;
+import uk.iatom.iAtomSys.common.api.RunningDataPacket;
 import uk.iatom.iAtomSys.common.api.VmClient;
 import uk.iatom.iAtomSys.common.api.VmStatus;
 
@@ -46,6 +47,8 @@ public class ShellDisplayState {
   private DebugSymbols debugSymbols = DebugSymbols.empty();
   private RegisterPacket[] registers = new RegisterPacket[0];
   private PortPacket[] ports = new PortPacket[0];
+  private LocalDateTime runningSince = LocalDateTime.now();
+  private long runningInstructionsExecuted = 0L;
 
   public void update() {
     status = api.getStatus();
@@ -125,7 +128,16 @@ public class ShellDisplayState {
       throw new IllegalStateException(
           "Cannot update display state assuming RUNNING status if state is actually " + status);
     }
-    //TODO Get uptime and FUN data like that!
+
+    RunningDataPacket packet = api.getRunningData();
+    if (packet == null) {
+      logger.error("Asynchronous running data is null. Continuing with incomplete data.");
+    } else {
+      LocalDateTime start = packet.startTime();
+      setRunningSince(start == null ? LocalDateTime.now() : start);
+
+      setRunningInstructionsExecuted(packet.executedInstructions());
+    }
   }
 
   /**
