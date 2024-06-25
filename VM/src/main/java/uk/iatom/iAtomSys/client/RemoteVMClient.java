@@ -49,6 +49,21 @@ public class RemoteVMClient implements VmClient {
 
   @Override
   @Nullable
+  public String[] getAvailableImages() {
+    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("state/images").build().toUri();
+
+    try {
+      RestTemplate restTemplate = new RestTemplate();
+      return restTemplate.getForObject(uri, String[].class);
+
+    } catch (RestClientException rce) {
+      logger.error("Error fetching remote VM status from %s".formatted(uri), rce);
+      return null;
+    }
+  }
+
+  @Override
+  @Nullable
   public MemoryResponsePacket getMemory(MemoryRequestPacket packet) {
     URI uri = UriComponentsBuilder.fromHttpUrl(host).path("state/memory").build().toUri();
 

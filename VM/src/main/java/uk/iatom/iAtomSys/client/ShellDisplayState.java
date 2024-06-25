@@ -1,6 +1,7 @@
 package uk.iatom.iAtomSys.client;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,7 +39,7 @@ public class ShellDisplayState {
 
   private VmStatus status = VmStatus.STOPPED;
   private String commandMessage = "[Nothing to see here!]";
-  private List<String> availableImages = new ArrayList<>();
+  private String[] availableImages = new String[0];
   private short memorySliceStartAddress = 0;
   private short[] memory = new short[0];
   private List<String[]> disassembly = new ArrayList<>();
@@ -67,6 +68,13 @@ public class ShellDisplayState {
       throw new IllegalStateException(
           "Cannot update display state assuming STOPPED status if state is actually " + status);
     }
+
+    // Available memory images to display on the STOPPED message
+    String[] images = api.getAvailableImages();
+    if (images == null) {
+      logger.error("Available images are null. Continuing with incomplete data.");
+    }
+    setAvailableImages(images);
   }
 
   /**

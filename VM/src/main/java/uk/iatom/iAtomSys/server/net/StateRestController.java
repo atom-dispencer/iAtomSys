@@ -44,17 +44,23 @@ public class StateRestController {
   }
 
   @GetMapping("/images")
-  public List<String> images() {
+  public String[] images() {
 
     File imagesDirectory = new File("images/");
     String[] imageFileNames = imagesDirectory.list((file, name) -> name.endsWith(".img"));
 
     if (imageFileNames == null) {
-      return new ArrayList<>();
+      return new String[0];
     }
 
-    return Arrays.stream(imageFileNames).map((name) -> name.substring(0, name.length() - 5))
-        .toList();
+    String[] result = new String[imageFileNames.length];
+    for (int i = 0; i < imageFileNames.length; i++) {
+
+      // Collect the names, removing the file extension
+      String name = imageFileNames[i];
+      result[i] = name.substring(0, name.length() - 4);
+    }
+    return result;
   }
 
   @GetMapping("/registers")

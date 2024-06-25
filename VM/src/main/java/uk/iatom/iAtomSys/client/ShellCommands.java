@@ -2,9 +2,14 @@ package uk.iatom.iAtomSys.client;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.event.EventListener;
 import org.springframework.shell.ExitRequest;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
@@ -23,6 +28,8 @@ import uk.iatom.iAtomSys.common.api.VmClient;
 @Component
 public class ShellCommands {
 
+  private static final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
+
   public static final String[] HELP_PAGES = new String[]{ //
       "[0] 'help <page>': Find help! Also check GitHub docs.", //
       "[1] 'exit': Terminate the application.", //
@@ -32,7 +39,8 @@ public class ShellCommands {
       "[5] 'jmp <address>': (Shorthand) PCR* <address>.", //
       "[6] 'set <address> <value>': Set the value at the address.", //
       "[7] 'dropDebug': Reset the loaded debug symbols.", //
-      "[8] 'run <x|start> <end?>': Execute between the addresses." //
+      "[8] 'run <x|start> <end?>': Execute between the addresses.", //
+      "[9] 'refresh': Refreshes the display state and redraw." //
   };
 
   @Autowired
@@ -55,7 +63,6 @@ public class ShellCommands {
   public void preDestroy() {
     display.deactivate();
   }
-
 
   @ShellMethod()
   public String exit() {
@@ -173,6 +180,12 @@ public class ShellCommands {
       help("8");
     }
 
+    display.getDisplayState().update();
+    display.draw();
+  }
+
+  @ShellMethod
+  public void refresh() {
     display.getDisplayState().update();
     display.draw();
   }
