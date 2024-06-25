@@ -27,6 +27,7 @@ public class IAtomSysVM {
 
   private final Logger logger = LoggerFactory.getLogger(IAtomSysVM.class);
 
+  @Setter
   private VmStatus status = VmStatus.STOPPED;
 
   @Autowired

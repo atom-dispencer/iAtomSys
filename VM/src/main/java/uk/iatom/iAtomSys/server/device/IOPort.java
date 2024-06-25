@@ -42,11 +42,7 @@ public class IOPort {
    * <br>
    */
   public void updateFlag() {
-    if (hasUnreadInput()) {
-      FlagHelper.setFlag(registerSet, flag.bitIndex, true);
-    } else {
-      FlagHelper.setFlag(registerSet, flag.bitIndex, false);
-    }
+    FlagHelper.setFlag(registerSet, flag.bitIndex, hasUnreadInput());
   }
 
   /**

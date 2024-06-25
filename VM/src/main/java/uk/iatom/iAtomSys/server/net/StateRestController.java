@@ -23,6 +23,7 @@ import uk.iatom.iAtomSys.common.api.PortOutputResponsePacket;
 import uk.iatom.iAtomSys.common.api.PortPacket;
 import uk.iatom.iAtomSys.common.api.PortWriteRequestPacket;
 import uk.iatom.iAtomSys.common.api.RegisterPacket;
+import uk.iatom.iAtomSys.common.api.VmStatus;
 import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.common.register.RegisterSet;
 import uk.iatom.iAtomSys.server.IAtomSysVM;
@@ -36,6 +37,11 @@ public class StateRestController {
 
   @Autowired
   private IAtomSysVM vm;
+
+  @GetMapping("/status")
+  public VmStatus status() {
+    return vm.getStatus();
+  }
 
   @GetMapping("/images")
   public List<String> images() {

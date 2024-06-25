@@ -148,7 +148,7 @@ public class ShellCommands {
   }
 
   @ShellMethod
-  public void dropDebug() {
+  public void drop_debug() {
     try {
       String message = api.dropDebug();
       display.getDisplayState().setCommandMessage(message);
