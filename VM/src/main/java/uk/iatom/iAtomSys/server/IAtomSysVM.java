@@ -1,5 +1,7 @@
 package uk.iatom.iAtomSys.server;
 
+import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicLong;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -51,14 +53,22 @@ public class IAtomSysVM {
   @Setter
   private DebugSymbols debugSymbols = DebugSymbols.empty();
 
-  /**
-   * A hook for {@link uk.iatom.iAtomSys.server.configuration.AsyncConfiguration} to call into the
-   * VM.
-   */
-  public void scheduledNextCycle() {
-    if (status == VmStatus.RUNNING) {
-      processNextCycle();
-    }
+  private final AsyncRunData asyncRunData = new AsyncRunData();
+
+  public void runAsync() {
+    Thread thread = new Thread(() -> {
+      asyncRunData.getAsyncExecutedInstructions().set(0L);
+      asyncRunData.setStartTime(LocalDateTime.now());
+
+      while(status == VmStatus.RUNNING) {
+        processNextCycle();
+        asyncRunData.getAsyncExecutedInstructions().getAndIncrement();
+      }
+    });
+
+    status = VmStatus.RUNNING;
+    thread.setDaemon(true);
+    thread.start();
   }
 
   /**
@@ -75,12 +85,18 @@ public class IAtomSysVM {
       port.updateFlag();
     }
 
-    if (pc == Short.MAX_VALUE) {
-      logger.info("PC is at max value %d, pausing.".formatted(pc));
-      status = VmStatus.PAUSED;
-    } else {
-      PCR.set((short) (pc + 1));
+    // Only increment PCR if it hasn't been changed during the cycle, i.e. an instruction trying
+    // to jump/branch.
+    if (pc == PCR.get()) {
+      if (pc == Short.MAX_VALUE) {
+        logger.info("PC is at max value %d, pausing.".formatted(pc));
+        status = VmStatus.PAUSED;
+      } else {
+        PCR.set((short) (pc + 1));
+      }
     }
+
+    // TODO Check breakpoints
   }
 
   private void executeInstruction(short int16Instruction) {

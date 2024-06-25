@@ -23,9 +23,11 @@ import uk.iatom.iAtomSys.common.api.PortOutputResponsePacket;
 import uk.iatom.iAtomSys.common.api.PortPacket;
 import uk.iatom.iAtomSys.common.api.PortWriteRequestPacket;
 import uk.iatom.iAtomSys.common.api.RegisterPacket;
+import uk.iatom.iAtomSys.common.api.RunningDataPacket;
 import uk.iatom.iAtomSys.common.api.VmStatus;
 import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.common.register.RegisterSet;
+import uk.iatom.iAtomSys.server.AsyncRunData;
 import uk.iatom.iAtomSys.server.IAtomSysVM;
 import uk.iatom.iAtomSys.server.device.IOPort;
 
@@ -41,6 +43,13 @@ public class StateRestController {
   @GetMapping("/status")
   public VmStatus status() {
     return vm.getStatus();
+  }
+
+  @GetMapping("/running_data")
+  public RunningDataPacket runningData() {
+    AsyncRunData runData = vm.getAsyncRunData();
+
+    return new RunningDataPacket(runData.getStartTime(), runData.getAsyncExecutedInstructions().get());
   }
 
   @GetMapping("/images")

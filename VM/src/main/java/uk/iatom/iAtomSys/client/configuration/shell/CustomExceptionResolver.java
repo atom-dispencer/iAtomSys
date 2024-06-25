@@ -35,7 +35,7 @@ public class CustomExceptionResolver implements CommandExceptionResolver {
     }
 
     shellDisplay.getDisplayState().setCommandMessage(message);
-    shellDisplay.draw();
+    shellDisplay.draw(true);
     return CommandHandlingResult.empty();
   }
 

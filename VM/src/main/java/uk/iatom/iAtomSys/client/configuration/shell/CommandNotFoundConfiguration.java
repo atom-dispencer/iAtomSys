@@ -17,7 +17,7 @@ public class CommandNotFoundConfiguration implements CommandNotFoundMessageProvi
     String message = "Command not found: '%s'".formatted(providerContext.text());
     String trimmed = message.substring(0, Math.min(64, message.length()));
     shellDisplay.getDisplayState().setCommandMessage(trimmed);
-    shellDisplay.draw();
+    shellDisplay.draw(true);
     return "";
   }
 }

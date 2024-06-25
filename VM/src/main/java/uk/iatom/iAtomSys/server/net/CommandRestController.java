@@ -48,6 +48,10 @@ public class CommandRestController {
 
   @PostMapping("/step")
   public String step(@RequestBody StepRequestPacket requestPacket) {
+    if (vm.getStatus() == VmStatus.RUNNING) {
+      return "Action not allowed: VM is running";
+    }
+
     int count = requestPacket.count();
 
     logger.info("Stepping %d cycles".formatted(count));
@@ -71,6 +75,9 @@ public class CommandRestController {
    */
   @PostMapping("/load_image")
   public String loadImage(@RequestBody LoadRequestPacket packet, HttpServletResponse response) {
+    if (vm.getStatus() == VmStatus.RUNNING) {
+      return "Action not allowed: VM is running";
+    }
 
     String dirtyImageName =
         packet.imageName().endsWith(".img") ? packet.imageName() : packet.imageName() + ".img";
@@ -147,6 +154,10 @@ public class CommandRestController {
 
   @PostMapping("/set")
   public String set(@RequestBody SetRequestPacket request) {
+    if (vm.getStatus() == VmStatus.RUNNING) {
+      return "Action not allowed: VM is running";
+    }
+
     String addressStr = request.address().toUpperCase().trim();
     String valueStr = request.value().toUpperCase().trim();
 
@@ -199,6 +210,10 @@ public class CommandRestController {
 
   @PostMapping("/drop_debug")
   public String dropDebug() {
+    if (vm.getStatus() == VmStatus.RUNNING) {
+      return "Action not allowed: VM is running";
+    }
+
     String name = vm.getDebugSymbols().sourceName();
     vm.setDebugSymbols(DebugSymbols.empty());
     return "Dropped debug symbols: " + name;
@@ -236,7 +251,19 @@ public class CommandRestController {
     }
 
     short runningFrom = vm.getRegisterSet().getRegister("PCR").get();
-    vm.setStatus(VmStatus.RUNNING);
+    vm.runAsync();
     return "Running from %04X".formatted(runningFrom);
+  }
+
+  @PostMapping("/pause")
+  public String pause() {
+    if (vm.getStatus() != VmStatus.RUNNING) {
+      return "Action not allowed: VM is not running";
+    }
+
+    vm.setStatus(VmStatus.PAUSED);
+
+    short pcr = vm.getRegisterSet().getRegister("PCR").get();
+    return "Paused at PCR: %04X".formatted(pcr);
   }
 }

@@ -16,10 +16,12 @@ import uk.iatom.iAtomSys.common.api.MemoryResponsePacket;
 import uk.iatom.iAtomSys.common.api.PortPacket;
 import uk.iatom.iAtomSys.common.api.RegisterPacket;
 import uk.iatom.iAtomSys.common.api.RunRequestPacket;
+import uk.iatom.iAtomSys.common.api.RunningDataPacket;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
 import uk.iatom.iAtomSys.common.api.VmClient;
 import uk.iatom.iAtomSys.common.api.VmStatus;
+import uk.iatom.iAtomSys.server.AsyncRunData;
 
 @Component
 public class RemoteVMClient implements VmClient {
@@ -106,6 +108,20 @@ public class RemoteVMClient implements VmClient {
   }
 
   @Override
+  public RunningDataPacket getRunningData() {
+    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("state/running_data").build().toUri();
+
+    try {
+      RestTemplate restTemplate = new RestTemplate();
+      return restTemplate.getForEntity(uri, RunningDataPacket.class).getBody();
+
+    } catch (RestClientException rce) {
+      logger.error("Error fetching remote VM state from %s".formatted(uri), rce);
+      return null;
+    }
+  }
+
+  @Override
   @NonNull
   public String step(StepRequestPacket packet) {
     URI uri = UriComponentsBuilder.fromHttpUrl(host).path("command/step").build().toUri();
@@ -124,7 +140,7 @@ public class RemoteVMClient implements VmClient {
 
   @Override
   @NonNull
-  public String loadmem(LoadRequestPacket packet) {
+  public String load(LoadRequestPacket packet) {
     URI uri = UriComponentsBuilder.fromHttpUrl(host).path("command/load_image").build().toUri();
 
     try {
@@ -157,7 +173,7 @@ public class RemoteVMClient implements VmClient {
   }
 
   @Override
-  public String dropDebug() {
+  public String drop_debug() {
     URI uri = UriComponentsBuilder.fromHttpUrl(host).path("command/drop_debug").build().toUri();
 
     try {
@@ -167,7 +183,7 @@ public class RemoteVMClient implements VmClient {
       return body == null ? "<Null response>" : body;
 
     } catch (RestClientException rce) {
-      logger.error("Error executing dropDebug command: %s".formatted(uri), rce);
+      logger.error("Error executing drop_debug command: %s".formatted(uri), rce);
       return "Request error: %s".formatted(rce.getClass().getSimpleName());
     }
   }
@@ -184,6 +200,22 @@ public class RemoteVMClient implements VmClient {
 
     } catch (RestClientException rce) {
       logger.error("Error executing run command: %s".formatted(uri), rce);
+      return "Request error: %s".formatted(rce.getClass().getSimpleName());
+    }
+  }
+
+  @Override
+  public String pause() {
+    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("command/pause").build().toUri();
+
+    try {
+      RestTemplate restTemplate = new RestTemplate();
+      ResponseEntity<String> responseEntity = restTemplate.postForEntity(uri, null, String.class);
+      String body = responseEntity.getBody();
+      return body == null ? "<Null response>" : body;
+
+    } catch (RestClientException rce) {
+      logger.error("Error executing pause command: %s".formatted(uri), rce);
       return "Request error: %s".formatted(rce.getClass().getSimpleName());
     }
   }

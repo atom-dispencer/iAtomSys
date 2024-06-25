@@ -27,6 +27,7 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import uk.iatom.iAtomSys.IAtomSysApplication;
 import uk.iatom.iAtomSys.common.api.RegisterPacket;
+import uk.iatom.iAtomSys.common.api.VmStatus;
 
 @Component
 public class ShellDisplay {
@@ -35,7 +36,7 @@ public class ShellDisplay {
   public void deferredStartupUpdate(ContextRefreshedEvent event) {
     logger.warn("Doing delayed startup update");
     displayState.update();
-    draw();
+    draw(true);
   }
 
   public static final int COMMAND_MAX_WIDTH = 64;
@@ -47,6 +48,7 @@ public class ShellDisplay {
   private PrintStream sysOutCache = System.out;
   private boolean alive;
   private Terminal terminal;
+
   private final Supplier<Rectangle> BORDER_RECT = () -> {
     int start = 2;
     Point origin = new Point(start, start);
@@ -162,7 +164,7 @@ public class ShellDisplay {
 
     displayState.update();
     displayState.setCommandMessage("Enter a command below to get started!");
-    draw();
+    draw(true);
 
     System.out.println("If you can see this, System.out has not been disabled.");
   }
@@ -331,12 +333,12 @@ public class ShellDisplay {
   /**
    * Immediately redraw the UI with the current {@link ShellDisplayState}.
    */
-  public void draw() {
+  public void draw(boolean resetCommand) {
     assertShellLive();
 
     long start = System.nanoTime();
 
-    drawBackground();
+    drawBackground(resetCommand);
     switch (displayState.getStatus()) {
       case STOPPED:
         drawStoppedMessage();
@@ -351,8 +353,10 @@ public class ShellDisplay {
         drawRunningData();
         break;
     }
+    // RUNNING is the only state where the screen refreshes without the user issuing a command
+    // Therefore, we must avoid overwriting any partially typed commands.
     drawCredits();
-    drawCommandInput();
+    drawCommandInput(resetCommand);
 
     long elapsedNanos = System.nanoTime() - start;
     double elapsedMillis = (elapsedNanos / 1_000_000d);
@@ -429,11 +433,15 @@ public class ShellDisplay {
   /**
    * Draw the background of the GUI, including the title and frame, without clearing the insides.
    */
-  public void drawBackground() {
+  public void drawBackground(boolean resetCommand) {
     assertShellLive();
+
     int preHeadingWidth = 10;
 
-    print(ANSICodes.CLEAR_SCREEN);
+    // Don't clear the screen if RUNNING because it will wipe partial commands
+    if (resetCommand) {
+      print(ANSICodes.CLEAR_SCREEN);
+    }
 
     Rectangle rect = BORDER_RECT.get();
     printBox(rect, '#', false);
@@ -453,8 +461,7 @@ public class ShellDisplay {
    * Reset the typing-cursor to the start of the command input box and clear the current command
    * input.
    */
-  // TODO Make drawCommandInput use printBox
-  public void drawCommandInput() {
+  public void drawCommandInput(boolean resetCommand) {
     assertShellLive();
     Rectangle rect = COMMAND_RECT.get();
 
@@ -469,9 +476,10 @@ public class ShellDisplay {
       lengthCorrectedMessage = commandMessage.substring(0, COMMAND_MAX_WIDTH);
     }
 
-    printBox(rect, '~', true);
+    printBox(rect, '~', resetCommand);
 
     print( //
+        resetCommand ? "" : ANSICodes.PUSH_CURSOR_POS, //
 
         // Short message
         ANSICodes.moveTo(rect.getLocation()), //
@@ -481,7 +489,9 @@ public class ShellDisplay {
         // Command input, ending at the input box
         ANSICodes.moveTo(rect.getLocation()), //
         ANSICodes.moveRight(2) + ANSICodes.moveDown(2), //
-        ":>" //
+        ":>", //
+
+        resetCommand ? "" : ANSICodes.POP_CURSOR_POS //
     );
   }
 
@@ -655,6 +665,10 @@ public class ShellDisplay {
 
     String title = " VM is running... ";
     int titleStart = Math.floorDiv(bounds.width, 2) - Math.floorDiv(title.length(), 2);
+
+    contents.append(ANSICodes.moveTo(new Point(20, 20)));
+    contents.append("Start Time: %s\n".formatted(displayState.getRunningSince()));
+    contents.append("Executed Instructions: %d".formatted(displayState.getRunningInstructionsExecuted()));
 
     print( //
         ANSICodes.PUSH_CURSOR_POS, //
