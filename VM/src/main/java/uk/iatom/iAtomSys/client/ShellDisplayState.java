@@ -50,8 +50,8 @@ public class ShellDisplayState {
     status = api.getStatus();
 
     if (status == null) {
-     status = VmStatus.STOPPED;
-     commandMessage = "ERROR GETTING STATUS. CHECK LOGS AND REPORT.";
+      status = VmStatus.STOPPED;
+      commandMessage = "ERROR GETTING STATUS. CHECK LOGS AND REPORT.";
     }
 
     switch (status) {

@@ -22,9 +22,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import uk.iatom.iAtomSys.common.api.DebugSymbols;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
+import uk.iatom.iAtomSys.common.api.RunRequestPacket;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
 import uk.iatom.iAtomSys.common.api.VmStatus;
+import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.server.IAtomSysVM;
 
 @RestController()
@@ -145,21 +147,44 @@ public class CommandRestController {
 
   @PostMapping("/set")
   public String set(@RequestBody SetRequestPacket request) {
-    String addressStr = request.address();
-    String valueStr = request.value();
+    String addressStr = request.address().toUpperCase().trim();
+    String valueStr = request.value().toUpperCase().trim();
 
     // Parse address
-    short address;
+    short address = 0;
     try {
-      address = Short.parseShort(addressStr, 16);
+
+      boolean isRegister = false;
+      for (Register register : vm.getRegisterSet().getActiveRegisters()) {
+        if (register.getName().equals(addressStr)) {
+          isRegister = true;
+          address = register.getAddress();
+        }
+      }
+
+      if (!isRegister) {
+        address = Short.parseShort(addressStr, 16);
+      }
+
     } catch (NumberFormatException nfx) {
-      return "Not a hex int-16: %s".formatted(addressStr);
+      return "Not a register or hex int-16: %s".formatted(addressStr);
     }
 
     // Parse value
-    short value;
+    short value = 0;
     try {
-      value = Short.parseShort(valueStr, 16);
+
+      boolean isRegister = false;
+      for (Register register : vm.getRegisterSet().getActiveRegisters()) {
+        if (register.getName().equals(valueStr)) {
+          isRegister = true;
+          value = register.get();
+        }
+      }
+
+      if (!isRegister) {
+        value = Short.parseShort(valueStr, 16);
+      }
     } catch (NumberFormatException nfx) {
       return "Not a hex int-16: %s".formatted(valueStr);
     }
@@ -167,7 +192,7 @@ public class CommandRestController {
     // Write value and finish up
     vm.getMemory().write(address, value);
 
-    String message = "Set %s to %s.".formatted(addressStr, valueStr);
+    String message = "Set %s (%04X) to %s (%04X)".formatted(addressStr, address, valueStr, value);
     logger.info(message);
     return message;
   }
@@ -177,5 +202,41 @@ public class CommandRestController {
     String name = vm.getDebugSymbols().sourceName();
     vm.setDebugSymbols(DebugSymbols.empty());
     return "Dropped debug symbols: " + name;
+  }
+
+  @PostMapping("/run")
+  public String run(@RequestBody RunRequestPacket packet) {
+    if (vm.getStatus() == VmStatus.RUNNING) {
+      return "VM is already running";
+    }
+
+    String startAddressStr = packet.startAddress();
+
+    short startAddress = 0;
+
+    boolean runFromHere;
+    int startAddressInt = 0;
+
+    // Start string -> int
+    try {
+      if (startAddressStr.equals("here")) {
+        runFromHere = true;
+      } else {
+        runFromHere = false;
+        startAddressInt = Integer.parseInt(startAddressStr, 16);
+      }
+    } catch (NumberFormatException nfe) {
+      return "Input must be a hex integer. Got %s.".formatted(startAddressStr);
+    }
+
+    // Determine real addresses
+    if (!runFromHere) {
+      startAddress = (short) startAddressInt;
+      vm.getRegisterSet().getRegister("PCR").set(startAddress);
+    }
+
+    short runningFrom = vm.getRegisterSet().getRegister("PCR").get();
+    vm.setStatus(VmStatus.RUNNING);
+    return "Running from %04X".formatted(runningFrom);
   }
 }

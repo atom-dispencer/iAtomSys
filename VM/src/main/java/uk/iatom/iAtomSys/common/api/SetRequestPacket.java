@@ -7,4 +7,19 @@ package uk.iatom.iAtomSys.common.api;
  */
 public record SetRequestPacket(String address, String value) {
 
+  public SetRequestPacket {
+    if (address == null) {
+      throw new IllegalStateException("Set command address may not be null");
+    }
+    if (value == null) {
+      throw new IllegalStateException("Set command value may not be null");
+    }
+
+    if (address.isBlank()) {
+      throw new IllegalStateException("Set command address may not be blank");
+    }
+    if (value.isBlank()) {
+      throw new IllegalStateException("Set command value may not be blank");
+    }
+  }
 }

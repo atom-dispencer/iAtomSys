@@ -15,7 +15,5 @@ public class VmConfiguration {
 
   private int processorStackSizeIntegers = 256;
 
-  private boolean running = false;
-
   private short portsRangeStartAddress = 0x000a;
 }

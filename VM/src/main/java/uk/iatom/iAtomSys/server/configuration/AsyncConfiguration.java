@@ -14,12 +14,10 @@ public class AsyncConfiguration {
   private VmConfiguration vmConfiguration;
 
   @Autowired
-  private IAtomSysVM iAtomSysVM;
+  private IAtomSysVM vm;
 
   @Scheduled(fixedRateString = "#{@vmConfiguration.millisPerCycle}")
   public void processNextCycle() {
-    if (vmConfiguration.isRunning()) {
-      iAtomSysVM.processNextCycle();
-    }
+    vm.scheduledNextCycle();
   }
 }
