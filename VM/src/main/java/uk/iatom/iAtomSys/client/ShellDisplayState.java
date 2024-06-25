@@ -1,5 +1,6 @@
 package uk.iatom.iAtomSys.client;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,19 +36,23 @@ public class ShellDisplayState {
   private ApiClientConfiguration apiClientConfiguration;
 
 
-  private VmStatus status;
-  private String commandMessage;
-  private List<String> availableImages;
-  private short memorySliceStartAddress;
-  private short[] memory;
-  private List<String[]> disassembly;
-  private DebugSymbols debugSymbols;
-  private RegisterPacket[] registers;
-  private PortPacket[] ports;
+  private VmStatus status = VmStatus.STOPPED;
+  private String commandMessage = "[Nothing to see here!]";
+  private List<String> availableImages = new ArrayList<>();
+  private short memorySliceStartAddress = 0;
+  private short[] memory = new short[0];
+  private List<String[]> disassembly = new ArrayList<>();
+  private DebugSymbols debugSymbols = DebugSymbols.empty();
+  private RegisterPacket[] registers = new RegisterPacket[0];
+  private PortPacket[] ports = new PortPacket[0];
 
   public void update() {
+    status = api.getStatus();
 
-    VmStatus status = api.getStatus();
+    if (status == null) {
+     status = VmStatus.STOPPED;
+     commandMessage = "ERROR GETTING STATUS. CHECK LOGS AND REPORT.";
+    }
 
     switch (status) {
       case STOPPED -> updateStopped();
@@ -128,7 +133,7 @@ public class ShellDisplayState {
     }
 
     for (PortPacket packet : ports) {
-      addresses.putIfAbsent((int) packet.address(), Integer.toString(packet.id()));
+      addresses.putIfAbsent((int) packet.address(), "IO" + packet.id());
     }
 
     return addresses;

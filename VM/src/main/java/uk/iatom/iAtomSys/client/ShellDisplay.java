@@ -297,11 +297,13 @@ public class ShellDisplay {
     Rectangle rect = BORDER_RECT.get();
     printBox(rect, '#', false);
 
+    String title = " iAtomSysVM (%s) ".formatted(displayState.getStatus().name());
+
     print( //
         ANSICodes.PUSH_CURSOR_POS, //
         ANSICodes.moveTo(rect.getLocation()), //
         ANSICodes.moveRight(2 + preHeadingWidth), //
-        " iAtomSysVM ", //
+        title, //
         ANSICodes.POP_CURSOR_POS //
     );
   }
@@ -431,7 +433,7 @@ public class ShellDisplay {
         if (reservedAddresses.containsKey(address)) {
           String name = reservedAddresses.get(address);
           name = name.length() <= 3 ? name : name.substring(0, 3);
-          lineBuilder.append("< %s  > ".formatted(name));
+          lineBuilder.append("< %-3s  > ".formatted(name));
         } else {
           lineBuilder.append("<0x%04x> ".formatted(address));
         }
@@ -589,7 +591,7 @@ public class ShellDisplay {
       String format = "%3d  %-3s  %04X    %04X";
 
       // Get the list of registers and sort it by ID, ascending
-      List<RegisterPacket> packets = List.of(displayState.getRegisters());
+      List<RegisterPacket> packets = new ArrayList<>(List.of(displayState.getRegisters()));
       packets.sort(Comparator.comparing(RegisterPacket::id));
 
       for (int i = 0; i < packets.size(); i++) {

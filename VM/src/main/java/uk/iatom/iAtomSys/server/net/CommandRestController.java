@@ -24,6 +24,7 @@ import uk.iatom.iAtomSys.common.api.DebugSymbols;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
+import uk.iatom.iAtomSys.common.api.VmStatus;
 import uk.iatom.iAtomSys.server.IAtomSysVM;
 
 @RestController()
@@ -112,6 +113,7 @@ public class CommandRestController {
 
       logger.info("Writing image... (%d bytes)".formatted(buffer.length));
       vm.getMemory().write((short) 0, buffer);
+      vm.setStatus(VmStatus.PAUSED);
 
       File debugSymbolsFile = new File(cleanFile.getAbsolutePath() + ".json");
       try (FileInputStream fis = new FileInputStream(debugSymbolsFile)) {
