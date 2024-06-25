@@ -21,11 +21,22 @@ import org.jline.terminal.TerminalBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.lang.Nullable;
+import org.springframework.stereotype.Component;
 import uk.iatom.iAtomSys.IAtomSysApplication;
 import uk.iatom.iAtomSys.common.api.RegisterPacket;
 
+@Component
 public class ShellDisplay {
+
+  @EventListener
+  public void deferredStartupUpdate(ContextRefreshedEvent event) {
+    logger.warn("Doing delayed startup update");
+    displayState.update();
+    draw();
+  }
 
   public static final int COMMAND_MAX_WIDTH = 64;
   private final Logger logger = LoggerFactory.getLogger(ShellDisplay.class);
@@ -125,6 +136,8 @@ public class ShellDisplay {
   };
 
   public void activate() {
+    logger.info("Activating ShellDisplay...");
+
     if (alive) {
       return;
     }
@@ -138,7 +151,6 @@ public class ShellDisplay {
       System.exit(-1);
     }
 
-    logger.info("Activating ShellDisplay...");
     logger.info("Terminal size is: %s".formatted(terminal.getSize()));
     if (terminal.getSize().getRows() == 0 || terminal.getSize().getColumns() == 0) {
       logger.error("A terminal dimension is zero. Rows:%d; Columns:%d;".formatted(
@@ -148,8 +160,7 @@ public class ShellDisplay {
 
     print(ANSICodes.NEW_BUFFER, ANSICodes.YOU_ARE_DRUNK);
 
-    // disableSysOut();
-
+    displayState.update();
     displayState.setCommandMessage("Enter a command below to get started!");
     draw();
 
@@ -355,14 +366,15 @@ public class ShellDisplay {
 
     printBox(CONTENT_RECT.get(), '+', true);
 
-    List<String> availableImages = displayState.getAvailableImages();
+    String[] availableImagesArray = displayState.getAvailableImages();
+    List<String> availableImages = List.of(availableImagesArray == null ? new String[0] : availableImagesArray);
 
     List<String> title = new ArrayList<>();
     title.add("  _         _                   _____        __      ____  __ ");
     title.add(" (_)   /\\  | |                 / ____|       \\ \\    / |  \\/  |");
     title.add("  _   /  \\ | |_ ___  _ __ ___ | (___  _   _ __\\ \\  / /| \\  / |");
     title.add(" | | / /\\ \\| __/ _ \\| '_ ` _ \\ \\___ \\| | | / __\\ \\/ / | |\\/| |");
-    title.add(" | |/ ____ | || (_) | | | | | |____) | |_| \\__ \\  /  | |  | |");
+    title.add(" | |/ ____ | || (_) | | | | | |____) | |_| \\__ \\\\  /  | |  | |");
     title.add(" |_/_/    \\_\\__\\___/|_| |_| |_|_____/ \\__, |___/ \\/   |_|  |_|");
     title.add("                                       __/ |                  ");
     title.add("                                      |___/                   ");
@@ -375,7 +387,7 @@ public class ShellDisplay {
     lines.add("The Virtual Machine is currently stopped.");
     lines.add("");
     lines.add("");
-    if (availableImages == null || availableImages.isEmpty()) {
+    if (availableImages.isEmpty()) {
       lines.add("There are no memory images [.img] in ./images/");
     } else {
       lines.add("Available memory images:");
@@ -383,11 +395,15 @@ public class ShellDisplay {
       // Magic numbers:
       // 4: Box frame and padding
       // 2: The final two lines with the 'load' command hint
-      int maxImageDisplayCount = bounds.height - 4 - titleHeight - lines.size() - 2;
+      int maxImageDisplayCount = Math.max(0, bounds.height - 4 - titleHeight - lines.size() - 2);
       int imageDisplayCount = Math.min(availableImages.size(), maxImageDisplayCount);
 
-      List<String> toAdd = availableImages.subList(0, imageDisplayCount - 1);
-      if (imageDisplayCount < availableImages.size()) {
+      // Wrap in ArrayList to make it mutable
+      List<String> toAdd = new ArrayList<>(availableImages.subList(0, imageDisplayCount));
+
+      // If the desired number of entries would overflow the available lines, add a message saying
+      // how many entries have been omitted
+      if (imageDisplayCount < availableImages.size() && !toAdd.isEmpty()) {
         toAdd.remove(toAdd.size() - 1);
         toAdd.add("... and %d more.".formatted(availableImages.size() - imageDisplayCount));
       }

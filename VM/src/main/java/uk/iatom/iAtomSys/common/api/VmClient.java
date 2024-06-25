@@ -5,6 +5,8 @@ public interface VmClient {
   // Queries
   VmStatus getStatus();
 
+  String[] getAvailableImages();
+
   MemoryResponsePacket getMemory(MemoryRequestPacket packet);
 
   RegisterPacket[] getRegisters();
