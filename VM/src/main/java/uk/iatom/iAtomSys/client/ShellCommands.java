@@ -25,8 +25,6 @@ import uk.iatom.iAtomSys.common.api.VmStatus;
 @Component
 public class ShellCommands {
 
-  private static final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
-
   public static final String[] HELP_PAGES = new String[]{ //
       "[0] 'help <page>': Find help! Also check GitHub docs.", //
       "[1] 'exit': Terminate the application.", //
@@ -39,16 +37,14 @@ public class ShellCommands {
       "[8] 'run <x|start> <end?>': Execute between the addresses.", //
       "[9] 'refresh': Refreshes the display state and redraw." //
   };
-
+  private static final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
+  private final AtomicBoolean shouldResetCommand = new AtomicBoolean(false);
   @Autowired
   private VmClient api;
   @Autowired
   private ApplicationContext applicationContext;
   @Autowired
   private ShellDisplay display;
-
-  private final AtomicBoolean shouldResetCommand = new AtomicBoolean(false);
-  private Thread updateDaemon = null;
   /**
    * The task responsible for repeatedly refreshing the UI while the VM is in the
    * {@link VmStatus#RUNNING} phase.
@@ -56,7 +52,7 @@ public class ShellCommands {
   private final Runnable updateDaemonTask = new Thread(() -> {
     logger.info("Starting update daemon...");
 
-    while(display.getDisplayState().getStatus() == VmStatus.RUNNING) {
+    while (display.getDisplayState().getStatus() == VmStatus.RUNNING && display.isAlive()) {
       try {
         display.getDisplayState().update();
         display.draw(shouldResetCommand.getAndSet(false));
@@ -68,6 +64,7 @@ public class ShellCommands {
 
     logger.info("Update daemon exiting...");
   });
+  private Thread updateDaemon = null;
 
   @PostConstruct
   public void postConstruct() {
@@ -214,7 +211,8 @@ public class ShellCommands {
       tryRefresh(false);
 
       // If the VM is running, start the update daemon if it isn't already going
-      if ((updateDaemon == null || !updateDaemon.isAlive()) && display.getDisplayState().getStatus() == VmStatus.RUNNING) {
+      if ((updateDaemon == null || !updateDaemon.isAlive())
+          && display.getDisplayState().getStatus() == VmStatus.RUNNING) {
         updateDaemon = new Thread(updateDaemonTask);
         updateDaemon.setDaemon(true);
         updateDaemon.start();

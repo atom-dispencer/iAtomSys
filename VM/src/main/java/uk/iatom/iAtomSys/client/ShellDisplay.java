@@ -8,12 +8,16 @@ import java.awt.Rectangle;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import lombok.Getter;
 import org.jline.terminal.Terminal;
@@ -27,28 +31,19 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import uk.iatom.iAtomSys.IAtomSysApplication;
 import uk.iatom.iAtomSys.common.api.RegisterPacket;
-import uk.iatom.iAtomSys.common.api.VmStatus;
 
 @Component
 public class ShellDisplay {
 
-  @EventListener
-  public void deferredStartupUpdate(ContextRefreshedEvent event) {
-    logger.warn("Doing delayed startup update");
-    displayState.update();
-    draw(true);
-  }
-
   public static final int COMMAND_MAX_WIDTH = 64;
   private final Logger logger = LoggerFactory.getLogger(ShellDisplay.class);
+  private final AtomicBoolean alive = new AtomicBoolean(false);
   int COMMAND_TRAY_HEIGHT = 4;
   @Getter
   @Autowired
   private ShellDisplayState displayState;
   private PrintStream sysOutCache = System.out;
-  private boolean alive;
   private Terminal terminal;
-
   private final Supplier<Rectangle> BORDER_RECT = () -> {
     int start = 2;
     Point origin = new Point(start, start);
@@ -71,7 +66,6 @@ public class ShellDisplay {
     );
     return new Rectangle(origin, dim);
   };
-
   private final Supplier<Rectangle> COMMAND_RECT = () -> {
     Rectangle content = CONTENT_RECT.get();
 
@@ -86,13 +80,11 @@ public class ShellDisplay {
 
     return new Rectangle(origin, dim);
   };
-
   private final Supplier<Point> CREDITS_POS = () -> {
     Point startPoint = COMMAND_RECT.get().getLocation();
     startPoint.translate(COMMAND_MAX_WIDTH + 8, 0);
     return startPoint;
   };
-
   private final Supplier<Rectangle> MEMORY_RUNDATA_RECT = () -> {
     Rectangle content = CONTENT_RECT.get();
 
@@ -105,7 +97,6 @@ public class ShellDisplay {
     );
     return new Rectangle(origin, dimension);
   };
-
   private final Supplier<Rectangle> REGISTERS_RECT = () -> {
     Rectangle content = CONTENT_RECT.get();
 
@@ -120,7 +111,6 @@ public class ShellDisplay {
 
     return new Rectangle(origin, dim);
   };
-
   private final Supplier<Rectangle> FLAGS_RECT = () -> {
     Rectangle content = CONTENT_RECT.get();
     Rectangle registers = REGISTERS_RECT.get();
@@ -137,13 +127,37 @@ public class ShellDisplay {
     return new Rectangle(origin, dim);
   };
 
+  private static List<String> getTitle() {
+    List<String> title = new ArrayList<>();
+    title.add("  _         _                   _____        __      ____  __ ");
+    title.add(" (_)   /\\  | |                 / ____|       \\ \\    / |  \\/  |");
+    title.add("  _   /  \\ | |_ ___  _ __ ___ | (___  _   _ __\\ \\  / /| \\  / |");
+    title.add(" | | / /\\ \\| __/ _ \\| '_ ` _ \\ \\___ \\| | | / __\\ \\/ / | |\\/| |");
+    title.add(" | |/ ____ | || (_) | | | | | |____) | |_| \\__ \\\\  /  | |  | |");
+    title.add(" |_/_/    \\_\\__\\___/|_| |_| |_|_____/ \\__, |___/ \\/   |_|  |_|");
+    title.add("                                       __/ |                  ");
+    title.add("                                      |___/                   ");
+    return title;
+  }
+
+  @EventListener
+  public void deferredStartupUpdate(ContextRefreshedEvent event) {
+    logger.warn("Doing delayed startup update");
+    displayState.update();
+    draw(true);
+  }
+
+  public boolean isAlive() {
+    return alive.get();
+  }
+
   public void activate() {
     logger.info("Activating ShellDisplay...");
 
-    if (alive) {
+    if (isAlive()) {
       return;
     }
-    this.alive = true;
+    this.alive.set(true);
 
     try {
       terminal = TerminalBuilder.terminal();
@@ -171,10 +185,11 @@ public class ShellDisplay {
 
   @PreDestroy
   public void deactivate() {
-    if (!alive) {
+    if (!isAlive()) {
       return;
     }
-    this.alive = false;
+    // Henceforth, 'print' cannot be used.
+    this.alive.set(false);
 
     // Enable System.out for logging
     enableSysOut();
@@ -196,13 +211,7 @@ public class ShellDisplay {
 
     } finally {
       // Try to restore the terminal's pre-application state
-      print(
-          ANSICodes.OLD_BUFFER,
-          "\nExiting app...\n\n"
-      );
-
-      // Re-enable System.out because #print disables it
-      enableSysOut();
+      System.out.println(ANSICodes.OLD_BUFFER + "\nExiting app...\n\n");
 
       // Eat any remaining input, so it doesn't mess with the parent terminal
       try {
@@ -213,8 +222,19 @@ public class ShellDisplay {
     }
   }
 
-
+  /**
+   * The final displaying method to which other 'print' methods ultimately defer. Enables
+   * {@link System#out}, writes to it, flushes the stream, and disables it again. This method is not
+   * thread safe.
+   *
+   * @param messages The messages to display, which will be joined together with no delimiter.
+   */
   private void print(@NotNull final String... messages) {
+    if (!isAlive()) {
+      logger.error("Cannot draw while ShellDisplay is not alive");
+      return;
+    }
+
     enableSysOut();
     String joined = String.join("", messages);
     System.out.print(joined);
@@ -325,16 +345,14 @@ public class ShellDisplay {
     }));
   }
 
-  private void assertShellLive() {
-    assert alive : new IllegalStateException(
-        "ShellDisplay cannot take actions while the shell is not live.");
-  }
-
   /**
    * Immediately redraw the UI with the current {@link ShellDisplayState}.
    */
   public void draw(boolean resetCommand) {
-    assertShellLive();
+    if (!isAlive()) {
+      logger.error("Cannot draw while ShellDisplay not alive.");
+      return;
+    }
 
     long start = System.nanoTime();
 
@@ -364,31 +382,22 @@ public class ShellDisplay {
   }
 
   private void drawStoppedMessage() {
-    assertShellLive();
     Rectangle bounds = CONTENT_RECT.get();
     Point start = bounds.getLocation();
-
     printBox(CONTENT_RECT.get(), '+', true);
 
     String[] availableImagesArray = displayState.getAvailableImages();
-    List<String> availableImages = List.of(availableImagesArray == null ? new String[0] : availableImagesArray);
+    List<String> availableImages = List.of(
+        availableImagesArray == null ? new String[0] : availableImagesArray);
 
-    List<String> title = new ArrayList<>();
-    title.add("  _         _                   _____        __      ____  __ ");
-    title.add(" (_)   /\\  | |                 / ____|       \\ \\    / |  \\/  |");
-    title.add("  _   /  \\ | |_ ___  _ __ ___ | (___  _   _ __\\ \\  / /| \\  / |");
-    title.add(" | | / /\\ \\| __/ _ \\| '_ ` _ \\ \\___ \\| | | / __\\ \\/ / | |\\/| |");
-    title.add(" | |/ ____ | || (_) | | | | | |____) | |_| \\__ \\\\  /  | |  | |");
-    title.add(" |_/_/    \\_\\__\\___/|_| |_| |_|_____/ \\__, |___/ \\/   |_|  |_|");
-    title.add("                                       __/ |                  ");
-    title.add("                                      |___/                   ");
+    List<String> title = getTitle();
     title.add("");
     int titleWidth = Collections.max(title, Comparator.comparing(String::length)).length();
     int titleHeight = title.size();
 
     List<String> lines = new ArrayList<>();
     lines.add("");
-    lines.add("The Virtual Machine is currently stopped.");
+    lines.add("The Virtual Machine is stopped.");
     lines.add("");
     lines.add("");
     if (availableImages.isEmpty()) {
@@ -434,8 +443,6 @@ public class ShellDisplay {
    * Draw the background of the GUI, including the title and frame, without clearing the insides.
    */
   public void drawBackground(boolean resetCommand) {
-    assertShellLive();
-
     int preHeadingWidth = 10;
 
     // Don't clear the screen if RUNNING because it will wipe partial commands
@@ -462,7 +469,6 @@ public class ShellDisplay {
    * input.
    */
   public void drawCommandInput(boolean resetCommand) {
-    assertShellLive();
     Rectangle rect = COMMAND_RECT.get();
 
     String commandMessage = displayState.getCommandMessage();
@@ -500,7 +506,6 @@ public class ShellDisplay {
    * message as well.
    */
   public void drawCredits() {
-    assertShellLive();
     Point startPoint = CREDITS_POS.get();
 
     // TODO Add license information to credits
@@ -659,30 +664,52 @@ public class ShellDisplay {
    * uptime.
    */
   public void drawRunningData() {
-    Rectangle bounds = MEMORY_RUNDATA_RECT.get();
+    Rectangle bounds = CONTENT_RECT.get();
+    Point start = bounds.getLocation();
     printBox(bounds, '+', true);
-    StringBuilder contents = new StringBuilder();
 
-    String title = " VM is running... ";
-    int titleStart = Math.floorDiv(bounds.width, 2) - Math.floorDiv(title.length(), 2);
+    String windowTitle = " VM is running... ";
+    int titleStart = Math.floorDiv(bounds.width, 2) - Math.floorDiv(windowTitle.length(), 2);
 
-    contents.append(ANSICodes.moveTo(new Point(20, 20)));
-    contents.append("Start Time: %s\n".formatted(displayState.getRunningSince()));
-    contents.append("Executed Instructions: %d".formatted(displayState.getRunningInstructionsExecuted()));
+    List<String> title = getTitle();
+    title.add("");
+    int titleWidth = Collections.max(title, Comparator.comparing(String::length)).length();
+
+    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss, dd LLL yyyy");
+    LocalDateTime runningSince = displayState.getRunningSince();
+    Duration runningTime = Duration.between(runningSince, LocalDateTime.now());
+
+    // Don't worry about rounding here, it's just an estimate
+    double executed = (double) displayState.getRunningInstructionsExecuted() / 1_000_000;
+    long seconds = runningTime.getSeconds();
+    double executionRate = seconds == 0 ? 0 : executed / seconds;
+
+    List<String> lines = new ArrayList<>();
+    lines.add("Up-time              : %02d:%02d:%02d".formatted(
+        runningTime.toHoursPart(),
+        runningTime.toMinutesPart(),
+        runningTime.toSecondsPart()
+    ));
+    lines.add("Running Since        : %s".formatted(dateTimeFormatter.format(runningSince)));
+    lines.add("Instructions Executed: %.2fM (%.2fM/s avg.)".formatted(executed, executionRate));
+    lines.add("");
+    lines.add("'help' : See help with commands");
+    lines.add("'pause' : Pause the VM and inspect its state");
 
     print( //
         ANSICodes.PUSH_CURSOR_POS, //
 
-        // Title
-        ANSICodes.moveTo(bounds.getLocation()), //
+        // Window
+        ANSICodes.moveTo(start), //
         ANSICodes.moveRight(titleStart), //
-        title, //
+        windowTitle,
 
-        // Boxes/memorySlice addresses/whatever
-        ANSICodes.moveTo(bounds.getLocation()), //
-        ANSICodes.moveRight(3), //
+        // Contents
+        ANSICodes.moveTo(start), //
         ANSICodes.moveDown(2), //
-        contents.toString(), //
+        ANSICodes.moveRight(3), //
+        formatParagraph(null, false, 0, title), //
+        formatParagraph(null, true, titleWidth, lines), //
 
         //
         ANSICodes.POP_CURSOR_POS //
@@ -693,8 +720,6 @@ public class ShellDisplay {
    * Draw the values of the VM registers, including their names, addresses and values.
    */
   public void drawRegisters() {
-    assertShellLive();
-
     Rectangle rect = REGISTERS_RECT.get();
     printBox(rect, '+', true);
 
@@ -746,8 +771,6 @@ public class ShellDisplay {
   }
 
   public void drawFlags() {
-    assertShellLive();
-
     Rectangle rect = FLAGS_RECT.get();
     printBox(rect, '+', true);
   }

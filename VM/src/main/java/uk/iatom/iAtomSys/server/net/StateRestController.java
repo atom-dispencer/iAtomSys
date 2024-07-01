@@ -2,9 +2,6 @@ package uk.iatom.iAtomSys.server.net;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +46,8 @@ public class StateRestController {
   public RunningDataPacket runningData() {
     AsyncRunData runData = vm.getAsyncRunData();
 
-    return new RunningDataPacket(runData.getStartTime(), runData.getAsyncExecutedInstructions().get());
+    return new RunningDataPacket(runData.getStartTime(),
+        runData.getAsyncExecutedInstructions().get());
   }
 
   @GetMapping("/images")
