@@ -197,7 +197,7 @@ public class CommandRestController {
         value = Short.parseShort(valueStr, 16);
       }
     } catch (NumberFormatException nfx) {
-      return "Not a hex int-16: %s".formatted(valueStr);
+      return "Not a register or hex int-16: %s".formatted(valueStr);
     }
 
     // Write value and finish up
