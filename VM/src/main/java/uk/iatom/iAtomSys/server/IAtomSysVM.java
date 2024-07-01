@@ -1,7 +1,6 @@
 package uk.iatom.iAtomSys.server;
 
 import java.time.LocalDateTime;
-import java.util.concurrent.atomic.AtomicLong;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -28,39 +27,30 @@ import uk.iatom.iAtomSys.server.stack.ProcessorStack;
 public class IAtomSysVM {
 
   private final Logger logger = LoggerFactory.getLogger(IAtomSysVM.class);
-
+  private final AsyncRunData asyncRunData = new AsyncRunData();
   @Setter
   private VmStatus status = VmStatus.STOPPED;
-
   @Autowired
   private Memory memory;
-
   @Autowired
   private RegisterSet registerSet;
-
   @Autowired
   private InstructionSet instructionSet;
-
   @Autowired
   private ProcessorStack processorStack;
-
   @Autowired
   private VmConfiguration vmConfiguration;
-
   @Autowired
   private IOPort[] ports;
-
   @Setter
   private DebugSymbols debugSymbols = DebugSymbols.empty();
-
-  private final AsyncRunData asyncRunData = new AsyncRunData();
 
   public void runAsync() {
     Thread thread = new Thread(() -> {
       asyncRunData.getAsyncExecutedInstructions().set(0L);
       asyncRunData.setStartTime(LocalDateTime.now());
 
-      while(status == VmStatus.RUNNING) {
+      while (status == VmStatus.RUNNING) {
         processNextCycle();
         asyncRunData.getAsyncExecutedInstructions().getAndIncrement();
       }

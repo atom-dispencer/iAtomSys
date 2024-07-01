@@ -8,8 +8,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.io.ClassPathResource;
-import uk.iatom.iAtomSys.client.ShellCommands;
-import uk.iatom.iAtomSys.client.ShellDisplay;
 
 @SpringBootApplication
 public class IAtomSysApplication {

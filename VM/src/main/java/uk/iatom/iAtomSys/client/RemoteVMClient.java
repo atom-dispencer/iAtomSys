@@ -21,7 +21,6 @@ import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
 import uk.iatom.iAtomSys.common.api.VmClient;
 import uk.iatom.iAtomSys.common.api.VmStatus;
-import uk.iatom.iAtomSys.server.AsyncRunData;
 
 @Component
 public class RemoteVMClient implements VmClient {
