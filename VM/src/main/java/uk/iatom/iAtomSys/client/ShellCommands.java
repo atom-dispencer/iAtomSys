@@ -31,7 +31,7 @@ public class ShellCommands {
   private static final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
 
   public static final String[] HELP_PAGES = new String[]{ //
-      "[0] 'help <page>': Find help! Also check GitHub docs.", //
+      "[0] 'help <page 0-9>': Find help! Also check GitHub docs.", //
       "[1] 'exit': Terminate the application.", //
       "[2] 'hello': Say hi!", //
       "[3] 'step <count>': Execute the next <count> instructions.", //

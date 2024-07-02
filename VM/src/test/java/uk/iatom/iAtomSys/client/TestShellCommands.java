@@ -2,6 +2,7 @@ package uk.iatom.iAtomSys.client;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
@@ -25,6 +26,15 @@ public class TestShellCommands {
     Mockito.doNothing().when(display).activate();
     Mockito.when(display.getDisplayState()).thenReturn(new ShellDisplayState());
     shellCommands = new ShellCommands(api, display);
+  }
+
+  @Test
+  void test_hello() {
+    shellCommands.hello();
+    Assertions.assertEquals(
+        "Hello!",
+        shellCommands.getDisplay().getDisplayState().getCommandMessage()
+    );
   }
 
   @ParameterizedTest
