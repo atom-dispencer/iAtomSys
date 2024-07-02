@@ -31,8 +31,10 @@ public class TestShellCommands {
   @ValueSource(strings = { "", "abc", "$%^", "100a", "\na" })
   void test_help_numberFormat(String str) {
     shellCommands.help(str);
-    String expected = "Input must be an integer. Got %s.".formatted(str);
-    Assertions.assertEquals(expected, shellCommands.getDisplay().getDisplayState().getCommandMessage());
+    Assertions.assertEquals(
+        ShellCommands.HELP_BAD_FORMAT.apply(str),
+        shellCommands.getDisplay().getDisplayState().getCommandMessage()
+    );
   }
 
   @ParameterizedTest
@@ -41,7 +43,9 @@ public class TestShellCommands {
     String str = Integer.toString(index);
     shellCommands.help(str);
 
-    String expected = "%s not in range [0,%d], try 'help 0'".formatted(str, ShellCommands.HELP_PAGES.length - 1);
-    Assertions.assertEquals(expected, shellCommands.getDisplay().getDisplayState().getCommandMessage());
+    Assertions.assertEquals(
+        ShellCommands.HELP_BAD_INDEX.apply(str),
+        shellCommands.getDisplay().getDisplayState().getCommandMessage()
+    );
   }
 }

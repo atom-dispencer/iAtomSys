@@ -3,6 +3,7 @@ package uk.iatom.iAtomSys.client;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,9 +43,13 @@ public class ShellCommands {
       "[9] 'refresh': Refreshes the display state and redraw." //
   };
 
+  // Messages which may appear in the ShellDisplayState command message
+  public static final Function<String, String> HELP_BAD_FORMAT = "Input must be an integer. Got %s."::formatted;
+  public static final Function<String, String> HELP_BAD_INDEX = (pageStr) -> "%s not in range [0,%d], try 'help 0'".formatted(pageStr, HELP_PAGES.length - 1);
+  public static final String EXIT_SHUTDOWN = "Shutting down application...";
+
   @Autowired
   private ApplicationContext applicationContext;
-
   private final VmClient api;
   private final ShellDisplay display;
   private final AtomicBoolean shouldResetCommand = new AtomicBoolean(false);
@@ -88,7 +93,7 @@ public class ShellCommands {
 
   @ShellMethod()
   public String exit() {
-    display.getDisplayState().setCommandMessage("Shutting down application...");
+    display.getDisplayState().setCommandMessage(EXIT_SHUTDOWN);
     display.draw(true);
     ((ConfigurableApplicationContext) applicationContext).close();
     throw new ExitRequest();
@@ -120,11 +125,9 @@ public class ShellCommands {
       display.getDisplayState().setCommandMessage(HELP_PAGES[page]);
 
     } catch (NumberFormatException nfx) {
-      display.getDisplayState()
-          .setCommandMessage("Input must be an integer. Got %s.".formatted(pageStr));
+      display.getDisplayState().setCommandMessage(HELP_BAD_FORMAT.apply(pageStr));
     } catch (IndexOutOfBoundsException ibx) {
-      display.getDisplayState().setCommandMessage(
-          "%s not in range [0,%d], try 'help 0'".formatted(pageStr, HELP_PAGES.length - 1));
+      display.getDisplayState().setCommandMessage(HELP_BAD_INDEX.apply(pageStr));
     }
 
     tryRefresh(true);
@@ -137,7 +140,6 @@ public class ShellCommands {
     tryRefresh(true);
   }
 
-  //TODO Availability methods https://docs.spring.io/spring-shell/reference/commands/availability.html
   @ShellMethod()
   public void step(final @ShellOption(value = "-n", defaultValue = "1") int count) {
 
