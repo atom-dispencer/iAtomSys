@@ -3,6 +3,7 @@ package uk.iatom.iAtomSys.client;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.util.concurrent.atomic.AtomicBoolean;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,7 +24,10 @@ import uk.iatom.iAtomSys.common.api.VmStatus;
 
 @ShellComponent
 @Component
+@Getter
 public class ShellCommands {
+
+  private static final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
 
   public static final String[] HELP_PAGES = new String[]{ //
       "[0] 'help <page>': Find help! Also check GitHub docs.", //
@@ -37,14 +41,20 @@ public class ShellCommands {
       "[8] 'run <x|start> <end?>': Execute between the addresses.", //
       "[9] 'refresh': Refreshes the display state and redraw." //
   };
-  private static final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
-  private final AtomicBoolean shouldResetCommand = new AtomicBoolean(false);
-  @Autowired
-  private VmClient api;
+
   @Autowired
   private ApplicationContext applicationContext;
+
+  private final VmClient api;
+  private final ShellDisplay display;
+  private final AtomicBoolean shouldResetCommand = new AtomicBoolean(false);
+
   @Autowired
-  private ShellDisplay display;
+  public ShellCommands(VmClient api, ShellDisplay display) {
+    this.api = api;
+    this.display = display;
+  }
+
   /**
    * The task responsible for repeatedly refreshing the UI while the VM is in the
    * {@link VmStatus#RUNNING} phase.
@@ -52,10 +62,10 @@ public class ShellCommands {
   private final Runnable updateDaemonTask = new Thread(() -> {
     logger.info("Starting update daemon...");
 
-    while (display.getDisplayState().getStatus() == VmStatus.RUNNING && display.isAlive()) {
+    while (getDisplay().getDisplayState().getStatus() == VmStatus.RUNNING && getDisplay().isAlive()) {
       try {
-        display.getDisplayState().update();
-        display.draw(shouldResetCommand.getAndSet(false));
+        getDisplay().getDisplayState().update();
+        getDisplay().draw(shouldResetCommand.getAndSet(false));
         Thread.sleep(1000L);
       } catch (Exception e) {
         logger.error("Suppressed error in run/sleep loop.", e);
