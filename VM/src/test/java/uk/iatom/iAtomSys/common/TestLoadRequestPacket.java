@@ -45,4 +45,22 @@ public class TestLoadRequestPacket {
         LoadRequestPacket.ERR_UNSANITARY(imageName, sanitised)
     );
   }
+
+  @Test
+  void name_long() {
+    String name = "x".repeat(LoadRequestPacket.MAX_PATH_LENGTH + 1);
+
+    Assertions.assertThrows(
+        IllegalArgumentException.class,
+        () -> new LoadRequestPacket(name),
+        LoadRequestPacket.ERR_LENGTH(name.length())
+    );
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "test", "test.img" })
+  void success(String name) {
+    LoadRequestPacket packet = new LoadRequestPacket(name);
+    Assertions.assertEquals("test.img", packet.imageName());
+  }
 }

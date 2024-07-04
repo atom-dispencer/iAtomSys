@@ -1,23 +1,19 @@
 package uk.iatom.iAtomSys.common.api;
 
-import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public record LoadRequestPacket(String imageName) {
 
   private static final Logger logger = LoggerFactory.getLogger(LoadRequestPacket.class);
-  private static final int MAX_PATH_LENGTH = 64;
+
+  public static final int MAX_PATH_LENGTH = 64;
 
   public static final String ERR_BLANK = "Image name cannot be blank!";
 
   public static String ERR_UNSANITARY(String bad, String sanitised) {
     int diff = bad.length() - sanitised.length();
     return "Image name has %d illegal character%s".formatted(diff, Math.abs(diff) == 1 ? "" : "s");
-  }
-
-  public static String ERR_NOT_SIMPLE(String fileNameOnly, String imageName) {
-    return "Image name must be simple: %s != %s".formatted(fileNameOnly, imageName);
   }
 
   public static String ERR_LENGTH(int length) {
@@ -35,6 +31,13 @@ public record LoadRequestPacket(String imageName) {
       throw new IllegalArgumentException(ERR_BLANK);
     }
 
+    int length = imageName.length();
+    if (length > MAX_PATH_LENGTH) {
+      String message = ERR_LENGTH(length);
+      logger.warn(message);
+      throw new IllegalArgumentException(message);
+    }
+
     String sanitised = sanitise(imageName);
     if (!imageName.equals(sanitised)) {
       String message = ERR_UNSANITARY(imageName, sanitised);
@@ -44,20 +47,6 @@ public record LoadRequestPacket(String imageName) {
 
     if (!imageName.endsWith(".img")) {
       imageName = imageName + ".img";
-    }
-
-    String fileNameOnly = new File(imageName).getName();
-    if (!fileNameOnly.equals(imageName)) {
-      String message = ERR_NOT_SIMPLE(fileNameOnly, imageName);
-      logger.warn(message);
-      throw new IllegalArgumentException(message);
-    }
-
-    int length = imageName.length();
-    if (length > MAX_PATH_LENGTH) {
-      String message = ERR_LENGTH(length);
-      logger.warn(message);
-      throw new IllegalArgumentException(message);
     }
   }
 }
