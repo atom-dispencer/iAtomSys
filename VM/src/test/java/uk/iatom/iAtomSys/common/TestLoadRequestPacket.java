@@ -39,10 +39,14 @@ public class TestLoadRequestPacket {
   void unsanitary(String imageName) {
     String sanitised = LoadRequestPacket.sanitise(imageName);
 
-    Assertions.assertThrows(
+    IllegalArgumentException ex = Assertions.assertThrows(
         IllegalArgumentException.class,
-        () -> new LoadRequestPacket(imageName),
-        LoadRequestPacket.ERR_UNSANITARY(imageName, sanitised)
+        () -> new LoadRequestPacket(imageName)
+    );
+
+    Assertions.assertEquals(
+        LoadRequestPacket.ERR_UNSANITARY(imageName, sanitised),
+        ex.getMessage()
     );
   }
 
@@ -50,11 +54,12 @@ public class TestLoadRequestPacket {
   void name_long() {
     String name = "x".repeat(LoadRequestPacket.MAX_PATH_LENGTH + 1);
 
-    Assertions.assertThrows(
+    IllegalArgumentException ex = Assertions.assertThrows(
         IllegalArgumentException.class,
-        () -> new LoadRequestPacket(name),
-        LoadRequestPacket.ERR_LENGTH(name.length())
+        () -> new LoadRequestPacket(name)
     );
+
+    Assertions.assertEquals(LoadRequestPacket.ERR_LENGTH(name.length()), ex.getMessage());
   }
 
   @ParameterizedTest

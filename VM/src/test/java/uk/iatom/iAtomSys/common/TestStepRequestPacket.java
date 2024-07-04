@@ -10,13 +10,12 @@ public class TestStepRequestPacket {
   @ParameterizedTest
   @ValueSource(ints = { StepRequestPacket.MIN_COUNT - 1, StepRequestPacket.MAX_COUNT + 1 })
   void test_step_countOutside(int count) {
-    String expected = StepRequestPacket.BAD_INTERVAL(count);
-
-    Assertions.assertThrows(
+    IllegalArgumentException ex = Assertions.assertThrows(
         IllegalArgumentException.class,
-        () -> new StepRequestPacket(count),
-        expected
+        () -> new StepRequestPacket(count)
     );
+
+    Assertions.assertEquals(StepRequestPacket.BAD_INTERVAL(count), ex.getMessage());
   }
 
   @ParameterizedTest
