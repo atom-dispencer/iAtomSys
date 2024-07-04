@@ -38,12 +38,33 @@ public class CommandRestController {
 
   private final Logger logger = LoggerFactory.getLogger(CommandRestController.class);
 
-  @Autowired
+  public static final int INT16_HEX_LENGTH = 4;
+  public static final String HELLO_WORLD = "World";
+  public static final String ERR_VM_RUNNING = "Action not allowed: VM is running";
+
+  public static String ERR_NUMBER_FORMAT(String addressStr) {
+    return "Not a register or hex int-16: %s".formatted(addressStr);
+  }
+
+  public static String ERR_INPUT_LENGTH(String value) {
+    return "Incorrect input length: %d!=%d on %s".formatted(value.length(), INT16_HEX_LENGTH, value);
+  }
+
+  public static String SET_SUCCESS(String addressStr, short address, String valueStr, short value) {
+    return "Set %s (%04X) to %s (%04X)".formatted(addressStr, address, valueStr, value);
+  }
+
+
   private IAtomSysVM vm;
+
+  @Autowired
+  public CommandRestController(IAtomSysVM vm) {
+    this.vm = vm;
+  }
 
   @GetMapping("/hello")
   public String hello() {
-    return "World";
+    return HELLO_WORLD;
   }
 
   @PostMapping("/step")
@@ -155,7 +176,7 @@ public class CommandRestController {
   @PostMapping("/set")
   public String set(@RequestBody SetRequestPacket request) {
     if (vm.getStatus() == VmStatus.RUNNING) {
-      return "Action not allowed: VM is running";
+      return ERR_VM_RUNNING;
     }
 
     String addressStr = request.address().toUpperCase().trim();
@@ -174,11 +195,15 @@ public class CommandRestController {
       }
 
       if (!isRegister) {
+        if (addressStr.length() != INT16_HEX_LENGTH) {
+          return ERR_INPUT_LENGTH(addressStr);
+        }
+
         address = Short.parseShort(addressStr, 16);
       }
 
     } catch (NumberFormatException nfx) {
-      return "Not a register or hex int-16: %s".formatted(addressStr);
+      return ERR_NUMBER_FORMAT(addressStr);
     }
 
     // Parse value
@@ -194,16 +219,20 @@ public class CommandRestController {
       }
 
       if (!isRegister) {
+        if (valueStr.length() != INT16_HEX_LENGTH) {
+          return ERR_INPUT_LENGTH(valueStr);
+        }
+
         value = Short.parseShort(valueStr, 16);
       }
     } catch (NumberFormatException nfx) {
-      return "Not a register or hex int-16: %s".formatted(valueStr);
+      return ERR_NUMBER_FORMAT(valueStr);
     }
 
     // Write value and finish up
     vm.getMemory().write(address, value);
 
-    String message = "Set %s (%04X) to %s (%04X)".formatted(addressStr, address, valueStr, value);
+    String message = SET_SUCCESS(addressStr, address, valueStr, value);
     logger.info(message);
     return message;
   }
