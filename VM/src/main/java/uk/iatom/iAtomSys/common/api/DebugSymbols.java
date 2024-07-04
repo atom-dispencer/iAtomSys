@@ -31,8 +31,9 @@ public record DebugSymbols(
 
   private static final Logger logger = LoggerFactory.getLogger(DebugSymbols.class);
 
+  public static final String EMPTY_NAME = "<empty>";
   public static DebugSymbols empty() {
-    return new DebugSymbols("empty", new HashMap<>(), new HashMap<>(), new HashMap<>());
+    return new DebugSymbols("", new HashMap<>(), new HashMap<>(), new HashMap<>());
   }
 
   public static @Nullable DebugSymbols fromJson(String sourceName, InputStream stream) {
@@ -61,5 +62,18 @@ public record DebugSymbols(
     Map<Integer, String> commentsRelevant = selector.apply(comments);
 
     return new DebugSymbols(this.sourceName(), labelsRelevant, functionsRelevant, commentsRelevant);
+  }
+
+  public boolean isEmpty() {
+    if (!sourceName.isEmpty())
+      return false;
+    if (!labels.isEmpty())
+      return false;
+    if (!functions.isEmpty())
+      return false;
+    if (!comments.isEmpty())
+      return false;
+
+    return true;
   }
 }

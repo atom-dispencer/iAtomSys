@@ -40,7 +40,7 @@ public class CommandRestController {
 
   public static final int INT16_HEX_LENGTH = 4;
   public static final String HELLO_WORLD = "World";
-  public static final String ERR_VM_RUNNING = "Action not allowed: VM is running";
+  public static final String ERR_NOT_ALLOWED_RUNNING = "Action not allowed: VM is running";
 
   public static String ERR_NUMBER_FORMAT(String addressStr) {
     return "Not a register or hex int-16: %s".formatted(addressStr);
@@ -52,6 +52,10 @@ public class CommandRestController {
 
   public static String SET_SUCCESS(String addressStr, short address, String valueStr, short value) {
     return "Set %s (%04X) to %s (%04X)".formatted(addressStr, address, valueStr, value);
+  }
+
+  public static String DROP_DEBUG_SUCCESS(String name) {
+    return "Dropped debug symbols: " + name;
   }
 
 
@@ -176,7 +180,7 @@ public class CommandRestController {
   @PostMapping("/set")
   public String set(@RequestBody SetRequestPacket request) {
     if (vm.getStatus() == VmStatus.RUNNING) {
-      return ERR_VM_RUNNING;
+      return ERR_NOT_ALLOWED_RUNNING;
     }
 
     String addressStr = request.address().toUpperCase().trim();
@@ -240,12 +244,16 @@ public class CommandRestController {
   @PostMapping("/drop_debug")
   public String dropDebug() {
     if (vm.getStatus() == VmStatus.RUNNING) {
-      return "Action not allowed: VM is running";
+      return ERR_NOT_ALLOWED_RUNNING;
     }
 
     String name = vm.getDebugSymbols().sourceName();
+    if (name == null || name.isBlank()) {
+      name = DebugSymbols.EMPTY_NAME;
+    }
+
     vm.setDebugSymbols(DebugSymbols.empty());
-    return "Dropped debug symbols: " + name;
+    return DROP_DEBUG_SUCCESS(name);
   }
 
   @PostMapping("/run")

@@ -11,6 +11,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import uk.iatom.iAtomSys.common.api.DebugSymbols;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.VmStatus;
 import uk.iatom.iAtomSys.common.register.DuplicateRegisterException;
@@ -49,7 +50,7 @@ public class TestCommandRestController {
   @Test
   void set_running() {
     when(vm.getStatus()).thenReturn(VmStatus.RUNNING);
-    assertEquals(ERR_VM_RUNNING, rest.set(null));
+    assertEquals(ERR_NOT_ALLOWED_RUNNING, rest.set(null));
   }
 
   @ParameterizedTest
@@ -113,5 +114,28 @@ public class TestCommandRestController {
     verify(memory, times(1)).write(anyShort(), anyShort());
     verify(memory, times(1)).read(anyShort());
     Assertions.assertEquals(SET_SUCCESS(addressStr, address, valueStr, value), message);
+  }
+
+  @Test
+  void drop_debug_running() {
+    when(vm.getStatus()).thenReturn(VmStatus.RUNNING);
+    assertEquals(ERR_NOT_ALLOWED_RUNNING, rest.dropDebug());
+  }
+
+  @Test
+  void drop_debug_success() {
+    DebugSymbols debugSymbols = DebugSymbols.empty();
+
+    doCallRealMethod().when(vm).setDebugSymbols(any());
+    when(vm.getDebugSymbols()).thenCallRealMethod();
+
+    vm.setDebugSymbols(debugSymbols);
+    assertEquals(debugSymbols, vm.getDebugSymbols());
+    String message = rest.dropDebug();
+    // == is important because we're making sure the backing object has changed.
+    assertNotSame(debugSymbols, vm.getDebugSymbols());
+    assertTrue(debugSymbols.isEmpty());
+
+    assertEquals(DROP_DEBUG_SUCCESS(DebugSymbols.EMPTY_NAME), message);
   }
 }
