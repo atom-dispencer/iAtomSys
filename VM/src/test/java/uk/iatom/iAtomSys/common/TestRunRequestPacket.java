@@ -37,4 +37,11 @@ public class TestRunRequestPacket {
 
     Assertions.assertEquals(RunRequestPacket.ERR_ADDRESS_BLANK, ex.getMessage());
   }
+
+  @Test
+  void success() {
+    Assertions.assertDoesNotThrow(
+        () -> new RunRequestPacket("address")
+    );
+  }
 }
