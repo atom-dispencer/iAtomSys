@@ -8,27 +8,27 @@ public class ProcessorStack {
 
   private final Memory memory;
   @Getter
-  private final short startAddress;
+  private final char startAddress;
   @Getter
   private final int sizeShorts;
-  private short writePointer = 0;
+  private char writePointer = 0;
 
-  public ProcessorStack(Memory memory, short startAddress, int sizeBytes) {
+  public ProcessorStack(Memory memory, char startAddress, int sizeBytes) {
     this.memory = memory;
     this.startAddress = startAddress;
     this.sizeShorts = sizeBytes;
   }
 
-  public void push(short value) throws ProcessorStackOverflowException {
+  public void push(char value) throws ProcessorStackOverflowException {
     if (writePointer - startAddress > sizeShorts) {
       throw new ProcessorStackOverflowException(this, value, "", null);
     }
 
-    short startWriteAddress = (short) (startAddress + writePointer);
+    char startWriteAddress = (char) (startAddress + writePointer);
     memory.write(startWriteAddress, value);
   }
 
-  public short pop() throws ProcessorStackUnderflowException {
+  public char pop() throws ProcessorStackUnderflowException {
     if (writePointer <= 0) {
       throw new ProcessorStackUnderflowException(this, "ProcessorStack is already empty.", null);
     }

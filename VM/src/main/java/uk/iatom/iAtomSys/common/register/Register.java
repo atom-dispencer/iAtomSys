@@ -12,10 +12,10 @@ public class Register {
   @Getter
   private final int id;
   @Getter
-  private final short address;
+  private final char address;
   private final Memory memory;
 
-  public Register(String name, int id, short address, Memory memory) {
+  public Register(String name, int id, char address, Memory memory) {
     this.name = name;
     this.id = id;
     this.address = address;
@@ -46,11 +46,11 @@ public class Register {
     return registerSet.getRegister("FLG");
   }
 
-  public short get() {
+  public char get() {
     return memory.read(this.address);
   }
 
-  public void set(short value) {
+  public void set(char value) {
     memory.write(this.address, value);
   }
 

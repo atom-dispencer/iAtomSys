@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import uk.iatom.iAtomSys.common.Int16Helper;
 import uk.iatom.iAtomSys.common.api.DebugSymbols;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
 import uk.iatom.iAtomSys.common.api.RunRequestPacket;
@@ -50,8 +51,8 @@ public class CommandRestController {
     return "Incorrect input length: %d!=%d on %s".formatted(value.length(), INT16_HEX_LENGTH, value);
   }
 
-  public static String SET_SUCCESS(String addressStr, short address, String valueStr, short value) {
-    return "Set %s (%04X) to %s (%04X)".formatted(addressStr, address, valueStr, value);
+  public static String SET_SUCCESS(String addressStr, char address, String valueStr, char value) {
+    return "Set %s (%04X) to %s (%04X)".formatted(addressStr, (int) address, valueStr, (int) value);
   }
 
   public static String DROP_DEBUG_SUCCESS(String name) {
@@ -130,11 +131,10 @@ public class CommandRestController {
         response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
         return "Image is invalid.";
       }
-
-      ShortBuffer shortBuffer = ByteBuffer.wrap(byteArr).order(ByteOrder.BIG_ENDIAN)
-          .asShortBuffer();
-      short[] buffer = new short[shortBuffer.capacity()];
-      shortBuffer.get(buffer);
+      char[] buffer = new char[byteArr.length / 2];
+      for (int i = 0; i < buffer.length; i++) {
+        buffer[i] = (char) ((byteArr[2 * i] << 8) | (byteArr[2*i + 1]));
+      }
 
       if (buffer.length > memorySize) {
         logger.error("New buffer size %d > memorySlice size %d".formatted(fileLength, memorySize));
@@ -146,7 +146,7 @@ public class CommandRestController {
       }
 
       logger.info("Writing image... (%d bytes)".formatted(buffer.length));
-      vm.getMemory().write((short) 0, buffer);
+      vm.getMemory().write((char) 0, buffer);
       vm.setStatus(VmStatus.PAUSED);
 
       File debugSymbolsFile = new File(cleanFile.getAbsolutePath() + ".json");
@@ -187,7 +187,7 @@ public class CommandRestController {
     String valueStr = request.value().toUpperCase().trim();
 
     // Parse address
-    short address = 0;
+    char address = 0;
     try {
 
       boolean isRegister = false;
@@ -203,7 +203,7 @@ public class CommandRestController {
           return ERR_INPUT_LENGTH(addressStr);
         }
 
-        address = Short.parseShort(addressStr, 16);
+        address = Int16Helper.hexToInt16(addressStr);
       }
 
     } catch (NumberFormatException nfx) {
@@ -211,7 +211,7 @@ public class CommandRestController {
     }
 
     // Parse value
-    short value = 0;
+    char value = 0;
     try {
 
       boolean isRegister = false;
@@ -227,7 +227,7 @@ public class CommandRestController {
           return ERR_INPUT_LENGTH(valueStr);
         }
 
-        value = Short.parseShort(valueStr, 16);
+        value = Int16Helper.hexToInt16(valueStr);
       }
     } catch (NumberFormatException nfx) {
       return ERR_NUMBER_FORMAT(valueStr);
@@ -264,10 +264,9 @@ public class CommandRestController {
 
     String startAddressStr = packet.startAddress();
 
-    short startAddress = 0;
+    char startAddress = 0;
 
     boolean runFromHere;
-    int startAddressInt = 0;
 
     // Start string -> int
     try {
@@ -275,7 +274,7 @@ public class CommandRestController {
         runFromHere = true;
       } else {
         runFromHere = false;
-        startAddressInt = Integer.parseInt(startAddressStr, 16);
+        startAddress = Int16Helper.hexToInt16(startAddressStr);
       }
     } catch (NumberFormatException nfe) {
       return "Input must be a hex integer. Got %s.".formatted(startAddressStr);
@@ -283,13 +282,12 @@ public class CommandRestController {
 
     // Determine real addresses
     if (!runFromHere) {
-      startAddress = (short) startAddressInt;
       vm.getRegisterSet().getRegister("PCR").set(startAddress);
     }
 
-    short runningFrom = vm.getRegisterSet().getRegister("PCR").get();
+    char runningFrom = vm.getRegisterSet().getRegister("PCR").get();
     vm.runAsync();
-    return "Running from %04X".formatted(runningFrom);
+    return "Running from %04X".formatted((int) runningFrom);
   }
 
   @PostMapping("/pause")
@@ -300,7 +298,7 @@ public class CommandRestController {
 
     vm.setStatus(VmStatus.PAUSED);
 
-    short pcr = vm.getRegisterSet().getRegister("PCR").get();
-    return "Paused at PCR: %04X".formatted(pcr);
+    char pcr = vm.getRegisterSet().getRegister("PCR").get();
+    return "Paused at PCR: %04X".formatted((int) pcr);
   }
 }

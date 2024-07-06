@@ -15,9 +15,9 @@ public class RegisterSet {
   private final Register[] registers = new Register[8];
   private final Map<String, Integer> names = new HashMap<>();
   private final Memory memory;
-  private final short startAddress;
+  private final char startAddress;
 
-  public RegisterSet(Memory memory, short startAddress) {
+  public RegisterSet(Memory memory, char startAddress) {
     this.memory = memory;
     this.startAddress = startAddress;
   }
@@ -30,8 +30,14 @@ public class RegisterSet {
               registers.length - 1));
     }
 
+    int address = startAddress + id;
+    if (address > Character.MAX_VALUE) {
+      throw new IllegalArgumentException("Register memory address %d exceeds 16-bit memory space."
+          .formatted(address));
+    }
+
     // TODO Check Short overflow when adding
-    Register register = new Register(name, id, (short) (startAddress + id), memory);
+    Register register = new Register(name, id, (char) address, memory);
 
     if (names.containsKey(name)) {
       Register original = getRegister(name);

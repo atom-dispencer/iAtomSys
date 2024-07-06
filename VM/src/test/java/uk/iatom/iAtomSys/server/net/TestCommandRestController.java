@@ -33,9 +33,9 @@ public class TestCommandRestController {
   void setup_each() {
     MockitoAnnotations.openMocks(this);
 
-    when(memory.read(anyShort())).thenReturn(Short.MAX_VALUE);
-    doNothing().when(memory).write(anyShort(), anyShort());
-    registerSet = new RegisterSet(memory, (short) 0);
+    when(memory.read(anyChar())).thenReturn(Character.MAX_VALUE);
+    doNothing().when(memory).write(anyChar(), anyChar());
+    registerSet = new RegisterSet(memory, (char) 0);
 
     when(vm.getRegisterSet()).thenReturn(registerSet);
     when(vm.getMemory()).thenReturn(memory);
@@ -105,14 +105,14 @@ public class TestCommandRestController {
 
     String addressStr = "TEST";
     String valueStr = "TEST";
-    short address = 6;
-    short value = 0x7FFF;
+    char address = 6;
+    char value = 0xFFFF;
 
     SetRequestPacket packet = new SetRequestPacket(addressStr, valueStr);
     String message = rest.set(packet);
 
-    verify(memory, times(1)).write(anyShort(), anyShort());
-    verify(memory, times(1)).read(anyShort());
+    verify(memory, times(1)).write(anyChar(), anyChar());
+    verify(memory, times(1)).read(anyChar());
     Assertions.assertEquals(SET_SUCCESS(addressStr, address, valueStr, value), message);
   }
 

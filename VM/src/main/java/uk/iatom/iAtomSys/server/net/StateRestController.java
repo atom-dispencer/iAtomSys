@@ -88,17 +88,17 @@ public class StateRestController {
   public MemoryResponsePacket memory(@RequestBody MemoryRequestPacket packet) {
 
     // Prepare memorySlice region
-    short pcr = Register.PCR(vm.getRegisterSet()).get();
+    char pcr = Register.PCR(vm.getRegisterSet()).get();
     int width = Math.max(0, packet.sliceWidth());
 
     int startAddress = Math.max(0, pcr + packet.pcrOffset());
     int endAddress = Math.min(Short.MAX_VALUE, startAddress + width);
-    short clampedStartAddress = (short) Math.min(Short.MAX_VALUE, startAddress);
-    short clampedEndAddress = (short) Math.max(endAddress, clampedStartAddress);
+    char clampedStartAddress = (char) Math.min(Short.MAX_VALUE, startAddress);
+    char clampedEndAddress = (char) Math.max(endAddress, clampedStartAddress);
 
-    short clampedWidth = (short) (clampedEndAddress - clampedStartAddress);
+    char clampedWidth = (char) (clampedEndAddress - clampedStartAddress);
 
-    short[] memory = new short[clampedWidth];
+    char[] memory = new char[clampedWidth];
     vm.getMemory().readRange(clampedStartAddress, memory);
 
     return new MemoryResponsePacket(clampedStartAddress, memory);

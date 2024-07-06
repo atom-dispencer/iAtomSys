@@ -540,7 +540,7 @@ public class ShellDisplay {
     StringBuilder contents = new StringBuilder();
 
     // Get the value of the program counter
-    short pcr = 0;
+    char pcr = 0;
     boolean pcrKnown = false;
     for (RegisterPacket registerPacket : displayState.getRegisters()) {
       if (registerPacket.name().equals("PCR")) {

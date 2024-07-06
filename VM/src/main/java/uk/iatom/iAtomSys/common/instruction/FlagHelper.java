@@ -28,11 +28,11 @@ public class FlagHelper {
 
   public static void setFlag(RegisterSet registerSet, int flagId, boolean value) {
     Register flagRegister = Register.FLG(registerSet);
-    short flagRegisterValue = flagRegister.get();
+    char flagRegisterValue = flagRegister.get();
 
     // If the given bit is not equal to the new desired value, flip it, so it is
     if (((flagRegisterValue & 0x8000) >> flagId) == 1 != value) {
-      flagRegisterValue ^= (short) (0x8000 >> flagId);
+      flagRegisterValue ^= (char) (0x8000 >> flagId);
     }
 
     flagRegister.set(flagRegisterValue);

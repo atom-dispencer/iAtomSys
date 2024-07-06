@@ -30,7 +30,7 @@ public class ServerBeans {
       Memory memory) {
     return new ProcessorStack(
         memory,
-        (short) 1000,
+        (char) 1000,
         vmConfiguration.getProcessorStackSizeIntegers() * 2
     );
   }
@@ -40,11 +40,11 @@ public class ServerBeans {
   public IOPort[] ports(VmConfiguration vmConfiguration, RegisterSet registerSet, Memory memory) {
     return new IOPort[]{
         new IOPort(vmConfiguration.getPortsRangeStartAddress(), Flag.IO0, registerSet, memory),
-        new IOPort((short) (vmConfiguration.getPortsRangeStartAddress() + 1), Flag.IO1, registerSet,
+        new IOPort((char) (vmConfiguration.getPortsRangeStartAddress() + 1), Flag.IO1, registerSet,
             memory),
-        new IOPort((short) (vmConfiguration.getPortsRangeStartAddress() + 2), Flag.IO2, registerSet,
+        new IOPort((char) (vmConfiguration.getPortsRangeStartAddress() + 2), Flag.IO2, registerSet,
             memory),
-        new IOPort((short) (vmConfiguration.getPortsRangeStartAddress() + 3), Flag.IO3, registerSet,
+        new IOPort((char) (vmConfiguration.getPortsRangeStartAddress() + 3), Flag.IO3, registerSet,
             memory),
     };
   }

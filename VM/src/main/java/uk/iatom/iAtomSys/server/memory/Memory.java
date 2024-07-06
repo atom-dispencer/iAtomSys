@@ -2,61 +2,56 @@ package uk.iatom.iAtomSys.server.memory;
 
 public class Memory {
 
-  private final short[] buffer;
+  private final char[] buffer;
 
   public Memory() {
-    this.buffer = new short[0xffff];
+    this.buffer = new char[0xffff];
   }
 
-  public short read(short address) {
-
-    // Java shorts are signed, but we need it to be unsigned.
-    int unsignedAddress = Short.toUnsignedInt(address);
+  public char read(char address) {
 
     // Can't return anything if addressBytes out of bounds
-    if (unsignedAddress >= getSize()) {
+    if (address >= getSize()) {
       throw new IndexOutOfBoundsException(
-          "The given address %d is outside the memorySlice space %d".formatted(unsignedAddress,
+          "The given address %d is outside the memorySlice space %d".formatted((int) address,
               Short.toUnsignedInt(Short.MAX_VALUE)));
     }
 
-    return buffer[unsignedAddress];
+    return buffer[address];
   }
 
-  public void readRange(short s16_address, short[] destination) {
+  public void readRange(char startAddress, char[] destination) {
 
     // Java shorts are signed, but we need it to be unsigned.
-    int u32_startAddress = Short.toUnsignedInt(s16_address);
     int width = destination.length;
-    int u32_endAddress = u32_startAddress + width;
+    int endAddress = startAddress + width;
 
     // Can't return anything if the region is out of bounds
     // endAddress >= startAddress, so only need to check end
-    if (u32_endAddress >= getSize()) {
+    if (endAddress >= getSize()) {
       throw new IndexOutOfBoundsException(
           "Some or all of the write region [%d,%d] lies outside the memorySlice space %d".formatted(
-              u32_startAddress, u32_endAddress, Short.toUnsignedInt(Short.MAX_VALUE)));
+              (int) startAddress, endAddress, Short.toUnsignedInt(Short.MAX_VALUE)));
     }
 
-    System.arraycopy(buffer, s16_address, destination, 0, width);
+    System.arraycopy(buffer, startAddress, destination, 0, width);
   }
 
-  public void write(short s16_address, short... shorts) {
+  public void write(char startAddress, char... shorts) {
 
     // Java shorts are signed, but we need it to be unsigned.
-    int u32_startAddress = Short.toUnsignedInt(s16_address);
     int width = shorts.length;
-    int u32_endAddress = u32_startAddress + width - 1;
+    int endAddress = startAddress + width - 1;
 
     // Can't return anything if the region is out of bounds
     // endAddress >= startAddress, so only need to check end
-    if (u32_endAddress >= getSize()) {
+    if (endAddress >= getSize()) {
       throw new IndexOutOfBoundsException(
           "Some or all of the write region [%d,%d] lies outside the memorySlice space %d".formatted(
-              u32_startAddress, u32_endAddress, Short.toUnsignedInt(Short.MAX_VALUE)));
+              (int) startAddress, endAddress, Short.toUnsignedInt(Short.MAX_VALUE)));
     }
 
-    System.arraycopy(shorts, 0, buffer, s16_address, width);
+    System.arraycopy(shorts, 0, buffer, startAddress, width);
   }
 
   public int getSize() {
