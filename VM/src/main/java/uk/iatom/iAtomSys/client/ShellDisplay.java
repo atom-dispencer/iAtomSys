@@ -354,6 +354,12 @@ public class ShellDisplay {
 
     long start = System.nanoTime();
 
+    // TODO Funny edge case where the VM finishes executing super fast,
+    //  so the state is PAUSED and the ShellCommands updater says to not clear the command,
+    //  but the command is already cleared because of the run command, so most of the screen
+    //  doesn't get cleared and stuff gets left on there...
+    // TODO Also need to see why the VM seems to be reading infinite.img as ffa8, but NP++ hex
+    //  says it should be 01a8...
     drawBackground(resetCommand);
 
     try {
