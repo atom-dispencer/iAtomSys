@@ -67,10 +67,12 @@ public class ShellCommands {
   private final Runnable updateDaemonTask = new Thread(() -> {
     logger.info("Starting update daemon...");
 
-    while (getDisplay().getDisplayState().getStatus() == VmStatus.RUNNING && getDisplay().isAlive()) {
+    boolean keepGoing = false;
+    while(!keepGoing) {
       try {
         getDisplay().getDisplayState().update();
         getDisplay().draw(shouldResetCommand.getAndSet(false));
+        keepGoing = getDisplay().getDisplayState().getStatus() == VmStatus.RUNNING && getDisplay().isAlive();
         Thread.sleep(1000L);
       } catch (Exception e) {
         logger.error("Suppressed error in run/sleep loop.", e);

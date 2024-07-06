@@ -92,8 +92,8 @@ public class StateRestController {
     int width = Math.max(0, packet.sliceWidth());
 
     int startAddress = Math.max(0, pcr + packet.pcrOffset());
-    int endAddress = Math.min(Short.MAX_VALUE, startAddress + width);
-    char clampedStartAddress = (char) Math.min(Short.MAX_VALUE, startAddress);
+    int endAddress = Math.min(Character.MAX_VALUE, startAddress + width);
+    char clampedStartAddress = (char) Math.min(Character.MAX_VALUE, startAddress);
     char clampedEndAddress = (char) Math.max(endAddress, clampedStartAddress);
 
     char clampedWidth = (char) (clampedEndAddress - clampedStartAddress);

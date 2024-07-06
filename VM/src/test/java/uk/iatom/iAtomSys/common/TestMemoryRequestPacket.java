@@ -8,21 +8,21 @@ import uk.iatom.iAtomSys.common.api.MemoryRequestPacket;
 public class TestMemoryRequestPacket {
 
   @ParameterizedTest
-  @ValueSource( shorts = { Short.MIN_VALUE, -1, MemoryRequestPacket.MAX_SLICE_WIDTH + 1, Short.MAX_VALUE})
-  void width_exceeds_interval(short width) {
+  @ValueSource( chars = { MemoryRequestPacket.MAX_SLICE_WIDTH + 1, Character.MAX_VALUE})
+  void width_exceeds_interval(char width) {
     IllegalArgumentException ex = Assertions.assertThrows(
         IllegalArgumentException.class,
-        () -> new MemoryRequestPacket((short) 0, width)
+        () -> new MemoryRequestPacket((char) 0, width)
     );
 
     Assertions.assertEquals(MemoryRequestPacket.ERR_WIDTH(width), ex.getMessage());
   }
 
   @ParameterizedTest
-  @ValueSource(shorts = { 0, MemoryRequestPacket.MAX_SLICE_WIDTH })
-  void success(short width) {
+  @ValueSource(chars = { 0, MemoryRequestPacket.MAX_SLICE_WIDTH })
+  void success(char width) {
     Assertions.assertDoesNotThrow(
-        () -> new MemoryRequestPacket((short) 0, width)
+        () -> new MemoryRequestPacket((char) 0, width)
     );
   }
 

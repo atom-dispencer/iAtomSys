@@ -130,7 +130,7 @@ public interface InstructionExecutor {
     value -= 1;
 
     // If the new value is the minimum value for a short, the operation overflowed
-    if (value == Short.MAX_VALUE) {
+    if (value == Character.MAX_VALUE) {
       FlagHelper.setFlag(vm.getRegisterSet(), FlagHelper.CARRY, false);
     }
 

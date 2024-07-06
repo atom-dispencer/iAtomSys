@@ -85,7 +85,7 @@ public class ShellDisplay {
     startPoint.translate(COMMAND_MAX_WIDTH + 8, 0);
     return startPoint;
   };
-  private final Supplier<Rectangle> MEMORY_RUNDATA_RECT = () -> {
+  private final Supplier<Rectangle> MEMORY_RUNNING_RECT = () -> {
     Rectangle content = CONTENT_RECT.get();
 
     int width = (int) Math.floor(content.width * 0.375);
@@ -247,8 +247,6 @@ public class ShellDisplay {
    * The display character will fill the starting point - i.e. the frame is *inclusive* of its
    * boundaries.
    *
-   * @param bounds
-   * @param c
    * @param clearInside Whether to replace characters inside the frame with spaces.
    */
   private void printBox(Rectangle bounds, char c, boolean clearInside) {
@@ -357,19 +355,24 @@ public class ShellDisplay {
     long start = System.nanoTime();
 
     drawBackground(resetCommand);
-    switch (displayState.getStatus()) {
-      case STOPPED:
-        drawStoppedMessage();
-        break;
-      case PAUSED:
-        drawMemoryState();
-        drawRegisters();
-        drawFlags();
-        // TODO Display values in ports (near registers/flags?)
-        break;
-      case RUNNING:
-        drawRunningData();
-        break;
+
+    try {
+      switch (displayState.getStatus()) {
+        case STOPPED:
+          drawStoppedMessage();
+          break;
+        case PAUSED:
+          drawMemoryState();
+          drawRegisters();
+          drawFlags();
+          // TODO Display values in ports (near registers/flags?)
+          break;
+        case RUNNING:
+          drawRunningData();
+          break;
+      }
+    } catch (Exception e) {
+      logger.error("Error during drawing!", e);
     }
     // RUNNING is the only state where the screen refreshes without the user issuing a command
     // Therefore, we must avoid overwriting any partially typed commands.
@@ -528,7 +531,7 @@ public class ShellDisplay {
    * position.
    */
   public void drawMemoryState() {
-    Rectangle bounds = MEMORY_RUNDATA_RECT.get();
+    Rectangle bounds = MEMORY_RUNNING_RECT.get();
     printBox(bounds, '+', true);
 
     //
@@ -588,7 +591,7 @@ public class ShellDisplay {
       } else {
         lineBuilder.append("<0x%04x> ".formatted(address));
       }
-      lineBuilder.append("%04x ".formatted(displayState.getMemory()[i]));
+      lineBuilder.append("%04x ".formatted((int) displayState.getMemory()[i]));
 
       // Program counter pointer indicator
       if (!pcrKnown || address == pcr) {
@@ -749,8 +752,8 @@ public class ShellDisplay {
         }
 
         RegisterPacket register = packets.get(i);
-        String content = format.formatted(register.id(), register.name(), register.address(),
-            register.value());
+        String content = format.formatted(register.id(), register.name(), (int) register.address(),
+            (int) register.value());
         info.append(content);
         info.append(ANSICodes.moveLeft(content.length()));
         info.append(ANSICodes.moveDown(1));

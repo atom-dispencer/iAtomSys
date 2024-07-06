@@ -37,8 +37,8 @@ public class MemoryDisassembler {
       try {
         decoded.add(disassembleInstruction(s));
       } catch (InstructionDisassemblyException idx) {
-        logger.error("Error disassembling instruction %04x".formatted(s), idx);
-        decoded.add(new String[]{"?", "%04x".formatted(s)});
+        logger.error("Error disassembling instruction %04x".formatted((int) s), idx);
+        decoded.add(new String[]{"?", "%04x".formatted((int) s)});
       }
     }
     return decoded;
@@ -60,7 +60,7 @@ public class MemoryDisassembler {
 
       Instruction instruction = instructionSet.getInstruction(opcode);
       if (instruction == null) {
-        return new String[]{"?", "%04x".formatted(instructionChar)};
+        return new String[]{"?", "%04x".formatted((int) instructionChar)};
       }
 
       String[] fragments = instruction.disassembler().disassemble(instruction, flags, registerSet);
@@ -73,7 +73,7 @@ public class MemoryDisassembler {
       return fragments;
     } catch (Exception e) {
       throw new InstructionDisassemblyException(
-          "Error disassembling Instruction %04X".formatted(instructionChar), e);
+          "Error disassembling Instruction %04X".formatted((int) instructionChar), e);
     }
   }
 }

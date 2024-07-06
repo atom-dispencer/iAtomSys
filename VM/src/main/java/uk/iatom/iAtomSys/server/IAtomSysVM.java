@@ -47,12 +47,17 @@ public class IAtomSysVM {
 
   public void runAsync() {
     Thread thread = new Thread(() -> {
-      asyncRunData.getAsyncExecutedInstructions().set(0L);
-      asyncRunData.setStartTime(LocalDateTime.now());
 
-      while (status == VmStatus.RUNNING) {
-        processNextCycle();
-        asyncRunData.getAsyncExecutedInstructions().getAndIncrement();
+      try {
+        asyncRunData.getAsyncExecutedInstructions().set(0L);
+        asyncRunData.setStartTime(LocalDateTime.now());
+
+        while (status == VmStatus.RUNNING) {
+          processNextCycle();
+          asyncRunData.getAsyncExecutedInstructions().getAndIncrement();
+        }
+      } catch (Exception e) {
+        logger.error("Error in async running.", e);
       }
     });
 
@@ -78,7 +83,7 @@ public class IAtomSysVM {
     // Only increment PCR if it hasn't been changed during the cycle, i.e. an instruction trying
     // to jump/branch.
     if (pc == PCR.get()) {
-      if (pc == Short.MAX_VALUE) {
+      if (pc == Character.MAX_VALUE) {
         logger.info("PC is at max value %d, pausing.".formatted((int) pc));
         status = VmStatus.PAUSED;
       } else {

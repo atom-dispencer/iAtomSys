@@ -1,20 +1,21 @@
 package uk.iatom.iAtomSys.server.memory;
 
+import uk.iatom.iAtomSys.common.Int16Helper;
+
 public class Memory {
 
   private final char[] buffer;
 
   public Memory() {
-    this.buffer = new char[0xffff];
+    this.buffer = new char[Int16Helper.MEMORY_SPACE];
   }
 
   public char read(char address) {
 
     // Can't return anything if addressBytes out of bounds
-    if (address >= getSize()) {
+    if (address > getSize()) {
       throw new IndexOutOfBoundsException(
-          "The given address %d is outside the memorySlice space %d".formatted((int) address,
-              Short.toUnsignedInt(Short.MAX_VALUE)));
+          "The given address %d is outside the memorySlice space %d".formatted((int) address, buffer.length));
     }
 
     return buffer[address];
@@ -31,7 +32,7 @@ public class Memory {
     if (endAddress >= getSize()) {
       throw new IndexOutOfBoundsException(
           "Some or all of the write region [%d,%d] lies outside the memorySlice space %d".formatted(
-              (int) startAddress, endAddress, Short.toUnsignedInt(Short.MAX_VALUE)));
+              (int) startAddress, endAddress, buffer.length));
     }
 
     System.arraycopy(buffer, startAddress, destination, 0, width);
@@ -48,7 +49,7 @@ public class Memory {
     if (endAddress >= getSize()) {
       throw new IndexOutOfBoundsException(
           "Some or all of the write region [%d,%d] lies outside the memorySlice space %d".formatted(
-              (int) startAddress, endAddress, Short.toUnsignedInt(Short.MAX_VALUE)));
+              (int) startAddress, endAddress, buffer.length));
     }
 
     System.arraycopy(shorts, 0, buffer, startAddress, width);
