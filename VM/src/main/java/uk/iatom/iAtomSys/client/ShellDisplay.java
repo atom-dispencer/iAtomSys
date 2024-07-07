@@ -346,7 +346,7 @@ public class ShellDisplay {
   /**
    * Immediately redraw the UI with the current {@link ShellDisplayState}.
    */
-  public void draw(boolean resetCommand) {
+  public void draw(boolean clearAll) {
     if (!isAlive()) {
       logger.error("Cannot draw while ShellDisplay not alive.");
       return;
@@ -354,13 +354,17 @@ public class ShellDisplay {
 
     long start = System.nanoTime();
 
+    if (clearAll) {
+      print(ANSICodes.CLEAR_SCREEN);
+    }
+
     // TODO Funny edge case where the VM finishes executing super fast,
     //  so the state is PAUSED and the ShellCommands updater says to not clear the command,
     //  but the command is already cleared because of the run command, so most of the screen
     //  doesn't get cleared and stuff gets left on there...
     // TODO Also need to see why the VM seems to be reading infinite.img as ffa8, but NP++ hex
     //  says it should be 01a8...
-    drawBackground(resetCommand);
+    drawBackground();
 
     try {
       switch (displayState.getStatus()) {
@@ -383,7 +387,7 @@ public class ShellDisplay {
     // RUNNING is the only state where the screen refreshes without the user issuing a command
     // Therefore, we must avoid overwriting any partially typed commands.
     drawCredits();
-    drawCommandInput(resetCommand);
+    drawCommandInput(clearAll);
 
     long elapsedNanos = System.nanoTime() - start;
     double elapsedMillis = (elapsedNanos / 1_000_000d);
@@ -451,13 +455,11 @@ public class ShellDisplay {
   /**
    * Draw the background of the GUI, including the title and frame, without clearing the insides.
    */
-  public void drawBackground(boolean resetCommand) {
+  public void drawBackground() {
     int preHeadingWidth = 10;
 
-    // Don't clear the screen if RUNNING because it will wipe partial commands
-    if (resetCommand) {
-      print(ANSICodes.CLEAR_SCREEN);
-    }
+    Rectangle content = CONTENT_RECT.get();
+    printBox(content, ' ', true);
 
     Rectangle rect = BORDER_RECT.get();
     printBox(rect, '#', false);
@@ -615,22 +617,26 @@ public class ShellDisplay {
       formattedLines.add(lineBuilder.toString());
     }
 
-    // Build the lines into columns
+    // Create builders for columns
     StringBuilder[] columnBuilders = new StringBuilder[columns];
+    for (int i = 0; i < columnBuilders.length; i++) {
+      columnBuilders[i] = new StringBuilder();
+    }
+    // Build the lines into the columns
     for (int i = 0; i < formattedLines.size() && i < columns * availableRows; i++) {
       int column = Math.floorDiv(i, availableRows);
-      if (columnBuilders[column] == null) {
-        StringBuilder newColumnBuilder = new StringBuilder();
+      StringBuilder columnBuilder = columnBuilders[column];
 
+      if (columnBuilder.isEmpty()) {
         // Go to the starting location before drawing title
         Point start = new Point(bounds.getLocation().x, bounds.getLocation().y);
         start.translate(widthPadding + spareWidth / 2 + column * paddedColumnWidth, 2);
-        newColumnBuilder.append(ANSICodes.moveTo(start));
+        columnBuilder.append(ANSICodes.moveTo(start));
 
-        newColumnBuilder.append(titleBuilder);
-        columnBuilders[column] = newColumnBuilder;
+        columnBuilder.append(titleBuilder);
+        columnBuilders[column] = columnBuilder;
       }
-      StringBuilder columnBuilder = columnBuilders[column];
+
       String line = formattedLines.get(i);
       columnBuilder.append(line);
       columnBuilder.append(ANSICodes.moveDown(1)).append(ANSICodes.moveLeft(line.length()));
@@ -638,8 +644,18 @@ public class ShellDisplay {
 
     // String the columns together
     if (columnBuilders.length > 0) {
-      for (StringBuilder column : columnBuilders) {
-        contents.append(column);
+      for (int i = 0; i < columnBuilders.length; i++) {
+        StringBuilder columnBuilder = columnBuilders[i];
+
+        if (columnBuilder == null) {
+          continue;
+        }
+        if (columnBuilder.toString().isEmpty()) {
+          logger.warn("Empty builder for column %d".formatted(i));
+          continue;
+        }
+
+        contents.append(columnBuilder);
       }
     } else {
       contents.append("Help!").append(ANSICodes.moveDown(2)).append(ANSICodes.moveLeft(5));
