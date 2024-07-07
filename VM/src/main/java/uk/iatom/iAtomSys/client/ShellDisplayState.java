@@ -48,6 +48,7 @@ public class ShellDisplayState {
   private RegisterPacket[] registers = new RegisterPacket[0];
   private PortPacket[] ports = new PortPacket[0];
   private LocalDateTime runningSince = LocalDateTime.now();
+  private Character[] breakpoints = new Character[0];
   private long runningInstructionsExecuted = 0L;
 
   public void update() {
@@ -107,6 +108,9 @@ public class ShellDisplayState {
     List<String[]> disassembly = memoryDisassembler.disassemble(memory);
     setMemory(memory);
     setDisassembly(disassembly);
+
+    Character[] breakpoints = api.getBreakpoints();
+    setBreakpoints(breakpoints);
 
     // Update register values
     RegisterPacket[] registers = api.getRegisters();

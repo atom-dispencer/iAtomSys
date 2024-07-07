@@ -84,6 +84,11 @@ public class StateRestController {
     };
   }
 
+  @GetMapping("/breakpoints")
+  public Character[] breakpoints() {
+    return vm.getBreakpoints().toArray(new Character[0]);
+  }
+
   /**
    * Note that start/end addresses are inclusive to allow querying 0xFFFF.
    */

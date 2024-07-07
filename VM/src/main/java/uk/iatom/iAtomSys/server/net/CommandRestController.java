@@ -263,8 +263,6 @@ public class CommandRestController {
 
     boolean runFromHere;
 
-    //TODO Run should take register arguments
-
     // Start string -> int
     try {
       if (startAddressStr.equals("here")) {
@@ -305,7 +303,6 @@ public class CommandRestController {
       return ERR_NOT_ALLOWED_VM_RUNNING;
     }
 
-    // TODO Tbreak should take register arguments
     String address = packet.addressStr();
 
     char bp;

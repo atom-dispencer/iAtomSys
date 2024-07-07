@@ -590,7 +590,8 @@ public class ShellDisplay {
       final StringBuilder lineBuilder = new StringBuilder(arr.length);
 
       // TODO Make sure this doesn't explode with wrapping around or whatever
-      // Instruction's address and hex value
+
+      // Reserved addresses
       int address = displayState.getMemorySliceStartAddress() + i;
       if (reservedAddresses.containsKey(address)) {
         String name = reservedAddresses.get(address);
@@ -599,6 +600,13 @@ public class ShellDisplay {
       } else {
         lineBuilder.append("<0x%04x> ".formatted(address));
       }
+
+      // Breakpoints
+      if (List.of(displayState.getBreakpoints()).contains((char) address)) {
+        lineBuilder.append("  -- Breakpoint -- ");
+      }
+
+      // The instruction itself
       lineBuilder.append("%04x ".formatted((int) displayState.getMemory()[i]));
 
       // Program counter pointer indicator

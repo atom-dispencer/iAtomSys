@@ -80,6 +80,20 @@ public class RemoteVMClient implements VmClient {
   }
 
   @Override
+  public Character[] getBreakpoints() {
+    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("state/breakpoints").build().toUri();
+
+    try {
+      RestTemplate restTemplate = new RestTemplate();
+      return restTemplate.getForEntity(uri, Character[].class).getBody();
+
+    } catch (RestClientException rce) {
+      logger.error("Error fetching remote breakpoints from %s".formatted(uri), rce);
+      return null;
+    }
+  }
+
+  @Override
   public RegisterPacket[] getRegisters() {
     URI uri = UriComponentsBuilder.fromHttpUrl(host).path("state/registers").build().toUri();
 

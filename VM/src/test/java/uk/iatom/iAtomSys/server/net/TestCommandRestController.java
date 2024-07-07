@@ -72,7 +72,7 @@ public class TestCommandRestController {
   void set_strange_addresses(String address) {
     SetRequestPacket packet = new SetRequestPacket(address, "0000");
     String result = rest.set(packet);
-    assertEquals(ERR_NUMBER_FORMAT(address), result);
+    assertEquals(ERR_NUMBER_FORMAT.apply(address), result);
   }
 
   @ParameterizedTest
@@ -80,7 +80,7 @@ public class TestCommandRestController {
   void set_strange_values(String value) {
     SetRequestPacket packet = new SetRequestPacket("0000", value);
     String result = rest.set(packet);
-    assertEquals(ERR_NUMBER_FORMAT(value), result);
+    assertEquals(ERR_NUMBER_FORMAT.apply(value), result);
   }
 
   @ParameterizedTest
@@ -88,15 +88,23 @@ public class TestCommandRestController {
   void set_long_addresses(String address) {
     SetRequestPacket packet = new SetRequestPacket(address, "0000");
     String result = rest.set(packet);
-    assertEquals(ERR_INPUT_LENGTH(address), result);
+    assertEquals(ERR_NUMBER_FORMAT.apply(address), result);
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "00000", "000" })
+  @ValueSource(strings = { "00000", "" })
   void set_long_values(String value) {
     SetRequestPacket packet = new SetRequestPacket("0000", value);
     String result = rest.set(packet);
-    assertEquals(ERR_INPUT_LENGTH(value), result);
+    assertEquals(ERR_NUMBER_FORMAT.apply(value), result);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "000", "00", "0" })
+  void set_short_values(String value) {
+    SetRequestPacket packet = new SetRequestPacket("0000", value);
+    String result = rest.set(packet);
+    assertEquals(ERR_NUMBER_FORMAT.apply(value), result);
   }
 
   @Test

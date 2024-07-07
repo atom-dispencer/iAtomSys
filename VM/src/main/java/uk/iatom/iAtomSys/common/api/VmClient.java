@@ -9,6 +9,8 @@ public interface VmClient {
 
   MemoryResponsePacket getMemory(MemoryRequestPacket packet);
 
+  Character[] getBreakpoints();
+
   RegisterPacket[] getRegisters();
 
   PortPacket[] getPorts();
