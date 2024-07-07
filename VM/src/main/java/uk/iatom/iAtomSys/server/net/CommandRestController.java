@@ -133,7 +133,7 @@ public class CommandRestController {
       }
       char[] buffer = new char[byteArr.length / 2];
       for (int i = 0; i < buffer.length; i++) {
-        buffer[i] = (char) ((byteArr[2 * i] << 8) | (byteArr[2*i + 1]));
+        buffer[i] = Int16Helper.fromBytes(byteArr[2*i], byteArr[2*i + 1]);
       }
 
       if (buffer.length > memorySize) {

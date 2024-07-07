@@ -17,4 +17,8 @@ public class Int16Helper {
 
     return (char) i;
   }
+
+  public static char fromBytes(byte left, byte right) {
+    return (char) ((Byte.toUnsignedInt(left) << 8) | Byte.toUnsignedInt(right));
+  }
 }
