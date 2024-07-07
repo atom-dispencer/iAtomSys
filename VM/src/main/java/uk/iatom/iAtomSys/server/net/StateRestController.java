@@ -84,6 +84,9 @@ public class StateRestController {
     };
   }
 
+  /**
+   * Note that start/end addresses are inclusive to allow querying 0xFFFF.
+   */
   @PostMapping("/memory")
   public MemoryResponsePacket memory(@RequestBody MemoryRequestPacket packet) {
 
@@ -96,7 +99,7 @@ public class StateRestController {
     char clampedStartAddress = (char) Math.min(Character.MAX_VALUE, startAddress);
     char clampedEndAddress = (char) Math.max(endAddress, clampedStartAddress);
 
-    char clampedWidth = (char) (clampedEndAddress - clampedStartAddress);
+    int clampedWidth = clampedEndAddress - clampedStartAddress + 1;
 
     char[] memory = new char[clampedWidth];
     vm.getMemory().readRange(clampedStartAddress, memory);

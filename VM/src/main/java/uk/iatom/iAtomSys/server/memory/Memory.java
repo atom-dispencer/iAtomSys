@@ -22,16 +22,14 @@ public class Memory {
   }
 
   public void readRange(char startAddress, char[] destination) {
-
-    // Java shorts are signed, but we need it to be unsigned.
     int width = destination.length;
     int endAddress = startAddress + width;
 
-    // Can't return anything if the region is out of bounds
-    // endAddress >= startAddress, so only need to check end
-    if (endAddress >= getSize()) {
+    // endAddress always >= startAddress, so only need to check end
+    // Max end address is 0xFFFF, and memory space is 0xFFFF, so must be strictly greater
+    if (endAddress > getSize()) {
       throw new IndexOutOfBoundsException(
-          "Some or all of the write region [%d,%d] lies outside the memorySlice space %d".formatted(
+          "Some or all of the read region [%d,%d] lies outside the memorySlice space %d".formatted(
               (int) startAddress, endAddress, buffer.length));
     }
 
@@ -39,14 +37,12 @@ public class Memory {
   }
 
   public void write(char startAddress, char... shorts) {
-
-    // Java shorts are signed, but we need it to be unsigned.
     int width = shorts.length;
     int endAddress = startAddress + width - 1;
 
-    // Can't return anything if the region is out of bounds
-    // endAddress >= startAddress, so only need to check end
-    if (endAddress >= getSize()) {
+    // endAddress always >= startAddress, so only need to check end point
+    // Max end address is 0xFFFF, and memory space is 0xFFFF, so must be strictly greater
+    if (endAddress > getSize()) {
       throw new IndexOutOfBoundsException(
           "Some or all of the write region [%d,%d] lies outside the memorySlice space %d".formatted(
               (int) startAddress, endAddress, buffer.length));
