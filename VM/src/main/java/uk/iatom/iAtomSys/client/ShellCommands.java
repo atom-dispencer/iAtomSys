@@ -36,10 +36,10 @@ public class ShellCommands {
       "[2] 'hello': Say hi!", //
       "[3] 'step <count>': Execute the next <count> instructions.", //
       "[4] 'load <image_name[.img]>': Load the given memorySlice image.", //
-      "[5] 'jmp <address>': (Shorthand) PCR* <address>.", //
+      "[5] 'jmp <address>': (Shorthand) set PCR* <address>.", //
       "[6] 'set <address> <value>': Set the value at the address.", //
       "[7] 'dropDebug': Reset the loaded debug symbols.", //
-      "[8] 'run <x|start> <end?>': Execute between the addresses.", //
+      "[8] 'run <start?>': Execute from current PCR or given address.", //
       "[9] 'refresh': Refreshes the display state and redraw." //
   };
 
