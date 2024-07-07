@@ -50,7 +50,7 @@ public class TestCommandRestController {
   @Test
   void set_running() {
     when(vm.getStatus()).thenReturn(VmStatus.RUNNING);
-    assertEquals(ERR_NOT_ALLOWED_RUNNING, rest.set(null));
+    assertEquals(ERR_NOT_ALLOWED_VM_RUNNING, rest.set(null));
   }
 
   @ParameterizedTest
@@ -119,7 +119,7 @@ public class TestCommandRestController {
   @Test
   void drop_debug_running() {
     when(vm.getStatus()).thenReturn(VmStatus.RUNNING);
-    assertEquals(ERR_NOT_ALLOWED_RUNNING, rest.dropDebug());
+    assertEquals(ERR_NOT_ALLOWED_VM_RUNNING, rest.dropDebug());
   }
 
   @Test

@@ -5,10 +5,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.ShortBuffer;
 import java.util.Arrays;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +24,7 @@ import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
 import uk.iatom.iAtomSys.common.api.RunRequestPacket;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
+import uk.iatom.iAtomSys.common.api.ToggleBreakpointRequestPacket;
 import uk.iatom.iAtomSys.common.api.VmStatus;
 import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.server.IAtomSysVM;
@@ -39,17 +38,24 @@ public class CommandRestController {
 
   private final Logger logger = LoggerFactory.getLogger(CommandRestController.class);
 
+  // Errors
   public static final int INT16_HEX_LENGTH = 4;
+  public static final Function<String, String> ERR_NUMBER_FORMAT = "Not a register or hex int-16: %s"::formatted;
+  public static final String ERR_NOT_ALLOWED_VM_RUNNING = "Action not allowed: VM is running";
+  public static final String ERR_NOT_ALLOWED_VM_NOT_RUNNING = "Action not allowed: VM is not running";
+  public static final String ERR_LOAD_FILE_TOO_LARGE = "Requested file larger than VM memory.";
+  public static final String ERR_LOAD_IMAGE_INVALID = "Image is invalid.";
+  public static final String ERR_LOAD_FILE_WOULD_OVERFLOW = "Requested file would overflow VM memorySlice.";
+  public static final Function<String, String> ERR_LOAD_READING_FILE = "Error reading file %s"::formatted;
+
+  // Successes
   public static final String HELLO_WORLD = "World";
-  public static final String ERR_NOT_ALLOWED_RUNNING = "Action not allowed: VM is running";
-
-  public static String ERR_NUMBER_FORMAT(String addressStr) {
-    return "Not a register or hex int-16: %s".formatted(addressStr);
-  }
-
-  public static String ERR_INPUT_LENGTH(String value) {
-    return "Incorrect input length: %d!=%d on %s".formatted(value.length(), INT16_HEX_LENGTH, value);
-  }
+  public static final Function<Integer, String> TBREAK_ADDED = "Added breakpoint at %04X"::formatted;
+  public static final Function<Integer, String> TBREAK_REMOVED = "Removed breakpoint at %04X"::formatted;
+  public static final Function<Integer, String> STEP_SUCCESS = "Stepped %d cycles"::formatted;
+  public static final String LOAD_SYMBOLS_UNPARSABLE = "Loaded image but debug symbols unparsable";
+  public static final String LOAD_SYMBOLS_NOT_FOUND = "Loaded image but debug symbols not found";
+  public static final Function<String, String> LOAD_SUCCESS = "Loaded %s"::formatted;
 
   public static String SET_SUCCESS(String addressStr, char address, String valueStr, char value) {
     return "Set %s (%04X) to %s (%04X)".formatted(addressStr, (int) address, valueStr, (int) value);
@@ -59,8 +65,24 @@ public class CommandRestController {
     return "Dropped debug symbols: " + name;
   }
 
-
   private IAtomSysVM vm;
+
+  private char parseRegisterOrInt16(String value) throws NumberFormatException {
+    for (Register register : vm.getRegisterSet().getActiveRegisters()) {
+      if (register.getName().equals(value)) {
+        return register.get();
+      }
+    }
+
+    int lenDif = INT16_HEX_LENGTH - value.length();
+    if (lenDif > 0) {
+      value = "0".repeat(lenDif) + value;
+    } else if (lenDif < 0) {
+      throw new NumberFormatException(ERR_NUMBER_FORMAT.apply(value));
+    }
+
+    return Int16Helper.hexToInt16(value);
+  }
 
   @Autowired
   public CommandRestController(IAtomSysVM vm) {
@@ -75,7 +97,7 @@ public class CommandRestController {
   @PostMapping("/step")
   public String step(@RequestBody StepRequestPacket requestPacket) {
     if (vm.getStatus() == VmStatus.RUNNING) {
-      return "Action not allowed: VM is running";
+      return ERR_NOT_ALLOWED_VM_RUNNING;
     }
 
     int count = requestPacket.count();
@@ -85,7 +107,7 @@ public class CommandRestController {
       vm.processNextCycle();
     }
 
-    String message = "Stepped %d cycles.".formatted(count);
+    String message = STEP_SUCCESS.apply(count);
     logger.info(message);
     return message;
   }
@@ -102,7 +124,7 @@ public class CommandRestController {
   @PostMapping("/load_image")
   public String loadImage(@RequestBody LoadRequestPacket packet, HttpServletResponse response) {
     if (vm.getStatus() == VmStatus.RUNNING) {
-      return "Action not allowed: VM is running";
+      return ERR_NOT_ALLOWED_VM_RUNNING;
     }
 
     String dirtyImageName =
@@ -121,7 +143,7 @@ public class CommandRestController {
       if (fileLength > memorySize) {
         logger.error("File length %d > memorySlice size %d".formatted(fileLength, memorySize));
         response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
-        return "Requested file larger than VM memorySlice.";
+        return ERR_LOAD_FILE_TOO_LARGE;
       }
 
       byte[] byteArr = stream.readAllBytes();
@@ -129,7 +151,7 @@ public class CommandRestController {
         logger.error(
             "File %s is invalid image: Odd length %d".formatted(cleanFile, byteArr.length));
         response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
-        return "Image is invalid.";
+        return ERR_LOAD_IMAGE_INVALID;
       }
       char[] buffer = new char[byteArr.length / 2];
       for (int i = 0; i < buffer.length; i++) {
@@ -139,7 +161,7 @@ public class CommandRestController {
       if (buffer.length > memorySize) {
         logger.error("New buffer size %d > memorySlice size %d".formatted(fileLength, memorySize));
         response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
-        return "Requested file would overflow VM memorySlice.";
+        return ERR_LOAD_FILE_WOULD_OVERFLOW;
       } else if (buffer.length < memorySize) {
         logger.info("Inflating image from %d to %d bytes".formatted(buffer.length, memorySize));
         buffer = Arrays.copyOf(buffer, memorySize);
@@ -156,81 +178,54 @@ public class CommandRestController {
         if (debugSymbols == null) {
           logger.warn("Debug symbols could not be parsed: {}", debugSymbolsFile.getAbsolutePath());
           response.setStatus(HttpStatus.OK.value());
-          return "Loaded image but debug symbols unparsable";
+          return LOAD_SYMBOLS_UNPARSABLE;
         }
 
         vm.setDebugSymbols(debugSymbols);
       } catch (FileNotFoundException fnfx) {
         logger.warn("No debug symbols found: {}", fnfx.getMessage());
         response.setStatus(HttpStatus.OK.value());
-        return "Loaded image but debug symbols not found";
+        return LOAD_SYMBOLS_NOT_FOUND;
       }
 
     } catch (IOException ioException) {
       response.setStatus(HttpStatus.FORBIDDEN.value());
-      return "Error reading file '%s'".formatted(cleanName);
+      return ERR_LOAD_READING_FILE.apply(cleanName);
     }
 
     logger.info("Finished loading new memorySlice image!");
 
     response.setStatus(HttpStatus.OK.value());
-    return "Loaded %s".formatted(cleanFile);
+    return LOAD_SUCCESS.apply(cleanFile.getName());
   }
 
   @PostMapping("/set")
   public String set(@RequestBody SetRequestPacket request) {
     if (vm.getStatus() == VmStatus.RUNNING) {
-      return ERR_NOT_ALLOWED_RUNNING;
+      return ERR_NOT_ALLOWED_VM_RUNNING;
     }
 
     String addressStr = request.address().toUpperCase().trim();
     String valueStr = request.value().toUpperCase().trim();
 
     // Parse address
-    char address = 0;
+    char address;
     try {
-
-      boolean isRegister = false;
-      for (Register register : vm.getRegisterSet().getActiveRegisters()) {
-        if (register.getName().equals(addressStr)) {
-          isRegister = true;
-          address = register.getAddress();
-        }
-      }
-
-      if (!isRegister) {
-        if (addressStr.length() != INT16_HEX_LENGTH) {
-          return ERR_INPUT_LENGTH(addressStr);
-        }
-
-        address = Int16Helper.hexToInt16(addressStr);
-      }
-
+      address = parseRegisterOrInt16(addressStr);
     } catch (NumberFormatException nfx) {
-      return ERR_NUMBER_FORMAT(addressStr);
+      String message = ERR_NUMBER_FORMAT.apply(addressStr);
+      logger.warn(message);
+      return message;
     }
 
     // Parse value
-    char value = 0;
+    char value;
     try {
-
-      boolean isRegister = false;
-      for (Register register : vm.getRegisterSet().getActiveRegisters()) {
-        if (register.getName().equals(valueStr)) {
-          isRegister = true;
-          value = register.get();
-        }
-      }
-
-      if (!isRegister) {
-        if (valueStr.length() != INT16_HEX_LENGTH) {
-          return ERR_INPUT_LENGTH(valueStr);
-        }
-
-        value = Int16Helper.hexToInt16(valueStr);
-      }
+      value = parseRegisterOrInt16(valueStr);
     } catch (NumberFormatException nfx) {
-      return ERR_NUMBER_FORMAT(valueStr);
+      String message = ERR_NUMBER_FORMAT.apply(valueStr);
+      logger.warn(message);
+      return message;
     }
 
     // Write value and finish up
@@ -244,7 +239,7 @@ public class CommandRestController {
   @PostMapping("/drop_debug")
   public String dropDebug() {
     if (vm.getStatus() == VmStatus.RUNNING) {
-      return ERR_NOT_ALLOWED_RUNNING;
+      return ERR_NOT_ALLOWED_VM_RUNNING;
     }
 
     String name = vm.getDebugSymbols().sourceName();
@@ -268,6 +263,8 @@ public class CommandRestController {
 
     boolean runFromHere;
 
+    //TODO Run should take register arguments
+
     // Start string -> int
     try {
       if (startAddressStr.equals("here")) {
@@ -277,7 +274,7 @@ public class CommandRestController {
         startAddress = Int16Helper.hexToInt16(startAddressStr);
       }
     } catch (NumberFormatException nfe) {
-      return "Input must be a hex integer. Got %s.".formatted(startAddressStr);
+      return ERR_NUMBER_FORMAT.apply(startAddressStr);
     }
 
     // Determine real addresses
@@ -293,7 +290,7 @@ public class CommandRestController {
   @PostMapping("/pause")
   public String pause() {
     if (vm.getStatus() != VmStatus.RUNNING) {
-      return "Action not allowed: VM is not running";
+      return ERR_NOT_ALLOWED_VM_NOT_RUNNING;
     }
 
     vm.setStatus(VmStatus.PAUSED);
@@ -301,4 +298,31 @@ public class CommandRestController {
     char pcr = vm.getRegisterSet().getRegister("PCR").get();
     return "Paused at PCR: %04X".formatted((int) pcr);
   }
+
+  @PostMapping("/tbreak")
+  public String tbreak(ToggleBreakpointRequestPacket packet) {
+    if (vm.getStatus() == VmStatus.RUNNING) {
+      return ERR_NOT_ALLOWED_VM_RUNNING;
+    }
+
+    // TODO Tbreak should take register arguments
+    String address = packet.addressStr();
+
+    char bp;
+    try {
+      bp = Int16Helper.hexToInt16(address);
+    } catch (NumberFormatException nfx) {
+      logger.error("Toggle breakpoint couldn't parse address %s".formatted(address));
+      return ERR_NUMBER_FORMAT.apply(address);
+    }
+
+    if (!vm.getBreakpoints().contains(bp)) {
+      vm.getBreakpoints().add(bp);
+      return TBREAK_ADDED.apply((int) bp);
+    } else {
+      vm.getBreakpoints().remove(Character.valueOf(bp));
+      return TBREAK_REMOVED.apply((int) bp);
+    }
+  }
+
 }

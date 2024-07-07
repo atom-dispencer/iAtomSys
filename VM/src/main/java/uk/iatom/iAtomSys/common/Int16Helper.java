@@ -4,11 +4,11 @@ public class Int16Helper {
 
   public static int MEMORY_SPACE = Character.MAX_VALUE + 1;
 
-  public static char hexToInt16(String str) {
+  public static char hexToInt16(String str) throws NumberFormatException {
     return parseInt16(str, 16);
   }
 
-  public static char parseInt16(String str, int radix) {
+  public static char parseInt16(String str, int radix) throws NumberFormatException {
     int i = Integer.parseInt(str, radix);
 
     if (i > Character.MAX_VALUE) {

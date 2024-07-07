@@ -1,6 +1,8 @@
 package uk.iatom.iAtomSys.server;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -44,6 +46,7 @@ public class IAtomSysVM {
   private IOPort[] ports;
   @Setter
   private DebugSymbols debugSymbols = DebugSymbols.empty();
+  private List<Character> breakpoints = new ArrayList<>();
 
   public void runAsync() {
     Thread thread = new Thread(() -> {
@@ -53,8 +56,12 @@ public class IAtomSysVM {
         asyncRunData.setStartTime(LocalDateTime.now());
 
         while (status == VmStatus.RUNNING) {
-          processNextCycle();
+          char pcr = processNextCycle();
           asyncRunData.getAsyncExecutedInstructions().getAndIncrement();
+
+          if (breakpoints.contains(pcr)) {
+            status = VmStatus.PAUSED;
+          }
         }
       } catch (Exception e) {
         logger.error("Error in async running.", e);
@@ -69,7 +76,7 @@ public class IAtomSysVM {
   /**
    * Perform a single fetch-execute cycle, incrementing the program counter.
    */
-  public void processNextCycle() {
+  public char processNextCycle() {
     Register PCR = Register.PCR(registerSet);
     char pc = PCR.get();
 
@@ -91,7 +98,7 @@ public class IAtomSysVM {
       }
     }
 
-    // TODO Check breakpoints
+    return pc;
   }
 
   private void executeInstruction(char int16Instruction) {

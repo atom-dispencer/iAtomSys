@@ -27,4 +27,6 @@ public interface VmClient {
   String run(RunRequestPacket runRequestPacket);
 
   String pause();
+
+  String tbreak(ToggleBreakpointRequestPacket addressStr);
 }

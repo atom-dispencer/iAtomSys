@@ -19,6 +19,7 @@ import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
 import uk.iatom.iAtomSys.common.api.RunRequestPacket;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
+import uk.iatom.iAtomSys.common.api.ToggleBreakpointRequestPacket;
 import uk.iatom.iAtomSys.common.api.VmClient;
 import uk.iatom.iAtomSys.common.api.VmStatus;
 
@@ -38,9 +39,10 @@ public class ShellCommands {
       "[4] 'load <image_name[.img]>': Load the given memorySlice image.", //
       "[5] 'jmp <address>': (Shorthand) set PCR* <address>.", //
       "[6] 'set <address> <value>': Set the value at the address.", //
-      "[7] 'dropDebug': Reset the loaded debug symbols.", //
+      "[7] 'drop_debug': Reset the loaded debug symbols.", //
       "[8] 'run <start?>': Execute from current PCR or given address.", //
-      "[9] 'refresh': Refreshes the display state and redraw." //
+      "[9] 'refresh': Refreshes the display state and redraw.", //
+      "[10] 'tbreak <address>': Toggle the given breakpoint address." //
   };
 
   // Messages which may appear in the ShellDisplayState command message
@@ -244,6 +246,19 @@ public class ShellCommands {
   public void pause() {
     try {
       String message = api.pause();
+      display.getDisplayState().setCommandMessage(message);
+    } catch (IllegalArgumentException e) {
+      help("10");
+    }
+
+    tryRefresh(false);
+  }
+
+  @ShellMethod
+  public void tbreak(final @ShellOption(defaultValue = "here") String addressStr) {
+    try {
+      ToggleBreakpointRequestPacket packet = new ToggleBreakpointRequestPacket(addressStr);
+      String message = api.tbreak(packet);
       display.getDisplayState().setCommandMessage(message);
     } catch (IllegalArgumentException e) {
       help("10");

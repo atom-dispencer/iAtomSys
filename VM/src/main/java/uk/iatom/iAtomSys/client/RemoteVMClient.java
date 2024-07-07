@@ -19,6 +19,7 @@ import uk.iatom.iAtomSys.common.api.RunRequestPacket;
 import uk.iatom.iAtomSys.common.api.RunningDataPacket;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
+import uk.iatom.iAtomSys.common.api.ToggleBreakpointRequestPacket;
 import uk.iatom.iAtomSys.common.api.VmClient;
 import uk.iatom.iAtomSys.common.api.VmStatus;
 
@@ -215,6 +216,22 @@ public class RemoteVMClient implements VmClient {
 
     } catch (RestClientException rce) {
       logger.error("Error executing pause command: %s".formatted(uri), rce);
+      return "Request error: %s".formatted(rce.getClass().getSimpleName());
+    }
+  }
+
+  @Override
+  public String tbreak(ToggleBreakpointRequestPacket packet) {
+    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("command/tbreak").build().toUri();
+
+    try {
+      RestTemplate restTemplate = new RestTemplate();
+      ResponseEntity<String> responseEntity = restTemplate.postForEntity(uri, packet, String.class);
+      String body = responseEntity.getBody();
+      return body == null ? "<Null response>" : body;
+
+    } catch (RestClientException rce) {
+      logger.error("Error executing tbreak command: %s".formatted(uri), rce);
       return "Request error: %s".formatted(rce.getClass().getSimpleName());
     }
   }
