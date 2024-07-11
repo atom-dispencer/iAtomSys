@@ -598,7 +598,7 @@ public class ShellDisplay {
 
       // Breakpoints
       if (List.of(displayState.getBreakpoints()).contains((char) address)) {
-        lineBuilder.append(" $ BRK $ ");
+        formattedLines.add("$ BRKP $");
       }
 
       // The instruction itself
@@ -802,6 +802,9 @@ public class ShellDisplay {
     Rectangle rect = FLAGS_RECT.get();
     printBox(rect, '+', true);
 
+    int padding = 2;
+    Rectangle innerBounds = new Rectangle(rect.x + padding, rect.y + padding, rect.width - 2*padding, rect.height - 2*padding);
+
     char pcr = 0;
     for (RegisterPacket rp: displayState.getRegisters()) {
       if (rp.name().equals("PCR")) {
@@ -809,20 +812,27 @@ public class ShellDisplay {
       }
     }
 
-    int padding = 2;
     int nameWidth = rect.width - 2*padding - 6;
 
     List<String> lines = new ArrayList<>();
 
-    List<Character> breakpoints = Arrays.stream(displayState.getBreakpoints()).sorted().toList();
-
-    if (breakpoints.isEmpty()) {
+    if (displayState.getBreakpoints().length == 0) {
       lines.add("No breakpoints");
+      lines.add("Go have a 'tbreak'");
     } else {
-      int index = Math.max(findClosestIndex(pcr, breakpoints) - 3, 0);
+      List<Character> sortedBreakpoints = Arrays.stream(displayState.getBreakpoints()).sorted().toList();
+      int startIndex = Math.max(findClosestIndex(pcr, sortedBreakpoints) - 3, 0);
+      int maxLines = innerBounds.height - 1;
+      int count = Math.min(maxLines, sortedBreakpoints.size() - startIndex);
 
-      for (int j = index; j < breakpoints.size(); j++) {
-        int address = (int) breakpoints.get(j);
+      lines.add("Viewing %d-%d of %d".formatted(
+          startIndex + 1,
+          startIndex + count,
+          sortedBreakpoints.size()
+      ));
+
+      for (int j = startIndex; j < count; j++) {
+        int address = (int) sortedBreakpoints.get(j);
 
         String debug = displayState.getDebugSymbols().functions().getOrDefault(address, null);
         if (debug == null) {
@@ -832,7 +842,7 @@ public class ShellDisplay {
           debug = displayState.getDebugSymbols().labels().getOrDefault(address, null);
         }
         if (debug == null) {
-          debug = displayState.getNamedAddresses().getOrDefault(address, "");
+          debug = displayState.getNamedAddresses().getOrDefault(address, "(No info)");
         }
 
         if (debug.length() > nameWidth) {
@@ -845,7 +855,6 @@ public class ShellDisplay {
     }
 
     String title = " VM Breakpoints ";
-    Rectangle innerBounds = new Rectangle(rect.x + padding, rect.y + padding, rect.width - 2*padding, rect.height - 2*padding);
 
     print(
         ANSICodes.PUSH_CURSOR_POS,

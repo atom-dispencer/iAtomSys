@@ -55,14 +55,16 @@ public class IAtomSysVM {
         asyncRunData.getAsyncExecutedInstructions().set(0L);
         asyncRunData.setStartTime(LocalDateTime.now());
 
-        while (status == VmStatus.RUNNING) {
+        // This is the first documented case of a do-while loop in the wild...
+        do {
           char pcr = processNextCycle();
           asyncRunData.getAsyncExecutedInstructions().getAndIncrement();
 
           if (breakpoints.contains(pcr)) {
             status = VmStatus.PAUSED;
           }
-        }
+        } while (status == VmStatus.RUNNING);
+
       } catch (Exception e) {
         logger.error("Error in async running.", e);
       }
@@ -94,7 +96,8 @@ public class IAtomSysVM {
         logger.info("PC is at max value %d, pausing.".formatted((int) pc));
         status = VmStatus.PAUSED;
       } else {
-        PCR.set((char) (pc + 1));
+        pc = (char) (pc + 1);
+        PCR.set(pc);
       }
     }
 

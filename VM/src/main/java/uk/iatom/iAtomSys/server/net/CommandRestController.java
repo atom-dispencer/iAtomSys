@@ -46,6 +46,7 @@ public class CommandRestController {
   public static final String ERR_LOAD_IMAGE_INVALID = "Image is invalid.";
   public static final String ERR_LOAD_FILE_WOULD_OVERFLOW = "Requested file would overflow VM memorySlice.";
   public static final Function<String, String> ERR_LOAD_READING_FILE = "Error reading file %s"::formatted;
+  public static final Function<String, String> ERR_TBREAK_ADDRESS = "Toggle breakpoint couldn't parse address %s"::formatted;
   // Successes
   public static final String HELLO_WORLD = "World";
   public static final Function<Integer, String> TBREAK_ADDED = "Added breakpoint at %04X"::formatted;
@@ -322,7 +323,7 @@ public class CommandRestController {
   }
 
   @PostMapping("/tbreak")
-  public String tbreak(ToggleBreakpointRequestPacket packet) {
+  public String tbreak(@RequestBody ToggleBreakpointRequestPacket packet) {
     if (vm.getStatus() == VmStatus.RUNNING) {
       return ERR_NOT_ALLOWED_VM_RUNNING;
     }
@@ -333,8 +334,9 @@ public class CommandRestController {
     try {
       bp = AddressHelper.hexToInt16(address);
     } catch (AddressFormatException nfx) {
-      logger.error("Toggle breakpoint couldn't parse address %s".formatted(address));
-      return ERR_NUMBER_FORMAT.apply(address);
+      String err = ERR_TBREAK_ADDRESS.apply(address);
+      logger.error(err);
+      return err;
     }
 
     if (!vm.getBreakpoints().contains(bp)) {
