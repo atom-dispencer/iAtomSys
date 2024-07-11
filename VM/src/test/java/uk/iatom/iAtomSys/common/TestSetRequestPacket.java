@@ -2,6 +2,8 @@ package uk.iatom.iAtomSys.common;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 
 public class TestSetRequestPacket {
@@ -54,10 +56,41 @@ public class TestSetRequestPacket {
     Assertions.assertEquals(SetRequestPacket.ERR_VALUE_BLANK, ex.getMessage());
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = { "a", "ab", "abcde" })
+  void address_length_bad(String address) {
+    IllegalStateException isx = Assertions.assertThrows(
+        IllegalStateException.class,
+        () -> new SetRequestPacket(address, "0000")
+    );
+    Assertions.assertEquals(SetRequestPacket.ERR_BAD_ADDRESS_LENGTH.apply(address), isx.getMessage());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "a", "ab", "abcde" })
+  void value_length_bad(String address) {
+    IllegalStateException isx = Assertions.assertThrows(
+        IllegalStateException.class,
+        () -> new SetRequestPacket("0000", address)
+    );
+    Assertions.assertEquals(SetRequestPacket.ERR_BAD_VALUE_LENGTH.apply(address), isx.getMessage());
+  }
+
   @Test
-  void success() {
-    String address = "address";
-    String value = "value";
+  void success_address_longer() {
+    String address = "addr";
+    String value = "val";
+
+    Assertions.assertDoesNotThrow(
+        () -> new SetRequestPacket(address, value)
+    );
+  }
+
+
+  @Test
+  void success_value_longer() {
+    String address = "add";
+    String value = "valu";
 
     Assertions.assertDoesNotThrow(
         () -> new SetRequestPacket(address, value)

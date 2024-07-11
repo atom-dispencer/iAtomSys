@@ -1,13 +1,13 @@
 package uk.iatom.iAtomSys.server.memory;
 
-import uk.iatom.iAtomSys.common.Int16Helper;
+import uk.iatom.iAtomSys.common.AddressHelper;
 
 public class Memory {
 
   private final char[] buffer;
 
   public Memory() {
-    this.buffer = new char[Int16Helper.MEMORY_SPACE];
+    this.buffer = new char[AddressHelper.MEMORY_SPACE];
   }
 
   public char read(char address) {

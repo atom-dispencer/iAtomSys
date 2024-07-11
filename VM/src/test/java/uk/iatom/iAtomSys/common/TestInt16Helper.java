@@ -10,6 +10,6 @@ public class TestInt16Helper {
     byte left = 0x01;
     byte right = (byte) 0xa8;
 
-    Assertions.assertEquals((char) 0x01a8, Int16Helper.fromBytes(left, right));
+    Assertions.assertEquals((char) 0x01a8, AddressHelper.fromBytes(left, right));
   }
 }

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import uk.iatom.iAtomSys.common.AddressFormatException;
-import uk.iatom.iAtomSys.common.Int16Helper;
+import uk.iatom.iAtomSys.common.AddressHelper;
 import uk.iatom.iAtomSys.common.api.DebugSymbols;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
 import uk.iatom.iAtomSys.common.api.RunRequestPacket;
@@ -94,7 +94,7 @@ public class CommandRestController {
         value = "0".repeat(lenDif) + value;
       }
 
-      return Int16Helper.hexToInt16(value);
+      return AddressHelper.hexToInt16(value);
     }
 
     // Treat as a register name (or self-reference)
@@ -182,7 +182,7 @@ public class CommandRestController {
       }
       char[] buffer = new char[byteArr.length / 2];
       for (int i = 0; i < buffer.length; i++) {
-        buffer[i] = Int16Helper.fromBytes(byteArr[2*i], byteArr[2*i + 1]);
+        buffer[i] = AddressHelper.fromBytes(byteArr[2*i], byteArr[2*i + 1]);
       }
 
       if (buffer.length > memorySize) {
@@ -296,9 +296,9 @@ public class CommandRestController {
         runFromHere = true;
       } else {
         runFromHere = false;
-        startAddress = Int16Helper.hexToInt16(startAddressStr);
+        startAddress = AddressHelper.hexToInt16(startAddressStr);
       }
-    } catch (NumberFormatException nfe) {
+    } catch (AddressFormatException nfe) {
       return ERR_NUMBER_FORMAT.apply(startAddressStr);
     }
 
@@ -334,8 +334,8 @@ public class CommandRestController {
 
     char bp;
     try {
-      bp = Int16Helper.hexToInt16(address);
-    } catch (NumberFormatException nfx) {
+      bp = AddressHelper.hexToInt16(address);
+    } catch (AddressFormatException nfx) {
       logger.error("Toggle breakpoint couldn't parse address %s".formatted(address));
       return ERR_NUMBER_FORMAT.apply(address);
     }

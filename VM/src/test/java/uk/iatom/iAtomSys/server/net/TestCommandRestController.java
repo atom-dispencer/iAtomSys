@@ -107,30 +107,6 @@ public class TestCommandRestController {
     assertEquals(ERR_NUMBER_FORMAT.apply(value), result);
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = { "00000", "000" })
-  void set_long_addresses(String address) {
-    SetRequestPacket packet = new SetRequestPacket(address, "0000");
-    String result = rest.set(packet);
-    assertEquals(ERR_NUMBER_FORMAT.apply(address), result);
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = { "00000", "" })
-  void set_long_values(String value) {
-    SetRequestPacket packet = new SetRequestPacket("0000", value);
-    String result = rest.set(packet);
-    assertEquals(ERR_NUMBER_FORMAT.apply(value), result);
-  }
-
-  @ParameterizedTest
-  @ValueSource(strings = { "111", "11", "1" })
-  void set_short_values(String value) {
-    SetRequestPacket packet = new SetRequestPacket("0000", value);
-    String result = rest.set(packet);
-    assertEquals(SET_SUCCESS("0000", (char) 0, value, (char) 0), result);
-  }
-
   @Test
   void set_success() throws DuplicateRegisterException {
     registerSet.createRegister("TST", 6);
