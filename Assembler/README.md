@@ -4,9 +4,24 @@
 | Elixir   |       |              |
 
 ## Why Elixir?
-Because I'm curious about the functional paradigm.
-I've already made an assembler before (see my C# implemention in [**Crimson-RFASM**](https://github.com/atom-dispencer/Crimson-RFASM)), so I can focus on learning the language without having to solve so many other problems at the same time.
-Compiliation and assembly are (unlike linking) highly parallelisable because files are broadly independent of one-another - a perfect task for a highly concurrent language!
+Is Elixir the 'best' language for the job?
+Nope!
+But I'm curious about functional programming, soooo...
+
+I've made an assembler before (see my C# implemention in [**Crimson-RFASM**](https://github.com/atom-dispencer/Crimson-RFASM)), so I can focus on learning the language without having to solve so many other problems at the same time.
+
+And who knows!
+Elixir is great at handling lots of lightweight parallel tasks, perhaps like assembling many lines of code??
+I'm sure it'll be fine... ;)
+
+
+### Building and Running
+This project uses **mix** and **escript** to produce a binary which can be run on a machine with Erlang/OTP installed:
+
+```
+mix escript.build
+escript iatomsys_assembler
+```
 
 
 ## Installation
