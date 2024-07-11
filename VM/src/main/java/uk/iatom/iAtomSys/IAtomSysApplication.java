@@ -1,17 +1,18 @@
 package uk.iatom.iAtomSys;
 
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.Properties;
-import java.util.ResourceBundle;
 import lombok.Getter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 @SpringBootApplication
 public class IAtomSysApplication {
+
+  private static final Logger logger = LoggerFactory.getLogger(IAtomSysApplication.class);
 
   @Getter
   private static String cicdVersion;
@@ -36,7 +37,7 @@ public class IAtomSysApplication {
 
     // BOING!
     // (Geddit...? Coz it's a "Spring"...?)
-    SpringApplication.run(IAtomSysApplication.class, args);
+    ConfigurableApplicationContext context = SpringApplication.run(IAtomSysApplication.class, args);
   }
 
 }

@@ -12,4 +12,9 @@ public class ClientBeans {
     return new RemoteVMClient("http://localhost:8080/");
   }
 
+  @Bean
+  public ApiClientConfiguration apiClientConfiguration() {
+    return new ApiClientConfiguration();
+  }
+
 }

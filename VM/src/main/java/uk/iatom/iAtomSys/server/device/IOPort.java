@@ -2,20 +2,23 @@ package uk.iatom.iAtomSys.server.device;
 
 import java.util.ArrayList;
 import java.util.List;
+import lombok.Getter;
 import uk.iatom.iAtomSys.common.instruction.FlagHelper;
 import uk.iatom.iAtomSys.common.register.RegisterSet;
 import uk.iatom.iAtomSys.server.memory.Memory;
 
 public class IOPort {
 
+  @Getter
   private final short address;
+  @Getter
   private final FlagHelper.Flag flag;
   private final RegisterSet registerSet;
   private final Memory memory;
 
   private final ArrayList<Short> outputBuffer = new ArrayList<>();
-  private int outputPointer = 0;
   private final ArrayList<Short> inputBuffer = new ArrayList<>();
+  private int outputPointer = 0;
   private int inputPointer = 0;
 
 
@@ -39,13 +42,15 @@ public class IOPort {
    * <br>
    */
   public void updateFlag() {
-    if (hasUnreadInput()) {
-      FlagHelper.setFlag(registerSet, flag.bitIndex, true);
-    } else {
-      FlagHelper.setFlag(registerSet, flag.bitIndex, false);
-    }
+    FlagHelper.setFlag(registerSet, flag.bitIndex, hasUnreadInput());
   }
 
+  /**
+   * @return The value at {@link IOPort#address}
+   */
+  public short peek() {
+    return memory.read(address);
+  }
 
   /**
    * Shuffle the next value from the {@link IOPort#inputBuffer} into the bound
@@ -81,12 +86,13 @@ public class IOPort {
   }
 
   public List<Short> readUnreadOutput() {
-    inputPointer = inputBuffer.size() - 1;
-    return inputBuffer.subList(inputPointer, inputBuffer.size() - 1);
+    List<Short> result = outputBuffer.subList(outputPointer, outputBuffer.size() - 1);
+    outputPointer = outputBuffer.size() - 1;
+    return result;
   }
 
   public List<Short> readAllOutput() {
-    inputPointer = inputBuffer.size() - 1;
-    return outputBuffer.subList(0, outputBuffer.size() - 1) ;
+    outputPointer = outputBuffer.size() - 1;
+    return outputBuffer.subList(0, outputBuffer.size() - 1);
   }
 }

@@ -2,7 +2,7 @@ package uk.iatom.iAtomSys.client;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,14 +13,12 @@ import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 import org.springframework.stereotype.Component;
-import uk.iatom.iAtomSys.client.disassembly.MemoryDisassembler;
-import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
+import uk.iatom.iAtomSys.common.api.RunRequestPacket;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
-import uk.iatom.iAtomSys.common.api.VMClient;
-import uk.iatom.iAtomSys.common.api.VMStateRequestPacket;
-import uk.iatom.iAtomSys.common.api.VMStateResponsePacket;
+import uk.iatom.iAtomSys.common.api.VmClient;
+import uk.iatom.iAtomSys.common.api.VmStatus;
 
 
 @ShellComponent
@@ -32,18 +30,41 @@ public class ShellCommands {
       "[1] 'exit': Terminate the application.", //
       "[2] 'hello': Say hi!", //
       "[3] 'step <count>': Execute the next <count> instructions.", //
-      "[4] 'load <image_name[.img]>': Load the given memory image.", //
-      "[5] 'set <address> <value>': Set the value at the address." //
+      "[4] 'load <image_name[.img]>': Load the given memorySlice image.", //
+      "[5] 'jmp <address>': (Shorthand) PCR* <address>.", //
+      "[6] 'set <address> <value>': Set the value at the address.", //
+      "[7] 'dropDebug': Reset the loaded debug symbols.", //
+      "[8] 'run <x|start> <end?>': Execute between the addresses.", //
+      "[9] 'refresh': Refreshes the display state and redraw." //
   };
-  private final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
+  private static final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
+  private final AtomicBoolean shouldResetCommand = new AtomicBoolean(false);
   @Autowired
-  private VMClient api;
+  private VmClient api;
   @Autowired
   private ApplicationContext applicationContext;
   @Autowired
   private ShellDisplay display;
-  @Autowired
-  private MemoryDisassembler memoryDisassembler;
+  /**
+   * The task responsible for repeatedly refreshing the UI while the VM is in the
+   * {@link VmStatus#RUNNING} phase.
+   */
+  private final Runnable updateDaemonTask = new Thread(() -> {
+    logger.info("Starting update daemon...");
+
+    while (display.getDisplayState().getStatus() == VmStatus.RUNNING && display.isAlive()) {
+      try {
+        display.getDisplayState().update();
+        display.draw(shouldResetCommand.getAndSet(false));
+        Thread.sleep(1000L);
+      } catch (Exception e) {
+        logger.error("Suppressed error in run/sleep loop.", e);
+      }
+    }
+
+    logger.info("Update daemon exiting...");
+  });
+  private Thread updateDaemon = null;
 
   @PostConstruct
   public void postConstruct() {
@@ -55,35 +76,30 @@ public class ShellCommands {
     display.deactivate();
   }
 
-  private void updateDisplayVMState() {
-
-    // TODO Dynamic pcrOffset and sliceWidth
-    VMStateResponsePacket vmStateResponsePacket = api.getState(new VMStateRequestPacket((short) -8, (short) 17));
-
-    if (vmStateResponsePacket == null) {
-      logger.error("Cannot update display VM state: received null.");
-      return;
-    }
-
-    // TODO Need to handle running/not-running states as each state will display different info!
-    // TODO What if state packet values are null?
-
-    display.getDisplayState().setMemorySliceStartAddress(vmStateResponsePacket.memoryStartAddress());
-    short[] memory = vmStateResponsePacket.memory();
-    List<String[]> disassembly = memoryDisassembler.disassemble(memory);
-    display.getDisplayState().setMemory(memory);
-    display.getDisplayState().setDisassembly(disassembly);
-
-    List<RegisterPacket> registers = vmStateResponsePacket.registers();
-    display.getDisplayState().setRegisters(registers);
-  }
-
   @ShellMethod()
   public String exit() {
     display.getDisplayState().setCommandMessage("Shutting down application...");
-    display.draw();
+    display.draw(true);
     ((ConfigurableApplicationContext) applicationContext).close();
     throw new ExitRequest();
+  }
+
+  /**
+   * Try to update the local state from the remote and redraw the UI, refraining if the
+   * {@link #updateDaemonTask} is running because that could cause race conditions.
+   *
+   * @param onlyRedraw Whether to only redraw the UI and *not* update the local state.
+   */
+  private void tryRefresh(boolean onlyRedraw) {
+    if (updateDaemon == null || !updateDaemon.isAlive()) {
+      if (!onlyRedraw) {
+        display.getDisplayState().update();
+      }
+
+      display.draw(true);
+    } else {
+      shouldResetCommand.set(true);
+    }
   }
 
   @ShellMethod()
@@ -94,19 +110,21 @@ public class ShellCommands {
       display.getDisplayState().setCommandMessage(HELP_PAGES[page]);
 
     } catch (NumberFormatException nfx) {
-      display.getDisplayState().setCommandMessage("Input must be an integer. Got %s.".formatted(pageStr));
+      display.getDisplayState()
+          .setCommandMessage("Input must be an integer. Got %s.".formatted(pageStr));
     } catch (IndexOutOfBoundsException ibx) {
       display.getDisplayState().setCommandMessage(
           "%s not in range [0,%d], try 'help 0'".formatted(pageStr, HELP_PAGES.length - 1));
     }
 
-    display.draw();
+    tryRefresh(true);
   }
 
   @ShellMethod()
   public void hello() {
     display.getDisplayState().setCommandMessage("Hello!");
-    display.draw();
+
+    tryRefresh(true);
   }
 
   //TODO Availability methods https://docs.spring.io/spring-shell/reference/commands/availability.html
@@ -122,8 +140,7 @@ public class ShellCommands {
       return;
     }
 
-    updateDisplayVMState();
-    display.draw();
+    tryRefresh(false);
   }
 
   @ShellMethod
@@ -131,7 +148,7 @@ public class ShellCommands {
 
     try {
       LoadRequestPacket request = new LoadRequestPacket(imageName);
-      String message = api.loadmem(request);
+      String message = api.load(request);
       display.getDisplayState().setCommandMessage(message);
 
     } catch (IllegalArgumentException e) {
@@ -139,19 +156,19 @@ public class ShellCommands {
       return;
     }
 
-    updateDisplayVMState();
-    display.draw();
+    tryRefresh(false);
   }
 
   @ShellMethod
   public void jmp(final @ShellOption(value = "-n", defaultValue = "0") String address) {
-    set("PCR*", address);
+    set("PCR", address);
   }
 
   @ShellMethod
-  public void set(final @ShellOption(defaultValue = "NO_ADDRESS") String address, final @ShellOption(defaultValue = "0") String value) {
+  public void set(final @ShellOption(defaultValue = "NO_ADDRESS") String address,
+      final @ShellOption(defaultValue = "0") String value) {
     if (address.equals("NO_ADDRESS")) {
-      help("5");
+      help("6");
       return;
     }
 
@@ -160,11 +177,66 @@ public class ShellCommands {
       String message = api.set(request);
       display.getDisplayState().setCommandMessage(message);
     } catch (IllegalArgumentException e) {
-      help("5");
+      help("6");
       return;
     }
 
-    updateDisplayVMState();
-    display.draw();
+    tryRefresh(false);
+  }
+
+  @ShellMethod
+  public void drop_debug() {
+    try {
+      String message = api.drop_debug();
+      display.getDisplayState().setCommandMessage(message);
+    } catch (IllegalArgumentException e) {
+      help("7");
+    }
+
+    tryRefresh(false);
+  }
+
+  @ShellMethod
+  public void run(final @ShellOption(defaultValue = "here") String startAddressStr) {
+
+    try {
+      // Redraw to clean the command input
+      tryRefresh(true);
+
+      RunRequestPacket packet = new RunRequestPacket(startAddressStr);
+      String message = api.run(packet);
+      display.getDisplayState().setCommandMessage(message);
+
+      // Refresh to get the new state (is the VM running?)
+      tryRefresh(false);
+
+      // If the VM is running, start the update daemon if it isn't already going
+      if ((updateDaemon == null || !updateDaemon.isAlive())
+          && display.getDisplayState().getStatus() == VmStatus.RUNNING) {
+        updateDaemon = new Thread(updateDaemonTask);
+        updateDaemon.setDaemon(true);
+        updateDaemon.start();
+      }
+    } catch (IllegalArgumentException e) {
+      logger.error("Run command", e);
+      help("8");
+    }
+  }
+
+  @ShellMethod
+  public void refresh() {
+    tryRefresh(false);
+  }
+
+  @ShellMethod
+  public void pause() {
+    try {
+      String message = api.pause();
+      display.getDisplayState().setCommandMessage(message);
+    } catch (IllegalArgumentException e) {
+      help("10");
+    }
+
+    tryRefresh(false);
   }
 }

@@ -71,17 +71,19 @@ Many `Register` flags are followed by a `Register*` flag. If the `Register*` fla
 ## Registers
 
 Registers in the VM are stored in memory and can therefore be accessed through standard memory
-  addresses. This is, however, inadvisable and generally impractical.
-Bear in mind that the whole state of the VM is stored in memory, so 'Registers' are just an
-  abstraction for a known constant memory address.
-Registers can be passed as flags to instructions via their 2-bit address.
+  addresses - i.e. a 'Register' is an abstraction for a known constant memory address. 
+Accessing registers directly via their addresses is, however, inadvisable and generally impractical.
+Registers can be passed as flags to instructions via their 2-bit ID.
 
-| Register          | Assembly | Hex | Function                                           |
-|-------------------|----------|-----|----------------------------------------------------|
-| Accumulator       | ACC      | 00  | The VM/CPU accumulator for mathematical operations | 
-| I Don't Know...   | IDK      | 01  | No internal VM/CPU function. User-controlled       |
-| To Be Honest...   | TBH      | 02  | No internal VM/CPU function. User-controlled       |
-| Laugh Out Loud... | LOL      | 03  | No internal VM/CPU function. User-controlled       |
+Registers' addresses in memory are offset by their ID from the address *0x0010*,
+  so TBH would be at `0x0010 + 0x0002 = 0x0012`.
+
+| Register          | Assembly | ID | Function                                           |
+|-------------------|----------|----|----------------------------------------------------|
+| Accumulator       | ACC      | 00 | The VM/CPU accumulator for mathematical operations | 
+| I Don't Know...   | IDK      | 01 | No internal VM/CPU function. User-controlled       |
+| To Be Honest...   | TBH      | 02 | No internal VM/CPU function. User-controlled       |
+| Laugh Out Loud... | LOL      | 03 | No internal VM/CPU function. User-controlled       |
 
 ### Hidden Registers
 Several registers are hidden, meaning that they cannot be addressed directly from instructions.
@@ -93,11 +95,12 @@ Interactions with these must happen indirectly via other instructions.
 | Flags           | 05  | Stores CPU flags.                                | 
 
 ## Flags
-CPU flags are stored in the invisible register FLG.
+CPU flags are stored in the hidden register FLG.
 
-| Flag  | Bit | Mask |                                                                |
-|-------|-----|------|----------------------------------------------------------------|
-| Carry | 1   | 0001 | Active when the accumulator has carried a bit during addition. |
+| Flag  | Bit | Mask   |                                                                |
+|-------|-----|--------|----------------------------------------------------------------|
+| Carry | 1   | 0x0001 | Active when the accumulator has carried a bit during addition. |
+
 
 ## IO-Ports (External Communication)
 The VM can communicate via its four `IOPorts`, which behave somewhat like UARTs.

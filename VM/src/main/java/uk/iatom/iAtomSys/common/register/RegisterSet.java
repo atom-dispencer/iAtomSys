@@ -1,11 +1,17 @@
 package uk.iatom.iAtomSys.common.register;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import uk.iatom.iAtomSys.server.memory.Memory;
 
 public class RegisterSet {
 
+  /**
+   * Is an array so that we can control the indices more easily as changes to the order/ID are
+   * breaking for programs running on the VM, and registers are indexed by their numeric ID.
+   */
   private final Register[] registers = new Register[8];
   private final Map<String, Integer> names = new HashMap<>();
   private final Memory memory;
@@ -40,8 +46,14 @@ public class RegisterSet {
     return names.getOrDefault(name, null);
   }
 
-  public Register[] getRegisters() {
-    return registers.clone();
+  public Register[] getActiveRegisters() {
+    List<Register> result = new ArrayList<>();
+    for (Register register : registers) {
+      if (register != null) {
+        result.add(register);
+      }
+    }
+    return result.toArray(new Register[0]);
   }
 
   public Register getRegister(int id) {

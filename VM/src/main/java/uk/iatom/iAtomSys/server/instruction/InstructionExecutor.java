@@ -4,6 +4,7 @@ import static uk.iatom.iAtomSys.common.instruction.FlagHelper.oneRegister_02;
 import static uk.iatom.iAtomSys.common.instruction.FlagHelper.twoRegisters_02_35;
 
 import uk.iatom.iAtomSys.common.instruction.FlagHelper;
+import uk.iatom.iAtomSys.common.instruction.Instruction;
 import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.common.register.RegisterReference;
 import uk.iatom.iAtomSys.server.IAtomSysVM;
@@ -12,7 +13,6 @@ import uk.iatom.iAtomSys.server.memory.Memory;
 import uk.iatom.iAtomSys.server.stack.ProcessorStack;
 import uk.iatom.iAtomSys.server.stack.ProcessorStackOverflowException;
 import uk.iatom.iAtomSys.server.stack.ProcessorStackUnderflowException;
-import uk.iatom.iAtomSys.common.instruction.Instruction;
 
 public interface InstructionExecutor {
 
@@ -250,10 +250,11 @@ public interface InstructionExecutor {
 
   /**
    * Perform the steps to execute the instruction with which this {@link InstructionExecutor} is
-   *  associated.
+   * associated.
    *
-   * @param vm The {@link IAtomSysVM} requesting the execution of the associated {@link Instruction}.
-   * @param flags The flag-byte for this {@link Instruction}, from the VM's memory.
+   * @param vm    The {@link IAtomSysVM} requesting the execution of the associated
+   *              {@link Instruction}.
+   * @param flags The flag-byte for this {@link Instruction}, from the VM's memorySlice.
    * @throws InstructionExecutionException In case of <i>anticipated</i> errors.
    */
   void exec(IAtomSysVM vm, byte flags) throws InstructionExecutionException;

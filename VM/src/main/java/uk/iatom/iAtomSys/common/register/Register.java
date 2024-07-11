@@ -2,7 +2,7 @@ package uk.iatom.iAtomSys.common.register;
 
 
 import lombok.Getter;
-import uk.iatom.iAtomSys.client.disassembly.RegisterPacket;
+import uk.iatom.iAtomSys.common.api.RegisterPacket;
 import uk.iatom.iAtomSys.server.memory.Memory;
 
 public class Register {

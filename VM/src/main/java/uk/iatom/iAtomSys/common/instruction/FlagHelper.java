@@ -7,6 +7,10 @@ import uk.iatom.iAtomSys.common.register.RegisterSet;
 public class FlagHelper {
 
   public static final int CARRY = 0;
+  public static final int IO0 = 8;
+  public static final int IO1 = 9;
+  public static final int IO2 = 10;
+  public static final int IO3 = 11;
 
   public static RegisterReference oneRegister_02(RegisterSet registerSet, byte flags) {
     byte registerId = (byte) ((flags & 0b11000000) >> 6);
@@ -42,11 +46,11 @@ public class FlagHelper {
   }
 
   public enum Flag {
-    CARRY(0),
-    IO0(8),
-    IO1(9),
-    IO2(10),
-    IO3(11);
+    CARRY(FlagHelper.CARRY),
+    IO0(FlagHelper.IO0),
+    IO1(FlagHelper.IO1),
+    IO2(FlagHelper.IO2),
+    IO3(FlagHelper.IO3);
 
     public final int bitIndex;
 
