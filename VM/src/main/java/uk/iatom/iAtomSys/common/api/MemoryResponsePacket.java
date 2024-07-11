@@ -5,4 +5,5 @@ public record MemoryResponsePacket(
     char sliceStartAddress,
     char[] memorySlice
 ) {
+
 }

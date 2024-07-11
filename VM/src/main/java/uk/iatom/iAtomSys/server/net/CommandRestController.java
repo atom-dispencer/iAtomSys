@@ -37,8 +37,6 @@ import uk.iatom.iAtomSys.server.IAtomSysVM;
 @SuppressWarnings({"unused"})
 public class CommandRestController {
 
-  private final Logger logger = LoggerFactory.getLogger(CommandRestController.class);
-
   // Errors
   public static final int INT16_HEX_LENGTH = 4;
   public static final Function<String, String> ERR_NUMBER_FORMAT = "Not a register or hex int-16: %s"::formatted;
@@ -48,7 +46,6 @@ public class CommandRestController {
   public static final String ERR_LOAD_IMAGE_INVALID = "Image is invalid.";
   public static final String ERR_LOAD_FILE_WOULD_OVERFLOW = "Requested file would overflow VM memorySlice.";
   public static final Function<String, String> ERR_LOAD_READING_FILE = "Error reading file %s"::formatted;
-
   // Successes
   public static final String HELLO_WORLD = "World";
   public static final Function<Integer, String> TBREAK_ADDED = "Added breakpoint at %04X"::formatted;
@@ -57,6 +54,13 @@ public class CommandRestController {
   public static final String LOAD_SYMBOLS_UNPARSABLE = "Loaded image but debug symbols unparsable";
   public static final String LOAD_SYMBOLS_NOT_FOUND = "Loaded image but debug symbols not found";
   public static final Function<String, String> LOAD_SUCCESS = "Loaded %s"::formatted;
+  private final Logger logger = LoggerFactory.getLogger(CommandRestController.class);
+  private IAtomSysVM vm;
+
+  @Autowired
+  public CommandRestController(IAtomSysVM vm) {
+    this.vm = vm;
+  }
 
   public static String SET_SUCCESS(String addressStr, char address, String valueStr, char value) {
     return "Set %s (%04X) to %s (%04X)".formatted(addressStr, (int) address, valueStr, (int) value);
@@ -65,8 +69,6 @@ public class CommandRestController {
   public static String DROP_DEBUG_SUCCESS(String name) {
     return "Dropped debug symbols: " + name;
   }
-
-  private IAtomSysVM vm;
 
   protected char parseRegisterOrInt16(String value) throws AddressFormatException {
     if (value == null || value.isBlank()) {
@@ -109,11 +111,6 @@ public class CommandRestController {
     }
 
     throw new AddressFormatException(ERR_NUMBER_FORMAT.apply(value));
-  }
-
-  @Autowired
-  public CommandRestController(IAtomSysVM vm) {
-    this.vm = vm;
   }
 
   @GetMapping("/hello")
@@ -182,7 +179,7 @@ public class CommandRestController {
       }
       char[] buffer = new char[byteArr.length / 2];
       for (int i = 0; i < buffer.length; i++) {
-        buffer[i] = AddressHelper.fromBytes(byteArr[2*i], byteArr[2*i + 1]);
+        buffer[i] = AddressHelper.fromBytes(byteArr[2 * i], byteArr[2 * i + 1]);
       }
 
       if (buffer.length > memorySize) {

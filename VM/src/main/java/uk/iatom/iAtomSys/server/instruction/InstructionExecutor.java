@@ -105,7 +105,7 @@ public interface InstructionExecutor {
     char address = reference.get();
 
     char value = vm.getMemory().read(address);
-    value = (char)(value + 1);
+    value = (char) (value + 1);
 
     // If the new value is the minimum value for a short, the operation overflowed
     if (value == 0) {

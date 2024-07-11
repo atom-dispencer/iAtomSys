@@ -117,7 +117,8 @@ public class IAtomSysVM {
 
     // If the instruction was not understood...
     if (instruction == null) {
-      logger.error("Could not decode instruction 0x%04x (skipping).".formatted((int) int16Instruction));
+      logger.error(
+          "Could not decode instruction 0x%04x (skipping).".formatted((int) int16Instruction));
       return;
     }
 

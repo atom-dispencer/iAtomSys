@@ -1,7 +1,6 @@
 package uk.iatom.iAtomSys.common.api;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import lombok.Getter;
+import org.apache.tomcat.util.buf.StringUtils;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.slf4j.Logger;
@@ -358,12 +359,6 @@ public class ShellDisplay {
       print(ANSICodes.CLEAR_SCREEN);
     }
 
-    // TODO Funny edge case where the VM finishes executing super fast,
-    //  so the state is PAUSED and the ShellCommands updater says to not clear the command,
-    //  but the command is already cleared because of the run command, so most of the screen
-    //  doesn't get cleared and stuff gets left on there...
-    // TODO Also need to see why the VM seems to be reading infinite.img as ffa8, but NP++ hex
-    //  says it should be 01a8...
     drawBackground();
 
     try {
@@ -373,8 +368,8 @@ public class ShellDisplay {
           break;
         case PAUSED:
           drawMemoryState();
-          drawRegisters();
-          drawFlags();
+          drawRegistersAndFlags();
+          drawBreakpointBox();
           // TODO Display values in ports (near registers/flags?)
           break;
         case RUNNING:
@@ -752,7 +747,7 @@ public class ShellDisplay {
   /**
    * Draw the values of the VM registers, including their names, addresses and values.
    */
-  public void drawRegisters() {
+  public void drawRegistersAndFlags() {
     Rectangle rect = REGISTERS_RECT.get();
     printBox(rect, '+', true);
 
@@ -803,8 +798,77 @@ public class ShellDisplay {
     );
   }
 
-  public void drawFlags() {
+  public void drawBreakpointBox() {
     Rectangle rect = FLAGS_RECT.get();
     printBox(rect, '+', true);
+
+    char pcr = 0;
+    for (RegisterPacket rp: displayState.getRegisters()) {
+      if (rp.name().equals("PCR")) {
+        pcr = rp.value();
+      }
+    }
+
+    int padding = 2;
+    int nameWidth = rect.width - 2*padding - 6;
+
+    List<String> lines = new ArrayList<>();
+
+    List<Character> breakpoints = Arrays.stream(displayState.getBreakpoints()).sorted().toList();
+
+    if (breakpoints.isEmpty()) {
+      lines.add("No breakpoints");
+    } else {
+      int index = Math.max(findClosestIndex(pcr, breakpoints) - 3, 0);
+
+      for (int j = index; j < breakpoints.size(); j++) {
+        int address = (int) breakpoints.get(j);
+
+        String debug = displayState.getDebugSymbols().functions().getOrDefault(address, null);
+        if (debug == null) {
+          debug = displayState.getDebugSymbols().comments().getOrDefault(address, null);
+        }
+        if (debug == null) {
+          debug = displayState.getDebugSymbols().labels().getOrDefault(address, null);
+        }
+        if (debug == null) {
+          debug = displayState.getNamedAddresses().getOrDefault(address, "");
+        }
+
+        if (debug.length() > nameWidth) {
+          debug = debug.substring(0, nameWidth);
+        } else if (debug.length() < nameWidth) {
+          debug = debug + " ".repeat(nameWidth - debug.length());
+        }
+        lines.add("%04x: %s".formatted(address, debug));
+      }
+    }
+
+    String title = " VM Breakpoints ";
+    Rectangle innerBounds = new Rectangle(rect.x + padding, rect.y + padding, rect.width - 2*padding, rect.height - 2*padding);
+
+    print(
+        ANSICodes.PUSH_CURSOR_POS,
+        ANSICodes.moveTo(rect.getLocation()),
+        ANSICodes.moveRight((rect.width - title.length()) / 2),
+        title,
+        formatParagraph(innerBounds.getLocation(), true, innerBounds.width, lines),
+        ANSICodes.POP_CURSOR_POS
+    );
+  }
+
+  private int findClosestIndex(char target, List<Character> breakpoints) {
+
+    if (breakpoints.isEmpty()) {
+      throw new IllegalArgumentException("Empty breakpoint lists should be handled separately.");
+    }
+
+    for (int i = 0; i < breakpoints.size(); i++) {
+      if (breakpoints.get(i) > target) {
+        return i;
+      }
+    }
+
+    return breakpoints.size() - 1;
   }
 }

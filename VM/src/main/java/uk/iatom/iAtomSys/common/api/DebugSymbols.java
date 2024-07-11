@@ -29,9 +29,9 @@ public record DebugSymbols(
     Map<Integer, String> comments
 ) {
 
+  public static final String EMPTY_NAME = "<empty>";
   private static final Logger logger = LoggerFactory.getLogger(DebugSymbols.class);
 
-  public static final String EMPTY_NAME = "<empty>";
   public static DebugSymbols empty() {
     return new DebugSymbols("", new HashMap<>(), new HashMap<>(), new HashMap<>());
   }
@@ -65,14 +65,18 @@ public record DebugSymbols(
   }
 
   public boolean isEmpty() {
-    if (!sourceName.isEmpty())
+    if (!sourceName.isEmpty()) {
       return false;
-    if (!labels.isEmpty())
+    }
+    if (!labels.isEmpty()) {
       return false;
-    if (!functions.isEmpty())
+    }
+    if (!functions.isEmpty()) {
       return false;
-    if (!comments.isEmpty())
+    }
+    if (!comments.isEmpty()) {
       return false;
+    }
 
     return true;
   }

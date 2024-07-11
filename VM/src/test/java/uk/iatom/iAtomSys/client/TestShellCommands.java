@@ -38,7 +38,7 @@ public class TestShellCommands {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "", "abc", "$%^", "100a", "\na" })
+  @ValueSource(strings = {"", "abc", "$%^", "100a", "\na"})
   void test_help_numberFormat(String str) {
     shellCommands.help(str);
     Assertions.assertEquals(
@@ -48,7 +48,7 @@ public class TestShellCommands {
   }
 
   @ParameterizedTest
-  @ValueSource(ints = { -1, Integer.MAX_VALUE, Integer.MIN_VALUE })
+  @ValueSource(ints = {-1, Integer.MAX_VALUE, Integer.MIN_VALUE})
   void test_help_index(int index) {
     String str = Integer.toString(index);
     shellCommands.help(str);

@@ -10,8 +10,10 @@ import java.util.function.Function;
  */
 public record SetRequestPacket(@NotNull String address, @NotNull String value) {
 
-  public static final Function<String, String> ERR_BAD_ADDRESS_LENGTH = (address) -> "Address must be 3-4 characters, got: %d".formatted(address.length());
-  public static final Function<String, String> ERR_BAD_VALUE_LENGTH = (value) -> "Value must be 3-4 characters, got: %d".formatted(value.length());
+  public static final Function<String, String> ERR_BAD_ADDRESS_LENGTH = (address) -> "Address must be 3-4 characters, got: %d".formatted(
+      address.length());
+  public static final Function<String, String> ERR_BAD_VALUE_LENGTH = (value) -> "Value must be 3-4 characters, got: %d".formatted(
+      value.length());
   public static final String ERR_ADDRESS_NULL = "Set command address may not be null";
   public static final String ERR_VALUE_NULL = "Set command value may not be null";
   public static final String ERR_ADDRESS_BLANK = "Set command address may not be blank";

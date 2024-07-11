@@ -15,7 +15,8 @@ public class Memory {
     // Can't return anything if addressBytes out of bounds
     if (address > getSize()) {
       throw new IndexOutOfBoundsException(
-          "The given address %d is outside the memorySlice space %d".formatted((int) address, buffer.length));
+          "The given address %d is outside the memorySlice space %d".formatted((int) address,
+              buffer.length));
     }
 
     return buffer[address];

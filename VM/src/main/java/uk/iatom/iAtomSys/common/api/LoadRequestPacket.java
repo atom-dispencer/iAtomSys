@@ -5,24 +5,9 @@ import org.slf4j.LoggerFactory;
 
 public record LoadRequestPacket(String imageName) {
 
-  private static final Logger logger = LoggerFactory.getLogger(LoadRequestPacket.class);
-
   public static final int MAX_PATH_LENGTH = 64;
-
   public static final String ERR_BLANK = "Image name cannot be blank!";
-
-  public static String ERR_UNSANITARY(String bad, String sanitised) {
-    int diff = bad.length() - sanitised.length();
-    return "Image name has %d illegal character%s".formatted(diff, Math.abs(diff) == 1 ? "" : "s");
-  }
-
-  public static String ERR_LENGTH(int length) {
-    return "Image name too long: %d/%d".formatted(length, MAX_PATH_LENGTH);
-  }
-
-  public static String sanitise(String name) {
-    return name.replaceAll("[^a-zA-Z0-9._]", "");
-  }
+  private static final Logger logger = LoggerFactory.getLogger(LoadRequestPacket.class);
 
   public LoadRequestPacket {
 
@@ -48,5 +33,18 @@ public record LoadRequestPacket(String imageName) {
     if (!imageName.endsWith(".img")) {
       imageName = imageName + ".img";
     }
+  }
+
+  public static String ERR_UNSANITARY(String bad, String sanitised) {
+    int diff = bad.length() - sanitised.length();
+    return "Image name has %d illegal character%s".formatted(diff, Math.abs(diff) == 1 ? "" : "s");
+  }
+
+  public static String ERR_LENGTH(int length) {
+    return "Image name too long: %d/%d".formatted(length, MAX_PATH_LENGTH);
+  }
+
+  public static String sanitise(String name) {
+    return name.replaceAll("[^a-zA-Z0-9._]", "");
   }
 }

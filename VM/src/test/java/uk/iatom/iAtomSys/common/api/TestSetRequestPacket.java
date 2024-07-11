@@ -56,17 +56,18 @@ public class TestSetRequestPacket {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "a", "ab", "abcde" })
+  @ValueSource(strings = {"a", "ab", "abcde"})
   void address_length_bad(String address) {
     IllegalStateException isx = Assertions.assertThrows(
         IllegalStateException.class,
         () -> new SetRequestPacket(address, "0000")
     );
-    Assertions.assertEquals(SetRequestPacket.ERR_BAD_ADDRESS_LENGTH.apply(address), isx.getMessage());
+    Assertions.assertEquals(SetRequestPacket.ERR_BAD_ADDRESS_LENGTH.apply(address),
+        isx.getMessage());
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "a", "ab", "abcde" })
+  @ValueSource(strings = {"a", "ab", "abcde"})
   void value_length_bad(String address) {
     IllegalStateException isx = Assertions.assertThrows(
         IllegalStateException.class,

@@ -6,10 +6,6 @@ public record RunRequestPacket(String startAddress) {
   public static final String ERR_ADDRESS_NULL = "Start address may not be null";
   public static final String ERR_ADDRESS_BLANK = "Start address may not be blank";
 
-  public static String ERR_ADDRESS_LONG(String startAddress) {
-    return"Start address is too long: %d>%d".formatted(startAddress.length(), MAX_LENGTH);
-  }
-
   public RunRequestPacket {
 
     if (startAddress == null) {
@@ -23,5 +19,9 @@ public record RunRequestPacket(String startAddress) {
     if (startAddress.isBlank()) {
       throw new IllegalArgumentException(ERR_ADDRESS_BLANK);
     }
+  }
+
+  public static String ERR_ADDRESS_LONG(String startAddress) {
+    return "Start address is too long: %d>%d".formatted(startAddress.length(), MAX_LENGTH);
   }
 }

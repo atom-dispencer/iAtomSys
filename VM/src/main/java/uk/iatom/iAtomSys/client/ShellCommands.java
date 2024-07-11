@@ -29,8 +29,6 @@ import uk.iatom.iAtomSys.common.api.VmStatus;
 @Getter
 public class ShellCommands {
 
-  private static final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
-
   public static final String[] HELP_PAGES = new String[]{ //
       "[0] 'help <page 0-9>': Find help! Also check GitHub docs.", //
       "[1] 'exit': Terminate the application.", //
@@ -44,24 +42,15 @@ public class ShellCommands {
       "[9] 'refresh': Refreshes the display state and redraw.", //
       "[10] 'tbreak <address>': Toggle the given breakpoint address." //
   };
-
   // Messages which may appear in the ShellDisplayState command message
   public static final Function<String, String> HELP_BAD_FORMAT = "Input must be an integer. Got %s."::formatted;
-  public static final Function<String, String> HELP_BAD_INDEX = (pageStr) -> "%s not in range [0,%d], try 'help 0'".formatted(pageStr, HELP_PAGES.length - 1);
+  public static final Function<String, String> HELP_BAD_INDEX = (pageStr) -> "%s not in range [0,%d], try 'help 0'".formatted(
+      pageStr, HELP_PAGES.length - 1);
   public static final String EXIT_SHUTDOWN = "Shutting down application...";
-
-  @Autowired
-  private ApplicationContext applicationContext;
+  private static final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
   private final VmClient api;
   private final ShellDisplay display;
   private final AtomicBoolean shouldResetCommand = new AtomicBoolean(false);
-
-  @Autowired
-  public ShellCommands(VmClient api, ShellDisplay display) {
-    this.api = api;
-    this.display = display;
-  }
-
   /**
    * The task responsible for repeatedly refreshing the UI while the VM is in the
    * {@link VmStatus#RUNNING} phase.
@@ -69,7 +58,8 @@ public class ShellCommands {
   private final Runnable updateDaemonTask = new Thread(() -> {
     logger.info("Starting update daemon...");
 
-    while(getDisplay().getDisplayState().getStatus() == VmStatus.RUNNING && getDisplay().isAlive()) {
+    while (getDisplay().getDisplayState().getStatus() == VmStatus.RUNNING
+        && getDisplay().isAlive()) {
       try {
         getDisplay().getDisplayState().update();
         getDisplay().draw(shouldResetCommand.getAndSet(false));
@@ -81,7 +71,14 @@ public class ShellCommands {
 
     logger.info("Update daemon exiting...");
   });
+  @Autowired
+  private ApplicationContext applicationContext;
   private Thread updateDaemon = null;
+  @Autowired
+  public ShellCommands(VmClient api, ShellDisplay display) {
+    this.api = api;
+    this.display = display;
+  }
 
   @PostConstruct
   public void postConstruct() {

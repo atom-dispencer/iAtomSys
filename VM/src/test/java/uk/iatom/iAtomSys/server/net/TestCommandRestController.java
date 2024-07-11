@@ -1,8 +1,21 @@
 package uk.iatom.iAtomSys.server.net;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-import static uk.iatom.iAtomSys.server.net.CommandRestController.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyChar;
+import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static uk.iatom.iAtomSys.server.net.CommandRestController.DROP_DEBUG_SUCCESS;
+import static uk.iatom.iAtomSys.server.net.CommandRestController.ERR_NOT_ALLOWED_VM_RUNNING;
+import static uk.iatom.iAtomSys.server.net.CommandRestController.ERR_NUMBER_FORMAT;
+import static uk.iatom.iAtomSys.server.net.CommandRestController.HELLO_WORLD;
+import static uk.iatom.iAtomSys.server.net.CommandRestController.SET_SUCCESS;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -59,7 +72,7 @@ public class TestCommandRestController {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "0000", "000", "00", "0" })
+  @ValueSource(strings = {"0000", "000", "00", "0"})
   void parse_int16_success(String value) throws DuplicateRegisterException, AddressFormatException {
     registerSet.createRegister("TST", 1);
     char address = rest.parseRegisterOrInt16(value);
@@ -78,21 +91,21 @@ public class TestCommandRestController {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "0000", "0123", "4567", "890a", "bcde", "ffff"})
+  @ValueSource(strings = {"0000", "0123", "4567", "890a", "bcde", "ffff"})
   void set_good_addresses(String address) {
     SetRequestPacket packet = new SetRequestPacket(address, "0000");
     assertDoesNotThrow(() -> rest.set(packet));
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "0000", "0123", "4567", "890a", "bcde", "ffff"})
+  @ValueSource(strings = {"0000", "0123", "4567", "890a", "bcde", "ffff"})
   void set_good_values(String value) {
     SetRequestPacket packet = new SetRequestPacket("0000", value);
     assertDoesNotThrow(() -> rest.set(packet));
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "000Z" })
+  @ValueSource(strings = {"000Z"})
   void set_strange_addresses(String address) {
     SetRequestPacket packet = new SetRequestPacket(address, "0000");
     String result = rest.set(packet);
@@ -100,7 +113,7 @@ public class TestCommandRestController {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "000Z" })
+  @ValueSource(strings = {"000Z"})
   void set_strange_values(String value) {
     SetRequestPacket packet = new SetRequestPacket("0000", value);
     String result = rest.set(packet);

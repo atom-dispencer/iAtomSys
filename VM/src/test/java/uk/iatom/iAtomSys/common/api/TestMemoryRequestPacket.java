@@ -7,7 +7,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class TestMemoryRequestPacket {
 
   @ParameterizedTest
-  @ValueSource( chars = { MemoryRequestPacket.MAX_SLICE_WIDTH + 1, Character.MAX_VALUE})
+  @ValueSource(chars = {MemoryRequestPacket.MAX_SLICE_WIDTH + 1, Character.MAX_VALUE})
   void width_exceeds_interval(char width) {
     IllegalArgumentException ex = Assertions.assertThrows(
         IllegalArgumentException.class,
@@ -18,7 +18,7 @@ public class TestMemoryRequestPacket {
   }
 
   @ParameterizedTest
-  @ValueSource(chars = { 0, MemoryRequestPacket.MAX_SLICE_WIDTH })
+  @ValueSource(chars = {0, MemoryRequestPacket.MAX_SLICE_WIDTH})
   void success(char width) {
     Assertions.assertDoesNotThrow(
         () -> new MemoryRequestPacket((char) 0, width)

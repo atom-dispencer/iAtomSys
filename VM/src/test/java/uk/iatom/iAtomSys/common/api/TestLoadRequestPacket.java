@@ -25,7 +25,7 @@ public class TestLoadRequestPacket {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "bob?", "bo/b" })
+  @ValueSource(strings = {"bob?", "bo/b"})
   void sanitise(String name) {
     Assertions.assertEquals(
         "bob",
@@ -34,7 +34,7 @@ public class TestLoadRequestPacket {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "bob?", "bo/b", "../../bob" })
+  @ValueSource(strings = {"bob?", "bo/b", "../../bob"})
   void unsanitary(String imageName) {
     String sanitised = LoadRequestPacket.sanitise(imageName);
 
@@ -62,7 +62,7 @@ public class TestLoadRequestPacket {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "test", "test.img" })
+  @ValueSource(strings = {"test", "test.img"})
   void success(String name) {
     LoadRequestPacket packet = new LoadRequestPacket(name);
     Assertions.assertEquals("test.img", packet.imageName());
