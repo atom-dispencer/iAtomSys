@@ -11,10 +11,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import uk.iatom.iAtomSys.common.AddressFormatException;
 import uk.iatom.iAtomSys.common.api.DebugSymbols;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.VmStatus;
 import uk.iatom.iAtomSys.common.register.DuplicateRegisterException;
+import uk.iatom.iAtomSys.common.register.Register;
 import uk.iatom.iAtomSys.common.register.RegisterSet;
 import uk.iatom.iAtomSys.server.IAtomSysVM;
 import uk.iatom.iAtomSys.server.memory.Memory;
@@ -40,6 +42,28 @@ public class TestCommandRestController {
     when(vm.getRegisterSet()).thenReturn(registerSet);
     when(vm.getMemory()).thenReturn(memory);
     rest = new CommandRestController(vm);
+  }
+
+  @Test
+  void parse_register_success() throws DuplicateRegisterException, AddressFormatException {
+    Register register = registerSet.createRegister("TST", 1);
+    char value = rest.parseRegisterOrInt16("TST");
+    assertEquals(register.get(), value);
+  }
+
+  @Test
+  void parse_register_ref_success() throws DuplicateRegisterException, AddressFormatException {
+    Register register = registerSet.createRegister("TST", 1);
+    char value = rest.parseRegisterOrInt16("TST*");
+    assertEquals(register.getAddress(), value);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = { "0000", "000", "00", "0" })
+  void parse_int16_success(String value) throws DuplicateRegisterException, AddressFormatException {
+    registerSet.createRegister("TST", 1);
+    char address = rest.parseRegisterOrInt16(value);
+    assertEquals((char) 0, address);
   }
 
   @Test
@@ -100,19 +124,19 @@ public class TestCommandRestController {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "000", "00", "0" })
+  @ValueSource(strings = { "111", "11", "1" })
   void set_short_values(String value) {
     SetRequestPacket packet = new SetRequestPacket("0000", value);
     String result = rest.set(packet);
-    assertEquals(ERR_NUMBER_FORMAT.apply(value), result);
+    assertEquals(SET_SUCCESS("0000", (char) 0, value, (char) 0), result);
   }
 
   @Test
   void set_success() throws DuplicateRegisterException {
-    registerSet.createRegister("TEST", 6);
+    registerSet.createRegister("TST", 6);
 
-    String addressStr = "TEST";
-    String valueStr = "TEST";
+    String addressStr = " tst* ";
+    String valueStr = "tst  ";
     char address = 6;
     char value = 0xFFFF;
 
@@ -121,7 +145,12 @@ public class TestCommandRestController {
 
     verify(memory, times(1)).write(anyChar(), anyChar());
     verify(memory, times(1)).read(anyChar());
-    Assertions.assertEquals(SET_SUCCESS(addressStr, address, valueStr, value), message);
+    Assertions.assertEquals(SET_SUCCESS(
+        addressStr.trim().toUpperCase(),
+        address,
+        valueStr.trim().toUpperCase(),
+        value
+    ), message);
   }
 
   @Test

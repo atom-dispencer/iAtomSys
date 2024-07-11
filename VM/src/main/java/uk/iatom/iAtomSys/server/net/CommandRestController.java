@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import uk.iatom.iAtomSys.common.AddressFormatException;
 import uk.iatom.iAtomSys.common.Int16Helper;
 import uk.iatom.iAtomSys.common.api.DebugSymbols;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
@@ -67,21 +68,47 @@ public class CommandRestController {
 
   private IAtomSysVM vm;
 
-  private char parseRegisterOrInt16(String value) throws NumberFormatException {
+  protected char parseRegisterOrInt16(String value) throws AddressFormatException {
+    if (value == null || value.isBlank()) {
+      throw new AddressFormatException("%s is not a valid register or address.".formatted(value));
+    }
+    value = value.toUpperCase().trim();
+
+    boolean isRegister = false;
+    boolean isRegisterSelfReference = false;
+    boolean isHex = false;
+    if (value.matches("[A-Z]{3}\\*")) {
+      isRegisterSelfReference = true;
+    } else if (value.matches("[A-Z]{3}")) {
+      isRegister = true;
+    } else if (value.matches("[A-Z0-9]{1,4}")) {
+      isHex = true;
+    } else {
+      throw new AddressFormatException(ERR_NUMBER_FORMAT.apply(value));
+    }
+
+    // Treat as a memory address in hex
+    if (isHex) {
+      int lenDif = INT16_HEX_LENGTH - value.length();
+      if (lenDif > 0) {
+        value = "0".repeat(lenDif) + value;
+      }
+
+      return Int16Helper.hexToInt16(value);
+    }
+
+    // Treat as a register name (or self-reference)
+    if (isRegisterSelfReference) {
+      // Strip the * off
+      value = value.substring(0, 3);
+    }
     for (Register register : vm.getRegisterSet().getActiveRegisters()) {
       if (register.getName().equals(value)) {
-        return register.get();
+        return isRegisterSelfReference ? register.getAddress() : register.get();
       }
     }
 
-    int lenDif = INT16_HEX_LENGTH - value.length();
-    if (lenDif > 0) {
-      value = "0".repeat(lenDif) + value;
-    } else if (lenDif < 0) {
-      throw new NumberFormatException(ERR_NUMBER_FORMAT.apply(value));
-    }
-
-    return Int16Helper.hexToInt16(value);
+    throw new AddressFormatException(ERR_NUMBER_FORMAT.apply(value));
   }
 
   @Autowired
@@ -212,7 +239,7 @@ public class CommandRestController {
     char address;
     try {
       address = parseRegisterOrInt16(addressStr);
-    } catch (NumberFormatException nfx) {
+    } catch (AddressFormatException nfx) {
       String message = ERR_NUMBER_FORMAT.apply(addressStr);
       logger.warn(message);
       return message;
@@ -222,7 +249,7 @@ public class CommandRestController {
     char value;
     try {
       value = parseRegisterOrInt16(valueStr);
-    } catch (NumberFormatException nfx) {
+    } catch (AddressFormatException nfx) {
       String message = ERR_NUMBER_FORMAT.apply(valueStr);
       logger.warn(message);
       return message;

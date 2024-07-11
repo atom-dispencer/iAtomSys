@@ -603,7 +603,7 @@ public class ShellDisplay {
 
       // Breakpoints
       if (List.of(displayState.getBreakpoints()).contains((char) address)) {
-        lineBuilder.append("  -- Breakpoint -- ");
+        lineBuilder.append(" $ BRK $ ");
       }
 
       // The instruction itself

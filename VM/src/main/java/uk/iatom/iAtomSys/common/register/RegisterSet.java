@@ -22,7 +22,13 @@ public class RegisterSet {
     this.startAddress = startAddress;
   }
 
-  public void createRegister(String name, int id) throws DuplicateRegisterException {
+  public Register createRegister(String name, int id) throws DuplicateRegisterException {
+    name = name.toUpperCase().trim();
+    if (name.length() != 3) {
+      throw new IllegalArgumentException(
+          "Register names must be 3 characters long, got " + name.length()
+      );
+    }
 
     if (id < 0 || id >= registers.length) {
       throw new IllegalArgumentException(
@@ -46,6 +52,7 @@ public class RegisterSet {
 
     registers[id] = register;
     names.put(register.getName(), id);
+    return register;
   }
 
   public Integer getId(String name) {
