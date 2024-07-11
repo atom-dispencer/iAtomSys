@@ -3,7 +3,7 @@ package uk.iatom.iAtomSys.common;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class TestInt16Helper {
+public class TestAddressHelper {
 
   @Test
   void from_bytes() {

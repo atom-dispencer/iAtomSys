@@ -1,8 +1,7 @@
-package uk.iatom.iAtomSys.common;
+package uk.iatom.iAtomSys.common.api;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import uk.iatom.iAtomSys.common.api.RunRequestPacket;
 
 public class TestRunRequestPacket {
 

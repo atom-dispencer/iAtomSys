@@ -1,9 +1,8 @@
-package uk.iatom.iAtomSys.common;
+package uk.iatom.iAtomSys.common.api;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import uk.iatom.iAtomSys.common.api.StepRequestPacket;
 
 public class TestStepRequestPacket {
 
