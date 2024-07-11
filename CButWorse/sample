@@ -1,0 +1,67 @@
+
+; C But Worse
+;
+; The language must be easy to implement
+;   Minimal syntax
+;   No complex structures
+;   Structures should not be reused
+
+
+; Comments: ;
+;
+; Stack reference: []
+; Square brackets refer to consecutive words on the stack.
+; [word1, word2]
+;
+; 
+; Pushing operator: >>
+; Push the items in [] onto the stack, then invoke the operand
+; [arg arg arg] >> operand
+;
+; For a function: [arg1 arg2] >> func_name   (arg1 and arg2 are pushed onto the stack and func_name is invoked)
+; For variables:  [var1 var2] >> #            (# Does nothing, but var1 and var2 are implicitly assigned spaces on the stack)
+;
+;
+; Pulling operator: <<
+; Pull the items off the top of the stack to fill the [], then invoke the operand
+; [arg, arg, arg] >> operand
+;
+; For a function: [arg1 arg2] << func_name     (Can be replaced with an address to jump to - function name gets replaced with the subroutine address anyway)
+; For a return  : [val1 val2] << return        (Return is special!)
+; For variables : [var1 var2] << #             (Does nothing)
+;
+;
+; Binding operator: $
+; Bind addresses on the stack to variable names without changing the stack.
+; The position of the $ denotes the position of the stack pointer relative to the data to be bound.
+; The stack "grows" from left to right.
+;
+; This process is pass-by-reference:
+;   [my_var]$               ; Assume my_var is 0
+;   my_var = 5              ; my_var is reassigned to 5
+;   [another_var]$          ; Bind the same stack value to another name
+;   my_var == another_var    ; Both names resolve to 5
+;
+; Pre-bind : [var1 var2 var3]$
+;   Bind the three addresses *before* the stack pointer (the latest three to be pushed)
+; Post-bind: $[var1 var2 var3]
+;   Bind the three addresses *after* the stack pointer (the three which will be overwritten next)
+;
+;
+; Functions/Subroutines
+; Functions do not "return" a value but because functions are pass-by-reference they may set a value passed into them.
+; 
+
+
+main: (
+  [number_1 number_5 answer] >> #
+  number_1 = 1
+  number_5 = 5
+  [number_1 number_5 answer] >> add
+)
+
+
+add: (
+  [left_number right_number answer]$
+  answer = left_number + right_number
+)
