@@ -1,11 +1,9 @@
 package uk.iatom.iAtomSys.common.api;
 
-import java.util.ArrayList;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.springframework.web.bind.annotation.PostMapping;
 
 public class TestToggleBreakpointRequestPacket {
 
@@ -19,7 +17,7 @@ public class TestToggleBreakpointRequestPacket {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = { "", " " })
+  @ValueSource(strings = {"", " "})
   void err_blank(String blank) {
     IllegalArgumentException iax = Assertions.assertThrows(
         IllegalArgumentException.class,

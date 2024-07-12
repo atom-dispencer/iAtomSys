@@ -33,14 +33,16 @@ public class ShellCommands {
       "[0] 'help <page 0-9>': Find help! Also check GitHub docs.", //
       "[1] 'exit': Terminate the application.", //
       "[2] 'hello': Say hi!", //
-      "[3] 'step <count>': Execute the next <count> instructions.", //
+      "[3] 'step <count?>': Execute the next <count> instructions.", //
       "[4] 'load <image_name[.img]>': Load the given memorySlice image.", //
       "[5] 'jmp <address>': (Shorthand) set PCR* <address>.", //
       "[6] 'set <address> <value>': Set the value at the address.", //
       "[7] 'drop_debug': Reset the loaded debug symbols.", //
       "[8] 'run <start?>': Execute from current PCR or given address.", //
       "[9] 'refresh': Refreshes the display state and redraw.", //
-      "[10] 'tbreak <address>': Toggle the given breakpoint address." //
+      "[10] 'pause': Pause the VM's execution while running.", //
+      "[11] 'tbreak <address?>': Toggle the breakpoint at the address.", //
+      "[12] 'stop': Stop the VM and return to the start menu." //
   };
   // Messages which may appear in the ShellDisplayState command message
   public static final Function<String, String> HELP_BAD_FORMAT = "Input must be an integer. Got %s."::formatted;
@@ -74,6 +76,7 @@ public class ShellCommands {
   @Autowired
   private ApplicationContext applicationContext;
   private Thread updateDaemon = null;
+
   @Autowired
   public ShellCommands(VmClient api, ShellDisplay display) {
     this.api = api;
@@ -252,13 +255,26 @@ public class ShellCommands {
   }
 
   @ShellMethod
-  public void tbreak(final @ShellOption(defaultValue = ToggleBreakpointRequestPacket.HERE) String addressStr) {
+  public void tbreak(
+      final @ShellOption(defaultValue = ToggleBreakpointRequestPacket.HERE) String addressStr) {
     try {
       ToggleBreakpointRequestPacket packet = new ToggleBreakpointRequestPacket(addressStr);
       String message = api.tbreak(packet);
       display.getDisplayState().setCommandMessage(message);
     } catch (IllegalArgumentException e) {
-      help("10");
+      help("11");
+    }
+
+    tryRefresh(false);
+  }
+
+  @ShellMethod
+  public void stop() {
+    try {
+      String message = api.stop();
+      display.getDisplayState().setCommandMessage(message);
+    } catch (IllegalArgumentException e) {
+      help("12");
     }
 
     tryRefresh(false);

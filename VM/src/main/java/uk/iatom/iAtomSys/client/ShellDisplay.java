@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import lombok.Getter;
-import org.apache.tomcat.util.buf.StringUtils;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.slf4j.Logger;
@@ -435,6 +434,37 @@ public class ShellDisplay {
       lines.add("To load an image: load <image_name>");
     }
 
+    List<String> tips = new ArrayList<>();
+    tips.add("~~ Commands ~~");
+    tips.add("");
+
+    for (String tip : ShellCommands.HELP_PAGES) {
+      int deficit = COMMAND_MAX_WIDTH - tip.length();
+
+      String[] split = tip.split(":");
+      if (split.length != 2) {
+        logger.error("Bad formatting for help message: {}", tip);
+        tips.add(tip);
+      } else {
+        tips.add(split[0] + " ".repeat(deficit + 1) + split[1]);
+      }
+    }
+
+    tips.add("");
+    tips.add("Arguments marked with ? are optional or have defaults.");
+    tips.add("Further details on GitHub - link in the copyright notice.");
+
+    Rectangle tipsBounds = new Rectangle(
+        bounds.x + titleWidth + 4,
+        bounds.y + (bounds.height - tips.size()) / 2,
+        bounds.width - titleWidth - 4,
+        bounds.height - 4
+    );
+
+    boolean tallEnough = tipsBounds.height > tips.size();
+    boolean wideEnough = tipsBounds.width > COMMAND_MAX_WIDTH + 2;
+    boolean showCommandTips = tallEnough && wideEnough;
+
     print(
         ANSICodes.PUSH_CURSOR_POS,
         ANSICodes.moveTo(start),
@@ -442,6 +472,8 @@ public class ShellDisplay {
         ANSICodes.moveRight(3),
         formatParagraph(null, false, 0, title),
         formatParagraph(null, true, titleWidth, lines),
+        showCommandTips ? formatParagraph(tipsBounds.getLocation(), true, tipsBounds.width, tips)
+            : "",
         ANSICodes.POP_CURSOR_POS
     );
 
@@ -803,16 +835,17 @@ public class ShellDisplay {
     printBox(rect, '+', true);
 
     int padding = 2;
-    Rectangle innerBounds = new Rectangle(rect.x + padding, rect.y + padding, rect.width - 2*padding, rect.height - 2*padding);
+    Rectangle innerBounds = new Rectangle(rect.x + padding, rect.y + padding,
+        rect.width - 2 * padding, rect.height - 2 * padding);
 
     char pcr = 0;
-    for (RegisterPacket rp: displayState.getRegisters()) {
+    for (RegisterPacket rp : displayState.getRegisters()) {
       if (rp.name().equals("PCR")) {
         pcr = rp.value();
       }
     }
 
-    int nameWidth = rect.width - 2*padding - 6;
+    int nameWidth = rect.width - 2 * padding - 6;
 
     List<String> lines = new ArrayList<>();
 
@@ -820,7 +853,8 @@ public class ShellDisplay {
       lines.add("No breakpoints");
       lines.add("Go have a 'tbreak'");
     } else {
-      List<Character> sortedBreakpoints = Arrays.stream(displayState.getBreakpoints()).sorted().toList();
+      List<Character> sortedBreakpoints = Arrays.stream(displayState.getBreakpoints()).sorted()
+          .toList();
       int startIndex = Math.max(findClosestIndex(pcr, sortedBreakpoints) - 3, 0);
       int maxLines = innerBounds.height - 1;
       int count = Math.min(maxLines, sortedBreakpoints.size() - startIndex);

@@ -31,4 +31,6 @@ public interface VmClient {
   String pause();
 
   String tbreak(ToggleBreakpointRequestPacket addressStr);
+
+  String stop();
 }

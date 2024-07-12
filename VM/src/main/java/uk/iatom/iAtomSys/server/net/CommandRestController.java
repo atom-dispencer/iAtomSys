@@ -56,6 +56,8 @@ public class CommandRestController {
   public static final String LOAD_SYMBOLS_UNPARSABLE = "Loaded image but debug symbols unparsable";
   public static final String LOAD_SYMBOLS_NOT_FOUND = "Loaded image but debug symbols not found";
   public static final Function<String, String> LOAD_SUCCESS = "Loaded %s"::formatted;
+  public static final String STOP_SUCCESS = "VM Stopped";
+  private static final String ERR_ALREADY_STOPPED = "VM is already stopped.";
   private final Logger logger = LoggerFactory.getLogger(CommandRestController.class);
   private IAtomSysVM vm;
 
@@ -115,6 +117,13 @@ public class CommandRestController {
     throw new AddressFormatException(ERR_NUMBER_FORMAT.apply(value));
   }
 
+  private void pauseIfStopped() {
+    if (vm.getStatus() == VmStatus.STOPPED) {
+      vm.setStatus(VmStatus.PAUSED);
+    }
+  }
+
+
   @GetMapping("/hello")
   public String hello() {
     return HELLO_WORLD;
@@ -125,6 +134,7 @@ public class CommandRestController {
     if (vm.getStatus() == VmStatus.RUNNING) {
       return ERR_NOT_ALLOWED_VM_RUNNING;
     }
+    pauseIfStopped();
 
     int count = requestPacket.count();
 
@@ -230,6 +240,7 @@ public class CommandRestController {
     if (vm.getStatus() == VmStatus.RUNNING) {
       return ERR_NOT_ALLOWED_VM_RUNNING;
     }
+    pauseIfStopped();
 
     String addressStr = request.address().toUpperCase().trim();
     String valueStr = request.value().toUpperCase().trim();
@@ -313,14 +324,15 @@ public class CommandRestController {
 
   @PostMapping("/pause")
   public String pause() {
-    if (vm.getStatus() != VmStatus.RUNNING) {
-      return ERR_NOT_ALLOWED_VM_NOT_RUNNING;
-    }
-
+    VmStatus oldStatus = vm.getStatus();
     vm.setStatus(VmStatus.PAUSED);
 
     char pcr = vm.getRegisterSet().getRegister("PCR").get();
-    return "Paused at PCR: %04X".formatted((int) pcr);
+    return switch (oldStatus) {
+      case RUNNING -> "Paused at PCR: %04X".formatted((int) pcr);
+      case PAUSED -> "VM was already paused";
+      case STOPPED -> "VM was not running";
+    };
   }
 
   @PostMapping("/tbreak")
@@ -328,6 +340,8 @@ public class CommandRestController {
     if (vm.getStatus() == VmStatus.RUNNING) {
       return ERR_NOT_ALLOWED_VM_RUNNING;
     }
+    pauseIfStopped();
+
     String address = packet.addressStr();
 
     if (ToggleBreakpointRequestPacket.NUKE.equals(address)) {
@@ -340,9 +354,11 @@ public class CommandRestController {
     // Java 13?? I've never needed this before, but I like it!
     String error = null;
     char bp = switch (address) {
-      case ToggleBreakpointRequestPacket.NEXT -> (char) (Register.PCR(vm.getRegisterSet()).get() + 1);
+      case ToggleBreakpointRequestPacket.NEXT ->
+          (char) (Register.PCR(vm.getRegisterSet()).get() + 1);
       case ToggleBreakpointRequestPacket.HERE -> Register.PCR(vm.getRegisterSet()).get();
-      case ToggleBreakpointRequestPacket.PREV -> (char) (Register.PCR(vm.getRegisterSet()).get() - 1);
+      case ToggleBreakpointRequestPacket.PREV ->
+          (char) (Register.PCR(vm.getRegisterSet()).get() - 1);
       default -> {
         try {
           yield AddressHelper.hexToInt16(address);
@@ -367,4 +383,13 @@ public class CommandRestController {
     }
   }
 
+  @PostMapping("/stop")
+  public String stop() {
+    if (vm.getStatus() == VmStatus.STOPPED) {
+      return ERR_ALREADY_STOPPED;
+    }
+
+    vm.setStatus(VmStatus.STOPPED);
+    return STOP_SUCCESS;
+  }
 }
