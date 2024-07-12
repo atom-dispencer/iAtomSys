@@ -252,7 +252,7 @@ public class ShellCommands {
   }
 
   @ShellMethod
-  public void tbreak(final @ShellOption(defaultValue = "here") String addressStr) {
+  public void tbreak(final @ShellOption(defaultValue = ToggleBreakpointRequestPacket.HERE) String addressStr) {
     try {
       ToggleBreakpointRequestPacket packet = new ToggleBreakpointRequestPacket(addressStr);
       String message = api.tbreak(packet);

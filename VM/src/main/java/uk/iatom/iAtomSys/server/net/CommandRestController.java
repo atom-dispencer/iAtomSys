@@ -51,6 +51,7 @@ public class CommandRestController {
   public static final String HELLO_WORLD = "World";
   public static final Function<Integer, String> TBREAK_ADDED = "Added breakpoint at %04X"::formatted;
   public static final Function<Integer, String> TBREAK_REMOVED = "Removed breakpoint at %04X"::formatted;
+  public static final Function<Integer, String> TBREAK_NUKED = "Removed all %d breakpoints"::formatted;
   public static final Function<Integer, String> STEP_SUCCESS = "Stepped %d cycles"::formatted;
   public static final String LOAD_SYMBOLS_UNPARSABLE = "Loaded image but debug symbols unparsable";
   public static final String LOAD_SYMBOLS_NOT_FOUND = "Loaded image but debug symbols not found";
@@ -327,16 +328,34 @@ public class CommandRestController {
     if (vm.getStatus() == VmStatus.RUNNING) {
       return ERR_NOT_ALLOWED_VM_RUNNING;
     }
-
     String address = packet.addressStr();
 
-    char bp;
-    try {
-      bp = AddressHelper.hexToInt16(address);
-    } catch (AddressFormatException nfx) {
-      String err = ERR_TBREAK_ADDRESS.apply(address);
-      logger.error(err);
-      return err;
+    if (ToggleBreakpointRequestPacket.NUKE.equals(address)) {
+      int count = vm.getBreakpoints().size();
+      vm.getBreakpoints().clear();
+      return TBREAK_NUKED.apply(count);
+    }
+
+    // Wait how long have we had 'yield'??
+    // Java 13?? I've never needed this before, but I like it!
+    String error = null;
+    char bp = switch (address) {
+      case ToggleBreakpointRequestPacket.NEXT -> (char) (Register.PCR(vm.getRegisterSet()).get() + 1);
+      case ToggleBreakpointRequestPacket.HERE -> Register.PCR(vm.getRegisterSet()).get();
+      case ToggleBreakpointRequestPacket.PREV -> (char) (Register.PCR(vm.getRegisterSet()).get() - 1);
+      default -> {
+        try {
+          yield AddressHelper.hexToInt16(address);
+        } catch (AddressFormatException nfx) {
+          error = ERR_TBREAK_ADDRESS.apply(address);
+          yield 0;
+        }
+      }
+    };
+
+    if (error != null) {
+      logger.error(error);
+      return error;
     }
 
     if (!vm.getBreakpoints().contains(bp)) {
