@@ -100,28 +100,43 @@ public class ShellDisplay {
   private final Supplier<Rectangle> REGISTERS_RECT = () -> {
     Rectangle content = CONTENT_RECT.get();
 
-    int REGISTER_FLAG_WIDTH = 32;
+    int WIDTH = 32;
 
     Point origin = new Point(
-        (int) content.getMaxX() - REGISTER_FLAG_WIDTH,
+        (int) content.getMaxX() - WIDTH,
         content.getLocation().y);
     Dimension dim = new Dimension(
-        REGISTER_FLAG_WIDTH,
+        WIDTH,
         Math.floorDiv(content.height, 2) + 1);
 
     return new Rectangle(origin, dim);
   };
   private final Supplier<Rectangle> FLAGS_RECT = () -> {
+    Rectangle registers = REGISTERS_RECT.get();
+
+    int WIDTH = 32;
+
+    Point origin = new Point(
+        registers.x - WIDTH,
+        registers.y);
+    Dimension dim = new Dimension(
+        WIDTH,
+        registers.height);
+
+    return new Rectangle(origin, dim);
+  };
+  private final Supplier<Rectangle> BREAKPOINTS_RECT = () -> {
     Rectangle content = CONTENT_RECT.get();
+    Rectangle flags = FLAGS_RECT.get();
     Rectangle registers = REGISTERS_RECT.get();
 
     Point origin = new Point(
-        registers.x,
-        (int) registers.getMaxY() - 1
+        flags.x,
+        (int) flags.getMaxY() - 1
     );
     Dimension dim = new Dimension(
-        registers.width,
-        content.height - registers.height + 1
+        flags.width + registers.width,
+        content.height - flags.height + 1
     );
 
     return new Rectangle(origin, dim);
@@ -367,7 +382,7 @@ public class ShellDisplay {
           break;
         case PAUSED:
           drawMemoryState();
-          drawRegistersAndFlags();
+          drawRegisters();
           drawBreakpointBox();
           // TODO Display values in ports (near registers/flags?)
           break;
@@ -779,7 +794,7 @@ public class ShellDisplay {
   /**
    * Draw the values of the VM registers, including their names, addresses and values.
    */
-  public void drawRegistersAndFlags() {
+  public void drawRegisters() {
     Rectangle rect = REGISTERS_RECT.get();
     printBox(rect, '+', true);
 
@@ -831,7 +846,7 @@ public class ShellDisplay {
   }
 
   public void drawBreakpointBox() {
-    Rectangle rect = FLAGS_RECT.get();
+    Rectangle rect = BREAKPOINTS_RECT.get();
     printBox(rect, '+', true);
 
     int padding = 2;
