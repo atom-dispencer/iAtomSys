@@ -85,18 +85,6 @@ public class ShellDisplay {
     startPoint.translate(COMMAND_MAX_WIDTH + 8, 0);
     return startPoint;
   };
-  private final Supplier<Rectangle> MEMORY_RUNNING_RECT = () -> {
-    Rectangle content = CONTENT_RECT.get();
-
-    int width = (int) Math.floor(content.width * 0.375);
-
-    Point origin = content.getLocation();
-    Dimension dimension = new Dimension(
-        width,
-        content.height
-    );
-    return new Rectangle(origin, dimension);
-  };
   private final Supplier<Rectangle> REGISTERS_RECT = () -> {
     Rectangle content = CONTENT_RECT.get();
 
@@ -120,7 +108,7 @@ public class ShellDisplay {
         registers.x - WIDTH,
         registers.y);
     Dimension dim = new Dimension(
-        WIDTH,
+        WIDTH + 1,
         registers.height);
 
     return new Rectangle(origin, dim);
@@ -140,6 +128,17 @@ public class ShellDisplay {
     );
 
     return new Rectangle(origin, dim);
+  };
+  private final Supplier<Rectangle> MEMORY_RUNNING_RECT = () -> {
+    Rectangle content = CONTENT_RECT.get();
+    Rectangle flags = FLAGS_RECT.get();
+
+    Point origin = content.getLocation();
+    Dimension dimension = new Dimension(
+        flags.x - origin.x - 2,
+        content.height
+    );
+    return new Rectangle(origin, dimension);
   };
 
   private static List<String> getTitle() {
@@ -383,6 +382,7 @@ public class ShellDisplay {
         case PAUSED:
           drawMemoryState();
           drawRegisters();
+          drawFlags();
           drawBreakpointBox();
           // TODO Display values in ports (near registers/flags?)
           break;
@@ -843,6 +843,11 @@ public class ShellDisplay {
         info.toString(), //
         ANSICodes.POP_CURSOR_POS //
     );
+  }
+
+  public void drawFlags() {
+    Rectangle bounds = FLAGS_RECT.get();
+    printBox(bounds, '+', true);
   }
 
   public void drawBreakpointBox() {

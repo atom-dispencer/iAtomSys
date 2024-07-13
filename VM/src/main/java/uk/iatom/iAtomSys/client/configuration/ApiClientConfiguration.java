@@ -8,5 +8,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class ApiClientConfiguration {
 
   private int vmStateRequestPcrOffset = -16;
-  private char vmStateRequestSliceWidth = 128;
+  private char vmStateRequestSliceWidth = 512;
 }
