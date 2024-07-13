@@ -12,6 +12,8 @@ public class FlagHelper {
   public static final int IO2 = 10;
   public static final int IO3 = 11;
 
+  public static final int FLAGS_COUNT = 16;
+
   public static RegisterReference oneRegister_02(RegisterSet registerSet, byte flags) {
     byte registerId = (byte) ((flags & 0b11000000) >> 6);
     Register register = registerSet.getRegister(registerId);
@@ -40,22 +42,45 @@ public class FlagHelper {
 
   public static boolean getFlag(RegisterSet registerSet, int flagId) {
     Register flagRegister = Register.FLG(registerSet);
-    int flagRegisterValue = flagRegister.get(); // Implicit upcast to int
+    return getFlag(flagId, flagRegister.get());
+  }
 
-    return (flagRegisterValue & (0x8000 >> flagId)) > 0;
+  public static boolean getFlag(int flagId, char flags) {
+    return (flags & (0x8000 >> flagId)) > 0;
   }
 
   public enum Flag {
     CARRY(FlagHelper.CARRY),
+    // Spare
+    F01(1),
+    F02(2),
+    F03(3),
+    F04(4),
+    F05(5),
+    F06(6),
+    F07(7),
+    // IO Ports
     IO0(FlagHelper.IO0),
     IO1(FlagHelper.IO1),
     IO2(FlagHelper.IO2),
-    IO3(FlagHelper.IO3);
+    IO3(FlagHelper.IO3),
+    // More spares
+    F12(12),
+    F13(13),
+    F14(14),
+    F15(15);
 
     public final int bitIndex;
 
     Flag(int bitIndex) {
       this.bitIndex = bitIndex;
+    }
+
+    public static Flag fromBitIndex(int i) {
+      if (i < 0 || i >= FLAGS_COUNT) {
+        throw new IllegalArgumentException("Maximum flag index is %d, got %d".formatted(FLAGS_COUNT, i));
+      }
+      return Flag.values()[i];
     }
   }
 }

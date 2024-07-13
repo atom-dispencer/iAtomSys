@@ -30,7 +30,10 @@ import org.springframework.context.event.EventListener;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import uk.iatom.iAtomSys.IAtomSysApplication;
+import uk.iatom.iAtomSys.common.api.PortPacket;
 import uk.iatom.iAtomSys.common.api.RegisterPacket;
+import uk.iatom.iAtomSys.common.instruction.FlagHelper;
+import uk.iatom.iAtomSys.server.device.IOPort;
 
 @Component
 public class ShellDisplay {
@@ -382,7 +385,7 @@ public class ShellDisplay {
         case PAUSED:
           drawMemoryState();
           drawRegisters();
-          drawFlags();
+          drawFlagsAndPorts();
           drawBreakpointBox();
           // TODO Display values in ports (near registers/flags?)
           break;
@@ -798,7 +801,7 @@ public class ShellDisplay {
     Rectangle rect = REGISTERS_RECT.get();
     printBox(rect, '+', true);
 
-    String title = " Registers & Flags ";
+    String title = " Registers ";
 
     StringBuilder info = new StringBuilder();
 
@@ -845,18 +848,87 @@ public class ShellDisplay {
     );
   }
 
-  public void drawFlags() {
+  public void drawFlagsAndPorts() {
     Rectangle bounds = FLAGS_RECT.get();
     printBox(bounds, '+', true);
+
+    RegisterPacket flags = null;
+    for (RegisterPacket packet: displayState.getRegisters()) {
+      if ("FLG".equals(packet.name())) {
+        flags = packet;
+        break;
+      }
+    }
+
+    Point flagStart = new Point(bounds.x + 4, bounds.y + 2);
+
+    List<String> flagLines = new ArrayList<>();
+    String flagsTitle = " Flags ";
+    flagLines.add(flagsTitle);
+    flagLines.add("-------");
+
+    if (flags == null) {
+      flagLines.add("Port Addr Value");
+      flagLines.add("---- ---- ------");
+    } else {
+      char flagsChar = flags.value();
+
+      for (int i = 0; i < FlagHelper.FLAGS_COUNT; i++) {
+        FlagHelper.Flag flag = FlagHelper.Flag.fromBitIndex(i);
+        String name = flag.toString();
+        boolean value = FlagHelper.getFlag(i, flagsChar);
+        flagLines.add("%-6s%s".formatted(
+            name,
+            value ? '+' : '-')
+        );
+      }
+
+    }
+
+    Point portStart = new Point(flagStart.x + flagsTitle.length() + 2, flagStart.y);
+    List<String> portLines = new ArrayList<>();
+    portLines.add("Port Addr Value");
+    portLines.add("---- ---- ------");
+
+    if (displayState.getPorts().length == 0) {
+      portLines.add("");
+      portLines.add("No port data");
+    } else{
+      for (PortPacket port : displayState.getPorts()) {
+        String name = "IO" + port.id();
+        String address = "%04X".formatted((int) port.address());
+        String value = "%04X".formatted((int) port.value());
+        char character = port.value();
+
+        // Remove control characters
+        if (character < 32 || character == 127) {
+          character = '?';
+        }
+
+        portLines.add("%-4s %4s %4s %1s".formatted(name, address, value, character));
+      }
+    }
+
+    String title = " Flags & Ports ";
+    print(
+        ANSICodes.PUSH_CURSOR_POS,
+        ANSICodes.moveTo(bounds.getLocation()),
+        ANSICodes.moveRight((bounds.width - title.length()) / 2),
+        title,
+        formatParagraph(flagStart, false, 0, flagLines),
+        formatParagraph(portStart, false, 0, portLines),
+        ANSICodes.POP_CURSOR_POS
+    );
+
   }
 
   public void drawBreakpointBox() {
-    Rectangle rect = BREAKPOINTS_RECT.get();
-    printBox(rect, '+', true);
+    Rectangle bounds = BREAKPOINTS_RECT.get();
+    printBox(bounds, '+', true);
 
     int padding = 2;
-    Rectangle innerBounds = new Rectangle(rect.x + padding, rect.y + padding,
-        rect.width - 2 * padding, rect.height - 2 * padding);
+    Rectangle innerBounds = new Rectangle(bounds.x + padding, bounds.y + padding,
+        bounds.width - 2 * padding, bounds.height - 2 * padding);
 
     char pcr = 0;
     for (RegisterPacket rp : displayState.getRegisters()) {
@@ -865,7 +937,7 @@ public class ShellDisplay {
       }
     }
 
-    int nameWidth = rect.width - 2 * padding - 6;
+    int nameWidth = bounds.width - 2 * padding - 6;
 
     List<String> lines = new ArrayList<>();
 
@@ -912,8 +984,8 @@ public class ShellDisplay {
 
     print(
         ANSICodes.PUSH_CURSOR_POS,
-        ANSICodes.moveTo(rect.getLocation()),
-        ANSICodes.moveRight((rect.width - title.length()) / 2),
+        ANSICodes.moveTo(bounds.getLocation()),
+        ANSICodes.moveRight((bounds.width - title.length()) / 2),
         title,
         formatParagraph(innerBounds.getLocation(), true, innerBounds.width, lines),
         ANSICodes.POP_CURSOR_POS
