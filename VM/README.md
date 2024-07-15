@@ -12,6 +12,14 @@
 
 A 16-bit virtual computer at the core of the iAtomSys ecosystem.
 
+## Known issues
+
+- Windows CMD and PowerShell native hosts:
+  - See [note to self](https://learn.microsoft.com/en-gb/windows/console/console-virtual-terminal-sequences)
+  - Users must press <enter> twice to run commands 
+  - Application does not return to the previous buffer correctly on exiting
+- Debug symbol parsing/loading is experimental
+
 # Building & Running
 
 The iAtomSysVM uses Java with the Gradle build system and includes a Gradle wrapper.
@@ -43,13 +51,20 @@ java -jar ".\build\libs\vm-DEV.jar"
 # You may need to change the path if your $VERSION build property is not 'DEV' (see above)
 
 # Or to launch with a debug server for development:
-java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar "$JAR"
+java -agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005 -jar ".\build\libs\vm-DEV.jar"
 ```
 
-Your terminal must be compatible with ANSI escape codes for the VM's GUI to function.
+Notes:
+- Your terminal must be compatible with ANSI escape codes for the VM's UI to function.
+  - The 
+- The VM application consists of a Spring HTTP with REST API and a Spring Shell terminal-based UI.
+- The VM does not require any external connections, but must be allowed to launch a Spring HTTP server on port 8080.
+  - The Spring server binds to `127.0.0.1` (`server.address=127.0.0.1`) to prevent external connections.
+  - It is not currently easy to change the port that the VM runs on, but this feature is on the way.
 
 The `debug.ps1` script is a utility PowerShell script for developers which performs the `clean`, `build` and 
     `test` tasks, then launches the JAR with a JVM debugger.
+This is primarily for my own use, but should be trivial to port to other operating systems/shells.
 
 # Manual
 
@@ -96,8 +111,6 @@ Addresses and values are hexadecimal 16-bit integers unless otherwise specified.
 | `tbreak <where>` | `tbreak` / `tbreak 8a6b` / `tbreak prev` | In the `PAUSED` state, toggle the breakpoint at the given location on/off, or removes all breakpoints with `tbreak nuke`. To toggle a breakpoint, the argument can be a hex address to toggle at that address, `here` to use the current value of the program counter, `prev` to take the address before that of the program counter's value, or `next` to take the address after. The calculated addresses in `prev` and `next` wrap from `0000-ffff` and vice-versa. Registers are not accepted. If the VM is not `PAUSED`, this command does nothing. |
 | `stop` | `stop` | Switch the VM to its `STOPPED` state. |
 
-
-
 #### STOPPED state
 ![stopped.png](docs/stopped.png)
 
@@ -106,9 +119,6 @@ Addresses and values are hexadecimal 16-bit integers unless otherwise specified.
 
 #### RUNNING state
 ![running.png](docs/running.png)
-
-
-### Commands
 
 ## Instruction Set
 ### 'Addressing' the requirements ;)
