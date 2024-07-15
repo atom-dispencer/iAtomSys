@@ -10,10 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.shell.ExitRequest;
-import org.springframework.shell.standard.ShellComponent;
-import org.springframework.shell.standard.ShellMethod;
-import org.springframework.shell.standard.ShellOption;
 import org.springframework.stereotype.Component;
 import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
 import uk.iatom.iAtomSys.common.api.RunRequestPacket;
@@ -24,8 +20,6 @@ import uk.iatom.iAtomSys.common.api.VmClient;
 import uk.iatom.iAtomSys.common.api.VmStatus;
 
 
-@ShellComponent
-@Component
 @Getter
 public class ShellCommands {
 
@@ -61,7 +55,7 @@ public class ShellCommands {
     logger.info("Starting update daemon...");
 
     while (getDisplay().getDisplayState().getStatus() == VmStatus.RUNNING
-        && getDisplay().isAlive()) {
+        && getDisplay().terminal.isAlive()) {
       try {
         getDisplay().getDisplayState().update();
         getDisplay().draw(shouldResetCommand.getAndSet(false));
@@ -85,20 +79,19 @@ public class ShellCommands {
 
   @PostConstruct
   public void postConstruct() {
-    display.activate();
+    display.start();
   }
 
   @PreDestroy
   public void preDestroy() {
-    display.deactivate();
+    display.stop();
   }
 
-  @ShellMethod()
   public String exit() {
     display.getDisplayState().setCommandMessage(EXIT_SHUTDOWN);
     display.draw(true);
     ((ConfigurableApplicationContext) applicationContext).close();
-    throw new ExitRequest();
+    throw new IllegalStateException("ExitRequest doesnt exist anymore soz");
   }
 
   /**
@@ -119,8 +112,7 @@ public class ShellCommands {
     }
   }
 
-  @ShellMethod()
-  public void help(final @ShellOption(defaultValue = "0") String pageStr) {
+  public void help( String pageStr) {
 
     try {
       int page = Integer.parseInt(pageStr);
@@ -135,15 +127,13 @@ public class ShellCommands {
     tryRefresh(true);
   }
 
-  @ShellMethod()
   public void hello() {
     display.getDisplayState().setCommandMessage("Hello!");
 
     tryRefresh(true);
   }
 
-  @ShellMethod()
-  public void step(final @ShellOption(value = "-n", defaultValue = "1") int count) {
+  public void step( int count) {
 
     try {
       StepRequestPacket packet = new StepRequestPacket(count);
@@ -157,8 +147,7 @@ public class ShellCommands {
     tryRefresh(false);
   }
 
-  @ShellMethod
-  public void load(final @ShellOption(defaultValue = "") String imageName) {
+  public void load( String imageName) {
 
     try {
       LoadRequestPacket request = new LoadRequestPacket(imageName);
@@ -173,14 +162,12 @@ public class ShellCommands {
     tryRefresh(false);
   }
 
-  @ShellMethod
-  public void jmp(final @ShellOption(value = "-n", defaultValue = "0") String address) {
+  public void jmp( String address) {
     set("PCR", address);
   }
 
-  @ShellMethod
-  public void set(final @ShellOption(defaultValue = "NO_ADDRESS") String address,
-      final @ShellOption(defaultValue = "0") String value) {
+  public void set( String address,
+       String value) {
     if (address.equals("NO_ADDRESS")) {
       help("6");
       return;
@@ -198,7 +185,6 @@ public class ShellCommands {
     tryRefresh(false);
   }
 
-  @ShellMethod
   public void drop_debug() {
     try {
       String message = api.drop_debug();
@@ -210,8 +196,7 @@ public class ShellCommands {
     tryRefresh(false);
   }
 
-  @ShellMethod
-  public void run(final @ShellOption(defaultValue = "here") String startAddressStr) {
+  public void run( String startAddressStr) {
 
     try {
       // Redraw to clean the command input
@@ -237,12 +222,10 @@ public class ShellCommands {
     }
   }
 
-  @ShellMethod
   public void refresh() {
     tryRefresh(false);
   }
 
-  @ShellMethod
   public void pause() {
     try {
       String message = api.pause();
@@ -254,9 +237,7 @@ public class ShellCommands {
     tryRefresh(false);
   }
 
-  @ShellMethod
-  public void tbreak(
-      final @ShellOption(defaultValue = ToggleBreakpointRequestPacket.HERE) String addressStr) {
+  public void tbreak(String addressStr) {
     try {
       ToggleBreakpointRequestPacket packet = new ToggleBreakpointRequestPacket(addressStr);
       String message = api.tbreak(packet);
@@ -268,7 +249,6 @@ public class ShellCommands {
     tryRefresh(false);
   }
 
-  @ShellMethod
   public void stop() {
     try {
       String message = api.stop();

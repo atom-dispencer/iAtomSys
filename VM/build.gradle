@@ -45,11 +45,7 @@ sourceSets.main.output.dir(generatedSourcesOutputDir, builtBy: generateCicdPrope
 
 
 dependencies {
-	implementation ('org.springframework.shell:spring-shell-starter') {
-		exclude(group: 'org.springframework.shell', module: 'spring-shell-standard-commands')
-	}
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.jline:jline-terminal-jansi:3.25.1'
 
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'

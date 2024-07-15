@@ -1,11 +1,8 @@
 package uk.iatom.iAtomSys.client.shell;
 
-import jakarta.annotation.PreDestroy;
-import jakarta.validation.constraints.NotNull;
 import java.awt.Dimension;
 import java.awt.Point;
 import java.awt.Rectangle;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.time.Duration;
@@ -17,17 +14,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 import lombok.Getter;
-import org.jline.terminal.Terminal;
-import org.jline.terminal.TerminalBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.context.event.EventListener;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import uk.iatom.iAtomSys.IAtomSysApplication;
 import uk.iatom.iAtomSys.common.api.PortPacket;
@@ -39,19 +32,17 @@ public class ShellDisplay {
 
   public static final int COMMAND_MAX_WIDTH = 64;
   private final Logger logger = LoggerFactory.getLogger(ShellDisplay.class);
-  private final AtomicBoolean alive = new AtomicBoolean(false);
   int COMMAND_TRAY_HEIGHT = 4;
   @Getter
   @Autowired
   private ShellDisplayState displayState;
-  private PrintStream sysOutCache = System.out;
-  private Terminal terminal;
+  public Terminal terminal;
   private final Supplier<Rectangle> BORDER_RECT = () -> {
     int start = 2;
     Point origin = new Point(start, start);
     Dimension bounds = new Dimension(
-        terminal.getSize().getColumns() - start,
-        terminal.getSize().getRows() - start
+        terminal.getSize().width - start,
+        terminal.getSize().height - start
     );
     return new Rectangle(origin, bounds);
   };
@@ -163,215 +154,32 @@ public class ShellDisplay {
     draw(true);
   }
 
-  public boolean isAlive() {
-    return alive.get();
-  }
-
-  public void activate() {
-    logger.info("Activating ShellDisplay...");
-
-    if (isAlive()) {
-      return;
-    }
-    this.alive.set(true);
-
-    try {
-      terminal = TerminalBuilder.terminal();
-    } catch (IOException iox) {
-      logger.error("Error activating ShellDisplay. Could not create new Terminal. Cannot continue.",
-          iox);
-      System.exit(-1);
-    }
-
-    logger.info("Terminal size is: %s".formatted(terminal.getSize()));
-    if (terminal.getSize().getRows() == 0 || terminal.getSize().getColumns() == 0) {
-      logger.error("A terminal dimension is zero. Rows:%d; Columns:%d;".formatted(
-              terminal.getSize().getRows(), terminal.getSize().getColumns()),
-          new ShellDrawingException("Neither terminal dimension may be zero."));
-    }
-
-    print(ANSICodes.NEW_BUFFER, ANSICodes.YOU_ARE_DRUNK);
+  public void start() {
+    terminal = new Terminal();
+    terminal.activate();
 
     displayState.update();
     displayState.setCommandMessage("Enter a command below to get started!");
     draw(true);
-
-    System.out.println("If you can see this, System.out has not been disabled.");
   }
 
-  @PreDestroy
-  public void deactivate() {
-    if (!isAlive()) {
-      return;
-    }
-    // Henceforth, 'print' cannot be used.
-    this.alive.set(false);
-
-    // Enable System.out for logging
-    enableSysOut();
-    if (logger != null) {
-      logger.info("Deactivating ShellDisplay...");
-    } else {
-      System.out.println("Deactivating ShellDisplay...");
-    }
-
-    try {
-      terminal.close();
-    } catch (IOException iox) {
-
-      if (logger != null) {
-        logger.error("Error closing old terminal.", iox);
-      } else {
-        System.err.println("Error closing old terminal." + iox);
-      }
-
-    } finally {
-      // Try to restore the terminal's pre-application state
-      System.out.println(ANSICodes.OLD_BUFFER + "\nExiting app...\n\n");
-
-      // Eat any remaining input, so it doesn't mess with the parent terminal
-      try {
-        int ignored = System.in.read(new byte[System.in.available()]);
-      } catch (IOException ignored) {
-        // If it fails, oh well...
-      }
-    }
-  }
-
-  /**
-   * The final displaying method to which other 'print' methods ultimately defer. Enables
-   * {@link System#out}, writes to it, flushes the stream, and disables it again. This method is not
-   * thread safe.
-   *
-   * @param messages The messages to display, which will be joined together with no delimiter.
-   */
-  private void print(@NotNull final String... messages) {
-    if (!isAlive()) {
-      logger.error("Cannot draw while ShellDisplay is not alive");
-      return;
-    }
-
-    enableSysOut();
-    String joined = String.join("", messages);
-    System.out.print(joined);
-    System.out.flush();
-    disableSysOut();
-  }
-
-  /**
-   * Display an ASCII-art box with the given boundaries, with a frame made from the given character.
-   * The display character will fill the starting point - i.e. the frame is *inclusive* of its
-   * boundaries.
-   *
-   * @param clearInside Whether to replace characters inside the frame with spaces.
-   */
-  private void printBox(Rectangle bounds, char c, boolean clearInside) {
-
-    char[] headerFooter = new char[bounds.width];
-    Arrays.fill(headerFooter, c);
-
-    String middleLine;
-    if (clearInside) {
-      middleLine = c + " ".repeat(bounds.width - 2) + c;
-    } else {
-      middleLine = c + ANSICodes.moveRight(bounds.width - 2) + c;
-    }
-
-    String middleBlock = (ANSICodes.moveRight(bounds.x - 1) + middleLine + "\n")
-        .repeat(bounds.height - 2);
-
-    print(
-        ANSICodes.PUSH_CURSOR_POS, //
-        ANSICodes.moveTo(bounds.getLocation()), //
-        new String(headerFooter) + "\n", //
-        middleBlock, //
-        ANSICodes.moveRight(bounds.x - 1) + new String(headerFooter), //
-        ANSICodes.POP_CURSOR_POS
-    );
-  }
-
-  private String formatParagraph(@Nullable Point start, boolean centre, int width,
-      List<String> lines) {
-    StringBuilder builder = new StringBuilder();
-
-    if (centre) {
-      if (width == 0) {
-        width = Collections.max(lines, Comparator.comparing(String::length)).length();
-      } else {
-
-        // Some of the lines may overrun if the width is arbitrary
-        // Long lines will get wrapped
-        List<String> newLines = new ArrayList<>();
-        for (int i = 0; i < lines.size(); i++) {
-          String line = lines.get(i);
-          if (line.length() > width) {
-            newLines.add(i, line.substring(0, width));
-            lines.add(i + 1, line.substring(width));
-          } else {
-            newLines.add(line);
-          }
-        }
-
-        lines = newLines;
-      }
-      final int lambdaWidth = width;
-
-      // Pad each line
-      lines = lines.stream()
-          .map(line -> " ".repeat(Math.max(0, (lambdaWidth - line.length()) / 2)) + line)
-          .toList();
-    }
-
-    if (start != null) {
-      builder.append(ANSICodes.moveTo(start));
-    }
-
-    for (String line : lines) {
-      if (line == null) {
-        line = "";
-      }
-
-      builder.append(line);
-      builder.append(ANSICodes.moveDown(1));
-      if (!line.isEmpty()) {
-        builder.append(ANSICodes.moveLeft(line.length()));
-      }
-    }
-
-    return builder.toString();
-  }
-
-  private void enableSysOut() {
-    if (sysOutCache != null) {
-      System.setOut(sysOutCache);
-    }
-  }
-
-  private void disableSysOut() {
-    if (sysOutCache == null) {
-      sysOutCache = System.out;
-    }
-    System.setOut(new PrintStream(new OutputStream() {
-      @Override
-      public void write(int b) {
-        // Do nothing, stream is dead.
-      }
-    }));
+  public void stop() {
+    terminal.deactivate();
   }
 
   /**
    * Immediately redraw the UI with the current {@link ShellDisplayState}.
    */
   public void draw(boolean clearAll) {
-    if (!isAlive()) {
-      logger.error("Cannot draw while ShellDisplay not alive.");
+    if (!terminal.isAlive()) {
+      logger.error("Cannot draw while ShellDisplay terminal not alive.");
       return;
     }
 
     long start = System.nanoTime();
 
     if (clearAll) {
-      print(ANSICodes.CLEAR_SCREEN);
+      terminal.print(ANSICodes.CLEAR_SCREEN);
     }
 
     drawBackground();
@@ -408,7 +216,7 @@ public class ShellDisplay {
   private void drawStoppedMessage() {
     Rectangle bounds = CONTENT_RECT.get();
     Point start = bounds.getLocation();
-    printBox(CONTENT_RECT.get(), '+', true);
+    terminal.printBox(CONTENT_RECT.get(), '+', true);
 
     String[] availableImagesArray = displayState.getAvailableImages();
     List<String> availableImages = List.of(
@@ -482,14 +290,14 @@ public class ShellDisplay {
     boolean wideEnough = tipsBounds.width > COMMAND_MAX_WIDTH + 2;
     boolean showCommandTips = tallEnough && wideEnough;
 
-    print(
+    terminal.print(
         ANSICodes.PUSH_CURSOR_POS,
         ANSICodes.moveTo(start),
         ANSICodes.moveDown(2),
         ANSICodes.moveRight(3),
-        formatParagraph(null, false, 0, title),
-        formatParagraph(null, true, titleWidth, lines),
-        showCommandTips ? formatParagraph(tipsBounds.getLocation(), true, tipsBounds.width, tips)
+        terminal.formatParagraph(null, false, 0, title),
+        terminal.formatParagraph(null, true, titleWidth, lines),
+        showCommandTips ? terminal.formatParagraph(tipsBounds.getLocation(), true, tipsBounds.width, tips)
             : "",
         ANSICodes.POP_CURSOR_POS
     );
@@ -503,14 +311,14 @@ public class ShellDisplay {
     int preHeadingWidth = 10;
 
     Rectangle content = CONTENT_RECT.get();
-    printBox(content, ' ', true);
+    terminal.printBox(content, ' ', true);
 
     Rectangle rect = BORDER_RECT.get();
-    printBox(rect, '#', false);
+    terminal.printBox(rect, '#', false);
 
     String title = " iAtomSysVM (%s) ".formatted(displayState.getStatus().name());
 
-    print( //
+    terminal.print( //
         ANSICodes.PUSH_CURSOR_POS, //
         ANSICodes.moveTo(rect.getLocation()), //
         ANSICodes.moveRight(2 + preHeadingWidth), //
@@ -537,9 +345,9 @@ public class ShellDisplay {
       lengthCorrectedMessage = commandMessage.substring(0, COMMAND_MAX_WIDTH);
     }
 
-    printBox(rect, '~', resetCommand);
+    terminal.printBox(rect, '~', resetCommand);
 
-    print( //
+    terminal.print( //
         resetCommand ? "" : ANSICodes.PUSH_CURSOR_POS, //
 
         // Short message
@@ -568,7 +376,7 @@ public class ShellDisplay {
         .formatted(IAtomSysApplication.getCicdVersion());
     String line2 = "Copyright © Adam Spencer 2024";
 
-    print(
+    terminal.print(
         ANSICodes.PUSH_CURSOR_POS,
         ANSICodes.moveTo(startPoint),
         ANSICodes.moveDown(1),
@@ -584,7 +392,7 @@ public class ShellDisplay {
    */
   public void drawMemoryState() {
     Rectangle bounds = MEMORY_RUNNING_RECT.get();
-    printBox(bounds, '+', true);
+    terminal.printBox(bounds, '+', true);
 
     //
     // Draw the stuff that will always need to be drawn, ignoring state
@@ -716,7 +524,7 @@ public class ShellDisplay {
       contents.append("me!").append(ANSICodes.moveDown(1)).append(ANSICodes.moveLeft(9));
     }
 
-    print( //
+    terminal.print( //
         ANSICodes.PUSH_CURSOR_POS, //
 
         // Title
@@ -743,7 +551,7 @@ public class ShellDisplay {
   public void drawRunningData() {
     Rectangle bounds = CONTENT_RECT.get();
     Point start = bounds.getLocation();
-    printBox(bounds, '+', true);
+    terminal.printBox(bounds, '+', true);
 
     String windowTitle = " VM is running... ";
     int titleStart = Math.floorDiv(bounds.width, 2) - Math.floorDiv(windowTitle.length(), 2);
@@ -773,7 +581,7 @@ public class ShellDisplay {
     lines.add("'help' : See help with commands");
     lines.add("'pause' : Pause the VM and inspect its state");
 
-    print( //
+    terminal.print( //
         ANSICodes.PUSH_CURSOR_POS, //
 
         // Window
@@ -785,8 +593,8 @@ public class ShellDisplay {
         ANSICodes.moveTo(start), //
         ANSICodes.moveDown(2), //
         ANSICodes.moveRight(3), //
-        formatParagraph(null, false, 0, title), //
-        formatParagraph(null, true, titleWidth, lines), //
+        terminal.formatParagraph(null, false, 0, title), //
+        terminal.formatParagraph(null, true, titleWidth, lines), //
 
         //
         ANSICodes.POP_CURSOR_POS //
@@ -798,7 +606,7 @@ public class ShellDisplay {
    */
   public void drawRegisters() {
     Rectangle rect = REGISTERS_RECT.get();
-    printBox(rect, '+', true);
+    terminal.printBox(rect, '+', true);
 
     String title = " Registers ";
 
@@ -834,7 +642,7 @@ public class ShellDisplay {
       }
     }
 
-    print( //
+    terminal.print( //
         ANSICodes.PUSH_CURSOR_POS, //
         ANSICodes.moveTo(rect.getLocation()), //
         ANSICodes.moveRight(Math.floorDiv(rect.width, 2) - Math.floorDiv(title.length(), 2)), //
@@ -849,7 +657,7 @@ public class ShellDisplay {
 
   public void drawFlagsAndPorts() {
     Rectangle bounds = FLAGS_RECT.get();
-    printBox(bounds, '+', true);
+    terminal.printBox(bounds, '+', true);
 
     RegisterPacket flags = null;
     for (RegisterPacket packet: displayState.getRegisters()) {
@@ -909,13 +717,13 @@ public class ShellDisplay {
     }
 
     String title = " Flags & Ports ";
-    print(
+    terminal.print(
         ANSICodes.PUSH_CURSOR_POS,
         ANSICodes.moveTo(bounds.getLocation()),
         ANSICodes.moveRight((bounds.width - title.length()) / 2),
         title,
-        formatParagraph(flagStart, false, 0, flagLines),
-        formatParagraph(portStart, false, 0, portLines),
+        terminal.formatParagraph(flagStart, false, 0, flagLines),
+        terminal.formatParagraph(portStart, false, 0, portLines),
         ANSICodes.POP_CURSOR_POS
     );
 
@@ -923,7 +731,7 @@ public class ShellDisplay {
 
   public void drawBreakpointBox() {
     Rectangle bounds = BREAKPOINTS_RECT.get();
-    printBox(bounds, '+', true);
+    terminal.printBox(bounds, '+', true);
 
     int padding = 2;
     Rectangle innerBounds = new Rectangle(bounds.x + padding, bounds.y + padding,
@@ -981,12 +789,12 @@ public class ShellDisplay {
 
     String title = " VM Breakpoints ";
 
-    print(
+    terminal.print(
         ANSICodes.PUSH_CURSOR_POS,
         ANSICodes.moveTo(bounds.getLocation()),
         ANSICodes.moveRight((bounds.width - title.length()) / 2),
         title,
-        formatParagraph(innerBounds.getLocation(), true, innerBounds.width, lines),
+        terminal.formatParagraph(innerBounds.getLocation(), true, innerBounds.width, lines),
         ANSICodes.POP_CURSOR_POS
     );
   }

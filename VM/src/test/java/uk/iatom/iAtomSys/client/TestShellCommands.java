@@ -26,7 +26,7 @@ public class TestShellCommands {
   @BeforeEach
   void setup() {
     MockitoAnnotations.openMocks(this);
-    Mockito.doNothing().when(display).activate();
+    Mockito.doNothing().when(display).start();
     Mockito.when(display.getDisplayState()).thenReturn(new ShellDisplayState());
     shellCommands = new ShellCommands(api, display);
   }
