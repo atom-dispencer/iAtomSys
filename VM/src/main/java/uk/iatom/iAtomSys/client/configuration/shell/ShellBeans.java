@@ -8,8 +8,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.shell.style.Theme;
 import org.springframework.shell.style.ThemeSettings;
-import uk.iatom.iAtomSys.client.ShellDisplay;
-import uk.iatom.iAtomSys.client.ShellDisplayState;
+import uk.iatom.iAtomSys.client.shell.ShellDisplay;
+import uk.iatom.iAtomSys.client.shell.ShellDisplayState;
 import uk.iatom.iAtomSys.client.disassembly.MemoryDisassembler;
 import uk.iatom.iAtomSys.common.api.VmClient;
 

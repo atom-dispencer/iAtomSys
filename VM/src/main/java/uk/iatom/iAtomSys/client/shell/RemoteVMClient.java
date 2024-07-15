@@ -1,4 +1,4 @@
-package uk.iatom.iAtomSys.client;
+package uk.iatom.iAtomSys.client.shell;
 
 import java.net.URI;
 import org.slf4j.Logger;

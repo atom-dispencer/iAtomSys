@@ -1,4 +1,4 @@
-package uk.iatom.iAtomSys.client;
+package uk.iatom.iAtomSys.client.shell;
 
 import jakarta.annotation.PreDestroy;
 import jakarta.validation.constraints.NotNull;
@@ -33,7 +33,6 @@ import uk.iatom.iAtomSys.IAtomSysApplication;
 import uk.iatom.iAtomSys.common.api.PortPacket;
 import uk.iatom.iAtomSys.common.api.RegisterPacket;
 import uk.iatom.iAtomSys.common.instruction.FlagHelper;
-import uk.iatom.iAtomSys.server.device.IOPort;
 
 @Component
 public class ShellDisplay {

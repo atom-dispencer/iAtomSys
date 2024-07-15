@@ -2,7 +2,7 @@ package uk.iatom.iAtomSys.client.configuration;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import uk.iatom.iAtomSys.client.RemoteVMClient;
+import uk.iatom.iAtomSys.client.shell.RemoteVMClient;
 
 @Configuration
 public class ClientBeans {

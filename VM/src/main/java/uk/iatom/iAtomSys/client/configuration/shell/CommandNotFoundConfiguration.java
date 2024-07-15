@@ -3,7 +3,7 @@ package uk.iatom.iAtomSys.client.configuration.shell;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.result.CommandNotFoundMessageProvider;
 import org.springframework.stereotype.Component;
-import uk.iatom.iAtomSys.client.ShellDisplay;
+import uk.iatom.iAtomSys.client.shell.ShellDisplay;
 
 @Component
 public class CommandNotFoundConfiguration implements CommandNotFoundMessageProvider {

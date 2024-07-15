@@ -8,7 +8,7 @@ import org.springframework.core.convert.TypeDescriptor;
 import org.springframework.shell.command.CommandExceptionResolver;
 import org.springframework.shell.command.CommandHandlingResult;
 import org.springframework.stereotype.Component;
-import uk.iatom.iAtomSys.client.ShellDisplay;
+import uk.iatom.iAtomSys.client.shell.ShellDisplay;
 
 @Component
 public class CustomExceptionResolver implements CommandExceptionResolver {

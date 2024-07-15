@@ -8,6 +8,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import uk.iatom.iAtomSys.client.shell.ShellCommands;
+import uk.iatom.iAtomSys.client.shell.ShellDisplay;
+import uk.iatom.iAtomSys.client.shell.ShellDisplayState;
 import uk.iatom.iAtomSys.common.api.VmClient;
 
 public class TestShellCommands {

@@ -1,4 +1,4 @@
-package uk.iatom.iAtomSys.client;
+package uk.iatom.iAtomSys.client.shell;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
