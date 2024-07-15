@@ -18,6 +18,9 @@ A 16-bit virtual computer at the core of the iAtomSys ecosystem.
   - See [note to self](https://learn.microsoft.com/en-gb/windows/console/console-virtual-terminal-sequences)
   - Users must press <enter> twice to run commands 
   - Application does not return to the previous buffer correctly on exiting
+- MinGW
+  - Exiting the application does not restore the previous buffer correctly, clearing previous commands
+  but leaving the Spring logo and exit message
 - Debug symbol parsing/loading is experimental
 - The user cannot change the port that the VM runs on
 
@@ -41,6 +44,9 @@ To build an executable JAR file:
 # To run the suite of unit tests, add the Gradle 'test' task:
 ./gradlew build test -Pversion="$VERSION"
 ```
+
+There are [Known Issues](#known-issues) with some terminals, but the VM has been tested on CMD, 
+    PowerShell and MinGW running *within* Windows Terminal.
 
 The iAtomSysVM is a terminal-app and to run its JAR file, you will need a Java JRE installed.
 The application was developed on Java 17 and support for other versions is not guaranteed.
