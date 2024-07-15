@@ -12,39 +12,48 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 
+@Getter
 public class Terminal {
 
   private static final Logger logger = LoggerFactory.getLogger(Terminal.class);
-  private PrintStream sysOutCache = System.out;
-
-  public Dimension getSize() {
-    return new Dimension(50, 50);
-  }
-
-  void exit() {
-    // Try to restore the s pre-application state
-    System.out.println(ANSICodes.OLD_BUFFER + "\nExiting app...\n\n");
-
-    // Eat any remaining input, so it doesn't mess with the parent terminal
-    try {
-      int ignored = System.in.read(new byte[System.in.available()]);
-    } catch (IOException ignored) {
-      // If it fails, oh well...
-    }
-
-    return;
-  }
 
   private final AtomicBoolean alive = new AtomicBoolean(false);
+  private final Dimension size = new Dimension(50, 50);
+  private PrintStream sysOutCache = System.out;
 
   public boolean isAlive() {
     return alive.get();
   }
+
+  public Dimension updateDimensions() {
+    // TODO Update dimensions with ANSI: https://github.com/remkop/picocli/issues/634
+    return new Dimension(50, 50);
+  }
+
+  private void enableSysOut() {
+    if (sysOutCache != null) {
+      System.setOut(sysOutCache);
+    }
+  }
+
+  private void disableSysOut() {
+    if (sysOutCache == null) {
+      sysOutCache = System.out;
+    }
+    System.setOut(new PrintStream(new OutputStream() {
+      @Override
+      public void write(int b) {
+        // Do nothing, stream is dead.
+      }
+    }));
+  }
+
 
   public void activate() {
     logger.info("Activating ShellDisplay...");
@@ -53,7 +62,6 @@ public class Terminal {
       return;
     }
     this.alive.set(true);
-
 
     logger.info("Terminal size is: %s".formatted(getSize()));
     if (getSize().height == 0 || getSize().width == 0) {
@@ -67,6 +75,7 @@ public class Terminal {
 
     System.out.println("If you can see this, System.out has not been disabled.");
   }
+
   public void deactivate() {
     if (!isAlive()) {
       return;
@@ -82,7 +91,15 @@ public class Terminal {
       System.out.println("Deactivating ShellDisplay...");
     }
 
-    exit();
+    // Try to restore the s pre-application state
+    System.out.println(ANSICodes.OLD_BUFFER + "\nExiting app...\n\n");
+
+    // Eat any remaining input, so it doesn't mess with the parent terminal
+    try {
+      int ignored = System.in.read(new byte[System.in.available()]);
+    } catch (IOException ignored) {
+      // If it fails, oh well...
+    }
   }
 
   /**
@@ -104,25 +121,6 @@ public class Terminal {
     System.out.flush();
     disableSysOut();
   }
-
-  private void enableSysOut() {
-    if (sysOutCache != null) {
-      System.setOut(sysOutCache);
-    }
-  }
-
-  private void disableSysOut() {
-    if (sysOutCache == null) {
-      sysOutCache = System.out;
-    }
-    System.setOut(new PrintStream(new OutputStream() {
-      @Override
-      public void write(int b) {
-        // Do nothing, stream is dead.
-      }
-    }));
-  }
-
 
   /**
    * Display an ASCII-art box with the given boundaries, with a frame made from the given character.

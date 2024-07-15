@@ -194,7 +194,6 @@ public class ShellDisplay {
           drawRegisters();
           drawFlagsAndPorts();
           drawBreakpointBox();
-          // TODO Display values in ports (near registers/flags?)
           break;
         case RUNNING:
           drawRunningData();
