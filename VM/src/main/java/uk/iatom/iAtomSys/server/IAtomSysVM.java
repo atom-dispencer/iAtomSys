@@ -1,6 +1,8 @@
 package uk.iatom.iAtomSys.server;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -44,15 +46,27 @@ public class IAtomSysVM {
   private IOPort[] ports;
   @Setter
   private DebugSymbols debugSymbols = DebugSymbols.empty();
+  private List<Character> breakpoints = new ArrayList<>();
 
   public void runAsync() {
     Thread thread = new Thread(() -> {
-      asyncRunData.getAsyncExecutedInstructions().set(0L);
-      asyncRunData.setStartTime(LocalDateTime.now());
 
-      while (status == VmStatus.RUNNING) {
-        processNextCycle();
-        asyncRunData.getAsyncExecutedInstructions().getAndIncrement();
+      try {
+        asyncRunData.getAsyncExecutedInstructions().set(0L);
+        asyncRunData.setStartTime(LocalDateTime.now());
+
+        // This is the first documented case of a do-while loop in the wild...
+        do {
+          char pcr = processNextCycle();
+          asyncRunData.getAsyncExecutedInstructions().getAndIncrement();
+
+          if (breakpoints.contains(pcr)) {
+            status = VmStatus.PAUSED;
+          }
+        } while (status == VmStatus.RUNNING);
+
+      } catch (Exception e) {
+        logger.error("Error in async running.", e);
       }
     });
 
@@ -64,11 +78,11 @@ public class IAtomSysVM {
   /**
    * Perform a single fetch-execute cycle, incrementing the program counter.
    */
-  public void processNextCycle() {
+  public char processNextCycle() {
     Register PCR = Register.PCR(registerSet);
-    short pc = PCR.get();
+    char pc = PCR.get();
 
-    short instruction = memory.read(pc);
+    char instruction = memory.read(pc);
     executeInstruction(instruction);
 
     for (IOPort port : ports) {
@@ -78,18 +92,19 @@ public class IAtomSysVM {
     // Only increment PCR if it hasn't been changed during the cycle, i.e. an instruction trying
     // to jump/branch.
     if (pc == PCR.get()) {
-      if (pc == Short.MAX_VALUE) {
-        logger.info("PC is at max value %d, pausing.".formatted(pc));
+      if (pc == Character.MAX_VALUE) {
+        logger.info("PC is at max value %d, pausing.".formatted((int) pc));
         status = VmStatus.PAUSED;
       } else {
-        PCR.set((short) (pc + 1));
+        pc = (char) (pc + 1);
+        PCR.set(pc);
       }
     }
 
-    // TODO Check breakpoints
+    return pc;
   }
 
-  private void executeInstruction(short int16Instruction) {
+  private void executeInstruction(char int16Instruction) {
 
     // Check the MA flag (the least significant bit)
     // If treat as a memorySlice load command
@@ -105,7 +120,8 @@ public class IAtomSysVM {
 
     // If the instruction was not understood...
     if (instruction == null) {
-      logger.error("Could not decode instruction 0x%04x (skipping).".formatted(int16Instruction));
+      logger.error(
+          "Could not decode instruction 0x%04x (skipping).".formatted((int) int16Instruction));
       return;
     }
 
@@ -123,7 +139,7 @@ public class IAtomSysVM {
       String extraInformation;
       try {
         Register PCR = Register.PCR(registerSet);
-        extraInformation = "PC:%d".formatted(PCR.get());
+        extraInformation = "PC:%d".formatted((int) PCR.get());
       } catch (Exception e) {
         logger.error("Error generating extra information for error.");
         extraInformation = "(Error generating extra information.)";

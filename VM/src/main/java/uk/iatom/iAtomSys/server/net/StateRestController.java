@@ -84,21 +84,29 @@ public class StateRestController {
     };
   }
 
+  @GetMapping("/breakpoints")
+  public Character[] breakpoints() {
+    return vm.getBreakpoints().toArray(new Character[0]);
+  }
+
+  /**
+   * Note that start/end addresses are inclusive to allow querying 0xFFFF.
+   */
   @PostMapping("/memory")
   public MemoryResponsePacket memory(@RequestBody MemoryRequestPacket packet) {
 
     // Prepare memorySlice region
-    short pcr = Register.PCR(vm.getRegisterSet()).get();
+    char pcr = Register.PCR(vm.getRegisterSet()).get();
     int width = Math.max(0, packet.sliceWidth());
 
     int startAddress = Math.max(0, pcr + packet.pcrOffset());
-    int endAddress = Math.min(Short.MAX_VALUE, startAddress + width);
-    short clampedStartAddress = (short) Math.min(Short.MAX_VALUE, startAddress);
-    short clampedEndAddress = (short) Math.max(endAddress, clampedStartAddress);
+    int endAddress = Math.min(Character.MAX_VALUE, startAddress + width);
+    char clampedStartAddress = (char) Math.min(Character.MAX_VALUE, startAddress);
+    char clampedEndAddress = (char) Math.max(endAddress, clampedStartAddress);
 
-    short clampedWidth = (short) (clampedEndAddress - clampedStartAddress);
+    int clampedWidth = clampedEndAddress - clampedStartAddress + 1;
 
-    short[] memory = new short[clampedWidth];
+    char[] memory = new char[clampedWidth];
     vm.getMemory().readRange(clampedStartAddress, memory);
 
     return new MemoryResponsePacket(clampedStartAddress, memory);

@@ -12,11 +12,11 @@ public record Instruction(
     InstructionExecutor executor
 ) {
 
-  public static byte extractOpcode(short instruction) {
+  public static byte extractOpcode(char instruction) {
     return (byte) ((instruction & 0xff00) >> 8);
   }
 
-  public static byte extractFlags(short instruction) {
+  public static byte extractFlags(char instruction) {
     return (byte) (instruction & 0x00ff);
   }
 }

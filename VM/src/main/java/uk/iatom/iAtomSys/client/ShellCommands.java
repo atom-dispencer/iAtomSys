@@ -3,6 +3,8 @@ package uk.iatom.iAtomSys.client;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,34 +19,40 @@ import uk.iatom.iAtomSys.common.api.LoadRequestPacket;
 import uk.iatom.iAtomSys.common.api.RunRequestPacket;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
+import uk.iatom.iAtomSys.common.api.ToggleBreakpointRequestPacket;
 import uk.iatom.iAtomSys.common.api.VmClient;
 import uk.iatom.iAtomSys.common.api.VmStatus;
 
 
 @ShellComponent
 @Component
+@Getter
 public class ShellCommands {
 
   public static final String[] HELP_PAGES = new String[]{ //
-      "[0] 'help <page>': Find help! Also check GitHub docs.", //
+      "[0] 'help <page 0-12>': Find help! Also check GitHub docs.", //
       "[1] 'exit': Terminate the application.", //
       "[2] 'hello': Say hi!", //
-      "[3] 'step <count>': Execute the next <count> instructions.", //
+      "[3] 'step <count?>': Execute the next <count> instructions.", //
       "[4] 'load <image_name[.img]>': Load the given memorySlice image.", //
-      "[5] 'jmp <address>': (Shorthand) PCR* <address>.", //
+      "[5] 'jmp <address>': (Shorthand) set PCR* <address>.", //
       "[6] 'set <address> <value>': Set the value at the address.", //
-      "[7] 'dropDebug': Reset the loaded debug symbols.", //
-      "[8] 'run <x|start> <end?>': Execute between the addresses.", //
-      "[9] 'refresh': Refreshes the display state and redraw." //
+      "[7] 'drop_debug': Reset the loaded debug symbols.", //
+      "[8] 'run <start?>': Execute from current PCR or given address.", //
+      "[9] 'refresh': Refreshes the display state and redraw.", //
+      "[10] 'pause': Pause the VM's execution while running.", //
+      "[11] 'tbreak <address?>': Toggle the breakpoint at the address.", //
+      "[12] 'stop': Stop the VM and return to the start menu." //
   };
+  // Messages which may appear in the ShellDisplayState command message
+  public static final Function<String, String> HELP_BAD_FORMAT = "Input must be an integer. Got %s."::formatted;
+  public static final Function<String, String> HELP_BAD_INDEX = (pageStr) -> "%s not in range [0,%d], try 'help 0'".formatted(
+      pageStr, HELP_PAGES.length - 1);
+  public static final String EXIT_SHUTDOWN = "Shutting down application...";
   private static final Logger logger = LoggerFactory.getLogger(ShellCommands.class);
+  private final VmClient api;
+  private final ShellDisplay display;
   private final AtomicBoolean shouldResetCommand = new AtomicBoolean(false);
-  @Autowired
-  private VmClient api;
-  @Autowired
-  private ApplicationContext applicationContext;
-  @Autowired
-  private ShellDisplay display;
   /**
    * The task responsible for repeatedly refreshing the UI while the VM is in the
    * {@link VmStatus#RUNNING} phase.
@@ -52,10 +60,11 @@ public class ShellCommands {
   private final Runnable updateDaemonTask = new Thread(() -> {
     logger.info("Starting update daemon...");
 
-    while (display.getDisplayState().getStatus() == VmStatus.RUNNING && display.isAlive()) {
+    while (getDisplay().getDisplayState().getStatus() == VmStatus.RUNNING
+        && getDisplay().isAlive()) {
       try {
-        display.getDisplayState().update();
-        display.draw(shouldResetCommand.getAndSet(false));
+        getDisplay().getDisplayState().update();
+        getDisplay().draw(shouldResetCommand.getAndSet(false));
         Thread.sleep(1000L);
       } catch (Exception e) {
         logger.error("Suppressed error in run/sleep loop.", e);
@@ -64,7 +73,15 @@ public class ShellCommands {
 
     logger.info("Update daemon exiting...");
   });
+  @Autowired
+  private ApplicationContext applicationContext;
   private Thread updateDaemon = null;
+
+  @Autowired
+  public ShellCommands(VmClient api, ShellDisplay display) {
+    this.api = api;
+    this.display = display;
+  }
 
   @PostConstruct
   public void postConstruct() {
@@ -78,7 +95,7 @@ public class ShellCommands {
 
   @ShellMethod()
   public String exit() {
-    display.getDisplayState().setCommandMessage("Shutting down application...");
+    display.getDisplayState().setCommandMessage(EXIT_SHUTDOWN);
     display.draw(true);
     ((ConfigurableApplicationContext) applicationContext).close();
     throw new ExitRequest();
@@ -110,11 +127,9 @@ public class ShellCommands {
       display.getDisplayState().setCommandMessage(HELP_PAGES[page]);
 
     } catch (NumberFormatException nfx) {
-      display.getDisplayState()
-          .setCommandMessage("Input must be an integer. Got %s.".formatted(pageStr));
+      display.getDisplayState().setCommandMessage(HELP_BAD_FORMAT.apply(pageStr));
     } catch (IndexOutOfBoundsException ibx) {
-      display.getDisplayState().setCommandMessage(
-          "%s not in range [0,%d], try 'help 0'".formatted(pageStr, HELP_PAGES.length - 1));
+      display.getDisplayState().setCommandMessage(HELP_BAD_INDEX.apply(pageStr));
     }
 
     tryRefresh(true);
@@ -127,7 +142,6 @@ public class ShellCommands {
     tryRefresh(true);
   }
 
-  //TODO Availability methods https://docs.spring.io/spring-shell/reference/commands/availability.html
   @ShellMethod()
   public void step(final @ShellOption(value = "-n", defaultValue = "1") int count) {
 
@@ -235,6 +249,32 @@ public class ShellCommands {
       display.getDisplayState().setCommandMessage(message);
     } catch (IllegalArgumentException e) {
       help("10");
+    }
+
+    tryRefresh(false);
+  }
+
+  @ShellMethod
+  public void tbreak(
+      final @ShellOption(defaultValue = ToggleBreakpointRequestPacket.HERE) String addressStr) {
+    try {
+      ToggleBreakpointRequestPacket packet = new ToggleBreakpointRequestPacket(addressStr);
+      String message = api.tbreak(packet);
+      display.getDisplayState().setCommandMessage(message);
+    } catch (IllegalArgumentException e) {
+      help("11");
+    }
+
+    tryRefresh(false);
+  }
+
+  @ShellMethod
+  public void stop() {
+    try {
+      String message = api.stop();
+      display.getDisplayState().setCommandMessage(message);
+    } catch (IllegalArgumentException e) {
+      help("12");
     }
 
     tryRefresh(false);

@@ -37,10 +37,10 @@ public interface InstructionExecutor {
     RegisterReference[] registers = twoRegisters_02_35(vm.getRegisterSet(), flags);
     Memory memory = vm.getMemory();
 
-    short originAddress = registers[0].get();
-    short destinationAddress = registers[1].get();
+    char originAddress = registers[0].get();
+    char destinationAddress = registers[1].get();
 
-    short value = memory.read(originAddress);
+    char value = memory.read(originAddress);
     memory.write(destinationAddress, value);
   }
 
@@ -55,11 +55,11 @@ public interface InstructionExecutor {
     int newValue = (flags & 0b00001000) >> 3;
 
     Register flagRegister = Register.FLG(vm.getRegisterSet());
-    short flagRegisterValue = flagRegister.get();
+    char flagRegisterValue = flagRegister.get();
 
     // If the given bit is not equal to the new desired value, flip it, so it is
     if (((flagRegisterValue & 0x8000) >> bit) != newValue) {
-      flagRegisterValue ^= (short) (0x8000 >> bit);
+      flagRegisterValue ^= (char) (0x8000 >> bit);
     }
 
     flagRegister.set(flagRegisterValue);
@@ -73,9 +73,9 @@ public interface InstructionExecutor {
    */
   static void xPSH(IAtomSysVM vm, byte flags) throws ProcessorStackOverflowException {
     RegisterReference reference = oneRegister_02(vm.getRegisterSet(), flags);
-    short address = reference.get();
+    char address = reference.get();
 
-    short value = vm.getMemory().read(address);
+    char value = vm.getMemory().read(address);
     vm.getProcessorStack().push(value);
   }
 
@@ -87,9 +87,9 @@ public interface InstructionExecutor {
    */
   static void xPOP(IAtomSysVM vm, byte flags) throws ProcessorStackUnderflowException {
     RegisterReference reference = oneRegister_02(vm.getRegisterSet(), flags);
-    short address = reference.get();
+    char address = reference.get();
 
-    short value = vm.getProcessorStack().pop();
+    char value = vm.getProcessorStack().pop();
     vm.getMemory().write(address, value);
   }
 
@@ -102,13 +102,13 @@ public interface InstructionExecutor {
    */
   static void xINC(IAtomSysVM vm, byte flags) {
     RegisterReference reference = oneRegister_02(vm.getRegisterSet(), flags);
-    short address = reference.get();
+    char address = reference.get();
 
-    short value = vm.getMemory().read(address);
-    value += 1;
+    char value = vm.getMemory().read(address);
+    value = (char) (value + 1);
 
     // If the new value is the minimum value for a short, the operation overflowed
-    if (value == Short.MIN_VALUE) {
+    if (value == 0) {
       FlagHelper.setFlag(vm.getRegisterSet(), FlagHelper.CARRY, true);
     }
 
@@ -124,13 +124,13 @@ public interface InstructionExecutor {
    */
   static void xDEC(IAtomSysVM vm, byte flags) {
     RegisterReference reference = oneRegister_02(vm.getRegisterSet(), flags);
-    short address = reference.get();
+    char address = reference.get();
 
-    short value = vm.getMemory().read(address);
-    value -= 1;
+    char value = vm.getMemory().read(address);
+    value = (char) (value - 1);
 
     // If the new value is the minimum value for a short, the operation overflowed
-    if (value == Short.MAX_VALUE) {
+    if (value == Character.MAX_VALUE) {
       FlagHelper.setFlag(vm.getRegisterSet(), FlagHelper.CARRY, false);
     }
 
@@ -146,18 +146,18 @@ public interface InstructionExecutor {
    */
   static void xADD(IAtomSysVM vm, byte flags) throws InstructionExecutionException {
     RegisterReference register = oneRegister_02(vm.getRegisterSet(), flags);
-    short address = register.get();
-    short value = vm.getMemory().read(address);
+    char address = register.get();
+    char value = vm.getMemory().read(address);
 
     Register ACC = Register.ACC(vm.getRegisterSet());
 
-    short accumulator = ACC.get();
-    short sum = (short) (accumulator + value);
+    char accumulator = ACC.get();
+    char sum = (char) (accumulator + value);
 
-    short carry = (short) Math.floorDiv(sum, Short.MAX_VALUE);
-    short remainder = (short) (sum % Short.MAX_VALUE);
+    int carries = Math.floorDiv(sum, Character.MAX_VALUE);
+    char remainder = (char) (sum % Character.MAX_VALUE);
 
-    switch (carry) {
+    switch (carries) {
       case 0:
         FlagHelper.setFlag(vm.getRegisterSet(), FlagHelper.CARRY, false);
         ACC.set(remainder);
@@ -168,8 +168,8 @@ public interface InstructionExecutor {
         break;
       default:
         throw new InstructionExecutionException(null,
-            "Excessive CarryCount=%d while adding ACC=%d and NUM=%d".formatted(carry, accumulator,
-                value), null);
+            "Excessive CarryCount=%d while adding ACC=%d and NUM=%d".formatted(
+                carries, (int) accumulator, (int) value), null);
     }
   }
 
@@ -182,31 +182,31 @@ public interface InstructionExecutor {
    */
   static void xSUB(IAtomSysVM vm, byte flags) throws InstructionExecutionException {
     RegisterReference register = oneRegister_02(vm.getRegisterSet(), flags);
-    short address = register.get();
-    short value = vm.getMemory().read(address);
+    char address = register.get();
+    char value = vm.getMemory().read(address);
 
     Register ACC = Register.ACC(vm.getRegisterSet());
 
-    short accumulator = ACC.get();
-    short sub = (short) (accumulator - value);
+    char accumulator = ACC.get();
+    char result = (char) (accumulator - value);
 
-    short carry = (short) Math.floorDiv(sub, Short.MAX_VALUE);
-    short remainder = (short) (sub % Short.MAX_VALUE);
+    int carries = Math.floorDiv(result, Character.MAX_VALUE);
+    char remainder = (char) (result % Character.MAX_VALUE);
 
-    switch (carry) {
+    switch (carries) {
       case 0:
         FlagHelper.setFlag(vm.getRegisterSet(), FlagHelper.CARRY, false);
         ACC.set(remainder);
         break;
-      case -1:
+      case 1:
         FlagHelper.setFlag(vm.getRegisterSet(), FlagHelper.CARRY, true);
-        short wrapped = (short) (Short.MAX_VALUE + remainder);
+        char wrapped = (char) (Character.MAX_VALUE + remainder);
         ACC.set(wrapped);
         break;
       default:
         throw new InstructionExecutionException(null,
-            "Excessive CarryCount=%d while subtracting NUM=%d from ACC=%d".formatted(carry, value,
-                accumulator), null);
+            "Anti-excessive CarryCount=%d while subtracting NUM=%d from ACC=%d".formatted(
+                carries, (int) value, (int) accumulator), null);
     }
   }
 
@@ -219,7 +219,7 @@ public interface InstructionExecutor {
    */
   static void xZRO(IAtomSysVM vm, byte flags) {
     RegisterReference reference = oneRegister_02(vm.getRegisterSet(), flags);
-    vm.getMemory().write(reference.get(), (short) 0);
+    vm.getMemory().write(reference.get(), (char) 0);
   }
 
   /**

@@ -30,37 +30,37 @@ public class MemoryDisassembler {
     this.registerSet = registerSet;
   }
 
-  public List<String[]> disassemble(short[] shorts) {
+  public List<String[]> disassemble(char[] shorts) {
     List<String[]> decoded = new ArrayList<>(shorts.length);
-    for (short s : shorts) {
+    for (char s : shorts) {
 
       try {
         decoded.add(disassembleInstruction(s));
       } catch (InstructionDisassemblyException idx) {
-        logger.error("Error disassembling instruction %04x".formatted(s), idx);
-        decoded.add(new String[]{"?", "%04x".formatted(s)});
+        logger.error("Error disassembling instruction %04x".formatted((int) s), idx);
+        decoded.add(new String[]{"?", "%04x".formatted((int) s)});
       }
     }
     return decoded;
   }
 
-  public String[] disassembleInstruction(short instructionShort)
+  public String[] disassembleInstruction(char instructionChar)
       throws InstructionDisassemblyException {
 
     try {
 
       // If odd, treat as a 'load-value' command
-      if (instructionShort % 2 == 1) {
-        String value = "%04x".formatted(instructionShort);
+      if (instructionChar % 2 == 1) {
+        String value = "%04x".formatted((int) instructionChar);
         return new String[]{">", value, "IDK"};
       }
 
-      byte opcode = Instruction.extractOpcode(instructionShort);
-      byte flags = Instruction.extractFlags(instructionShort);
+      byte opcode = Instruction.extractOpcode(instructionChar);
+      byte flags = Instruction.extractFlags(instructionChar);
 
       Instruction instruction = instructionSet.getInstruction(opcode);
       if (instruction == null) {
-        return new String[]{"?", "%04x".formatted(instructionShort)};
+        return new String[]{"?", "%04x".formatted((int) instructionChar)};
       }
 
       String[] fragments = instruction.disassembler().disassemble(instruction, flags, registerSet);
@@ -73,7 +73,7 @@ public class MemoryDisassembler {
       return fragments;
     } catch (Exception e) {
       throw new InstructionDisassemblyException(
-          "Error disassembling Instruction %04X".formatted(instructionShort), e);
+          "Error disassembling Instruction %04X".formatted((int) instructionChar), e);
     }
   }
 }

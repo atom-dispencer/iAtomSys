@@ -30,7 +30,10 @@ import org.springframework.context.event.EventListener;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import uk.iatom.iAtomSys.IAtomSysApplication;
+import uk.iatom.iAtomSys.common.api.PortPacket;
 import uk.iatom.iAtomSys.common.api.RegisterPacket;
+import uk.iatom.iAtomSys.common.instruction.FlagHelper;
+import uk.iatom.iAtomSys.server.device.IOPort;
 
 @Component
 public class ShellDisplay {
@@ -85,46 +88,60 @@ public class ShellDisplay {
     startPoint.translate(COMMAND_MAX_WIDTH + 8, 0);
     return startPoint;
   };
-  private final Supplier<Rectangle> MEMORY_RUNDATA_RECT = () -> {
-    Rectangle content = CONTENT_RECT.get();
-
-    int width = (int) Math.floor(content.width * 0.375);
-
-    Point origin = content.getLocation();
-    Dimension dimension = new Dimension(
-        width,
-        content.height
-    );
-    return new Rectangle(origin, dimension);
-  };
   private final Supplier<Rectangle> REGISTERS_RECT = () -> {
     Rectangle content = CONTENT_RECT.get();
 
-    int REGISTER_FLAG_WIDTH = 32;
+    int WIDTH = 32;
 
     Point origin = new Point(
-        (int) content.getMaxX() - REGISTER_FLAG_WIDTH,
+        (int) content.getMaxX() - WIDTH,
         content.getLocation().y);
     Dimension dim = new Dimension(
-        REGISTER_FLAG_WIDTH,
+        WIDTH,
         Math.floorDiv(content.height, 2) + 1);
 
     return new Rectangle(origin, dim);
   };
   private final Supplier<Rectangle> FLAGS_RECT = () -> {
+    Rectangle registers = REGISTERS_RECT.get();
+
+    int WIDTH = 32;
+
+    Point origin = new Point(
+        registers.x - WIDTH,
+        registers.y);
+    Dimension dim = new Dimension(
+        WIDTH + 1,
+        registers.height);
+
+    return new Rectangle(origin, dim);
+  };
+  private final Supplier<Rectangle> BREAKPOINTS_RECT = () -> {
     Rectangle content = CONTENT_RECT.get();
+    Rectangle flags = FLAGS_RECT.get();
     Rectangle registers = REGISTERS_RECT.get();
 
     Point origin = new Point(
-        registers.x,
-        (int) registers.getMaxY() - 1
+        flags.x,
+        (int) flags.getMaxY() - 1
     );
     Dimension dim = new Dimension(
-        registers.width,
-        content.height - registers.height + 1
+        flags.width + registers.width,
+        content.height - flags.height + 1
     );
 
     return new Rectangle(origin, dim);
+  };
+  private final Supplier<Rectangle> MEMORY_RUNNING_RECT = () -> {
+    Rectangle content = CONTENT_RECT.get();
+    Rectangle flags = FLAGS_RECT.get();
+
+    Point origin = content.getLocation();
+    Dimension dimension = new Dimension(
+        flags.x - origin.x - 2,
+        content.height
+    );
+    return new Rectangle(origin, dimension);
   };
 
   private static List<String> getTitle() {
@@ -247,8 +264,6 @@ public class ShellDisplay {
    * The display character will fill the starting point - i.e. the frame is *inclusive* of its
    * boundaries.
    *
-   * @param bounds
-   * @param c
    * @param clearInside Whether to replace characters inside the frame with spaces.
    */
   private void printBox(Rectangle bounds, char c, boolean clearInside) {
@@ -348,7 +363,7 @@ public class ShellDisplay {
   /**
    * Immediately redraw the UI with the current {@link ShellDisplayState}.
    */
-  public void draw(boolean resetCommand) {
+  public void draw(boolean clearAll) {
     if (!isAlive()) {
       logger.error("Cannot draw while ShellDisplay not alive.");
       return;
@@ -356,25 +371,35 @@ public class ShellDisplay {
 
     long start = System.nanoTime();
 
-    drawBackground(resetCommand);
-    switch (displayState.getStatus()) {
-      case STOPPED:
-        drawStoppedMessage();
-        break;
-      case PAUSED:
-        drawMemoryState();
-        drawRegisters();
-        drawFlags();
-        // TODO Display values in ports (near registers/flags?)
-        break;
-      case RUNNING:
-        drawRunningData();
-        break;
+    if (clearAll) {
+      print(ANSICodes.CLEAR_SCREEN);
+    }
+
+    drawBackground();
+
+    try {
+      switch (displayState.getStatus()) {
+        case STOPPED:
+          drawStoppedMessage();
+          break;
+        case PAUSED:
+          drawMemoryState();
+          drawRegisters();
+          drawFlagsAndPorts();
+          drawBreakpointBox();
+          // TODO Display values in ports (near registers/flags?)
+          break;
+        case RUNNING:
+          drawRunningData();
+          break;
+      }
+    } catch (Exception e) {
+      logger.error("Error during drawing!", e);
     }
     // RUNNING is the only state where the screen refreshes without the user issuing a command
     // Therefore, we must avoid overwriting any partially typed commands.
     drawCredits();
-    drawCommandInput(resetCommand);
+    drawCommandInput(clearAll);
 
     long elapsedNanos = System.nanoTime() - start;
     double elapsedMillis = (elapsedNanos / 1_000_000d);
@@ -427,6 +452,37 @@ public class ShellDisplay {
       lines.add("To load an image: load <image_name>");
     }
 
+    List<String> tips = new ArrayList<>();
+    tips.add("~~ Commands ~~");
+    tips.add("");
+
+    for (String tip : ShellCommands.HELP_PAGES) {
+      int deficit = COMMAND_MAX_WIDTH - tip.length();
+
+      String[] split = tip.split(":");
+      if (split.length != 2) {
+        logger.error("Bad formatting for help message: {}", tip);
+        tips.add(tip);
+      } else {
+        tips.add(split[0] + " ".repeat(deficit + 1) + split[1]);
+      }
+    }
+
+    tips.add("");
+    tips.add("Arguments marked with ? are optional or have defaults.");
+    tips.add("Further details on GitHub - link in the copyright notice.");
+
+    Rectangle tipsBounds = new Rectangle(
+        bounds.x + titleWidth + 4,
+        bounds.y + (bounds.height - tips.size()) / 2,
+        bounds.width - titleWidth - 4,
+        bounds.height - 4
+    );
+
+    boolean tallEnough = tipsBounds.height > tips.size();
+    boolean wideEnough = tipsBounds.width > COMMAND_MAX_WIDTH + 2;
+    boolean showCommandTips = tallEnough && wideEnough;
+
     print(
         ANSICodes.PUSH_CURSOR_POS,
         ANSICodes.moveTo(start),
@@ -434,6 +490,8 @@ public class ShellDisplay {
         ANSICodes.moveRight(3),
         formatParagraph(null, false, 0, title),
         formatParagraph(null, true, titleWidth, lines),
+        showCommandTips ? formatParagraph(tipsBounds.getLocation(), true, tipsBounds.width, tips)
+            : "",
         ANSICodes.POP_CURSOR_POS
     );
 
@@ -442,13 +500,11 @@ public class ShellDisplay {
   /**
    * Draw the background of the GUI, including the title and frame, without clearing the insides.
    */
-  public void drawBackground(boolean resetCommand) {
+  public void drawBackground() {
     int preHeadingWidth = 10;
 
-    // Don't clear the screen if RUNNING because it will wipe partial commands
-    if (resetCommand) {
-      print(ANSICodes.CLEAR_SCREEN);
-    }
+    Rectangle content = CONTENT_RECT.get();
+    printBox(content, ' ', true);
 
     Rectangle rect = BORDER_RECT.get();
     printBox(rect, '#', false);
@@ -528,7 +584,7 @@ public class ShellDisplay {
    * position.
    */
   public void drawMemoryState() {
-    Rectangle bounds = MEMORY_RUNDATA_RECT.get();
+    Rectangle bounds = MEMORY_RUNNING_RECT.get();
     printBox(bounds, '+', true);
 
     //
@@ -540,7 +596,7 @@ public class ShellDisplay {
     StringBuilder contents = new StringBuilder();
 
     // Get the value of the program counter
-    short pcr = 0;
+    char pcr = 0;
     boolean pcrKnown = false;
     for (RegisterPacket registerPacket : displayState.getRegisters()) {
       if (registerPacket.name().equals("PCR")) {
@@ -579,7 +635,8 @@ public class ShellDisplay {
       final StringBuilder lineBuilder = new StringBuilder(arr.length);
 
       // TODO Make sure this doesn't explode with wrapping around or whatever
-      // Instruction's address and hex value
+
+      // Reserved addresses
       int address = displayState.getMemorySliceStartAddress() + i;
       if (reservedAddresses.containsKey(address)) {
         String name = reservedAddresses.get(address);
@@ -588,7 +645,14 @@ public class ShellDisplay {
       } else {
         lineBuilder.append("<0x%04x> ".formatted(address));
       }
-      lineBuilder.append("%04x ".formatted(displayState.getMemory()[i]));
+
+      // Breakpoints
+      if (List.of(displayState.getBreakpoints()).contains((char) address)) {
+        formattedLines.add("$ BRKP $");
+      }
+
+      // The instruction itself
+      lineBuilder.append("%04x ".formatted((int) displayState.getMemory()[i]));
 
       // Program counter pointer indicator
       if (!pcrKnown || address == pcr) {
@@ -606,22 +670,26 @@ public class ShellDisplay {
       formattedLines.add(lineBuilder.toString());
     }
 
-    // Build the lines into columns
+    // Create builders for columns
     StringBuilder[] columnBuilders = new StringBuilder[columns];
+    for (int i = 0; i < columnBuilders.length; i++) {
+      columnBuilders[i] = new StringBuilder();
+    }
+    // Build the lines into the columns
     for (int i = 0; i < formattedLines.size() && i < columns * availableRows; i++) {
       int column = Math.floorDiv(i, availableRows);
-      if (columnBuilders[column] == null) {
-        StringBuilder newColumnBuilder = new StringBuilder();
+      StringBuilder columnBuilder = columnBuilders[column];
 
+      if (columnBuilder.isEmpty()) {
         // Go to the starting location before drawing title
         Point start = new Point(bounds.getLocation().x, bounds.getLocation().y);
         start.translate(widthPadding + spareWidth / 2 + column * paddedColumnWidth, 2);
-        newColumnBuilder.append(ANSICodes.moveTo(start));
+        columnBuilder.append(ANSICodes.moveTo(start));
 
-        newColumnBuilder.append(titleBuilder);
-        columnBuilders[column] = newColumnBuilder;
+        columnBuilder.append(titleBuilder);
+        columnBuilders[column] = columnBuilder;
       }
-      StringBuilder columnBuilder = columnBuilders[column];
+
       String line = formattedLines.get(i);
       columnBuilder.append(line);
       columnBuilder.append(ANSICodes.moveDown(1)).append(ANSICodes.moveLeft(line.length()));
@@ -629,8 +697,18 @@ public class ShellDisplay {
 
     // String the columns together
     if (columnBuilders.length > 0) {
-      for (StringBuilder column : columnBuilders) {
-        contents.append(column);
+      for (int i = 0; i < columnBuilders.length; i++) {
+        StringBuilder columnBuilder = columnBuilders[i];
+
+        if (columnBuilder == null) {
+          continue;
+        }
+        if (columnBuilder.toString().isEmpty()) {
+          logger.warn("Empty builder for column %d".formatted(i));
+          continue;
+        }
+
+        contents.append(columnBuilder);
       }
     } else {
       contents.append("Help!").append(ANSICodes.moveDown(2)).append(ANSICodes.moveLeft(5));
@@ -723,7 +801,7 @@ public class ShellDisplay {
     Rectangle rect = REGISTERS_RECT.get();
     printBox(rect, '+', true);
 
-    String title = " Registers & Flags ";
+    String title = " Registers ";
 
     StringBuilder info = new StringBuilder();
 
@@ -749,8 +827,8 @@ public class ShellDisplay {
         }
 
         RegisterPacket register = packets.get(i);
-        String content = format.formatted(register.id(), register.name(), register.address(),
-            register.value());
+        String content = format.formatted(register.id(), register.name(), (int) register.address(),
+            (int) register.value());
         info.append(content);
         info.append(ANSICodes.moveLeft(content.length()));
         info.append(ANSICodes.moveDown(1));
@@ -770,8 +848,162 @@ public class ShellDisplay {
     );
   }
 
-  public void drawFlags() {
-    Rectangle rect = FLAGS_RECT.get();
-    printBox(rect, '+', true);
+  public void drawFlagsAndPorts() {
+    Rectangle bounds = FLAGS_RECT.get();
+    printBox(bounds, '+', true);
+
+    RegisterPacket flags = null;
+    for (RegisterPacket packet: displayState.getRegisters()) {
+      if ("FLG".equals(packet.name())) {
+        flags = packet;
+        break;
+      }
+    }
+
+    Point flagStart = new Point(bounds.x + 4, bounds.y + 2);
+
+    List<String> flagLines = new ArrayList<>();
+    String flagsTitle = " Flags ";
+    flagLines.add(flagsTitle);
+    flagLines.add("-------");
+
+    if (flags == null) {
+      flagLines.add("Port Addr Value");
+      flagLines.add("---- ---- ------");
+    } else {
+      char flagsChar = flags.value();
+
+      for (int i = 0; i < FlagHelper.FLAGS_COUNT; i++) {
+        FlagHelper.Flag flag = FlagHelper.Flag.fromBitIndex(i);
+        String name = flag.toString();
+        boolean value = FlagHelper.getFlag(i, flagsChar);
+        flagLines.add("%-6s%s".formatted(
+            name,
+            value ? '+' : '-')
+        );
+      }
+
+    }
+
+    Point portStart = new Point(flagStart.x + flagsTitle.length() + 2, flagStart.y);
+    List<String> portLines = new ArrayList<>();
+    portLines.add("Port Addr Value");
+    portLines.add("---- ---- ------");
+
+    if (displayState.getPorts().length == 0) {
+      portLines.add("");
+      portLines.add("No port data");
+    } else{
+      for (PortPacket port : displayState.getPorts()) {
+        String name = "IO" + port.id();
+        String address = "%04X".formatted((int) port.address());
+        String value = "%04X".formatted((int) port.value());
+        char character = port.value();
+
+        // Remove control characters
+        if (character < 32 || character == 127) {
+          character = '?';
+        }
+
+        portLines.add("%-4s %4s %4s %1s".formatted(name, address, value, character));
+      }
+    }
+
+    String title = " Flags & Ports ";
+    print(
+        ANSICodes.PUSH_CURSOR_POS,
+        ANSICodes.moveTo(bounds.getLocation()),
+        ANSICodes.moveRight((bounds.width - title.length()) / 2),
+        title,
+        formatParagraph(flagStart, false, 0, flagLines),
+        formatParagraph(portStart, false, 0, portLines),
+        ANSICodes.POP_CURSOR_POS
+    );
+
+  }
+
+  public void drawBreakpointBox() {
+    Rectangle bounds = BREAKPOINTS_RECT.get();
+    printBox(bounds, '+', true);
+
+    int padding = 2;
+    Rectangle innerBounds = new Rectangle(bounds.x + padding, bounds.y + padding,
+        bounds.width - 2 * padding, bounds.height - 2 * padding);
+
+    char pcr = 0;
+    for (RegisterPacket rp : displayState.getRegisters()) {
+      if (rp.name().equals("PCR")) {
+        pcr = rp.value();
+      }
+    }
+
+    int nameWidth = bounds.width - 2 * padding - 6;
+
+    List<String> lines = new ArrayList<>();
+
+    if (displayState.getBreakpoints().length == 0) {
+      lines.add("No breakpoints");
+      lines.add("Go have a 'tbreak'");
+    } else {
+      List<Character> sortedBreakpoints = Arrays.stream(displayState.getBreakpoints()).sorted()
+          .toList();
+      int startIndex = Math.max(findClosestIndex(pcr, sortedBreakpoints) - 3, 0);
+      int maxLines = innerBounds.height - 1;
+      int count = Math.min(maxLines, sortedBreakpoints.size() - startIndex);
+
+      lines.add("Viewing %d-%d of %d".formatted(
+          startIndex + 1,
+          startIndex + count,
+          sortedBreakpoints.size()
+      ));
+
+      for (int j = startIndex; j < count; j++) {
+        int address = (int) sortedBreakpoints.get(j);
+
+        String debug = displayState.getDebugSymbols().functions().getOrDefault(address, null);
+        if (debug == null) {
+          debug = displayState.getDebugSymbols().comments().getOrDefault(address, null);
+        }
+        if (debug == null) {
+          debug = displayState.getDebugSymbols().labels().getOrDefault(address, null);
+        }
+        if (debug == null) {
+          debug = displayState.getNamedAddresses().getOrDefault(address, "(No info)");
+        }
+
+        if (debug.length() > nameWidth) {
+          debug = debug.substring(0, nameWidth);
+        } else if (debug.length() < nameWidth) {
+          debug = debug + " ".repeat(nameWidth - debug.length());
+        }
+        lines.add("%04x: %s".formatted(address, debug));
+      }
+    }
+
+    String title = " VM Breakpoints ";
+
+    print(
+        ANSICodes.PUSH_CURSOR_POS,
+        ANSICodes.moveTo(bounds.getLocation()),
+        ANSICodes.moveRight((bounds.width - title.length()) / 2),
+        title,
+        formatParagraph(innerBounds.getLocation(), true, innerBounds.width, lines),
+        ANSICodes.POP_CURSOR_POS
+    );
+  }
+
+  private int findClosestIndex(char target, List<Character> breakpoints) {
+
+    if (breakpoints.isEmpty()) {
+      throw new IllegalArgumentException("Empty breakpoint lists should be handled separately.");
+    }
+
+    for (int i = 0; i < breakpoints.size(); i++) {
+      if (breakpoints.get(i) > target) {
+        return i;
+      }
+    }
+
+    return breakpoints.size() - 1;
   }
 }

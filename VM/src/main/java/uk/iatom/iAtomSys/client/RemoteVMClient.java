@@ -19,6 +19,7 @@ import uk.iatom.iAtomSys.common.api.RunRequestPacket;
 import uk.iatom.iAtomSys.common.api.RunningDataPacket;
 import uk.iatom.iAtomSys.common.api.SetRequestPacket;
 import uk.iatom.iAtomSys.common.api.StepRequestPacket;
+import uk.iatom.iAtomSys.common.api.ToggleBreakpointRequestPacket;
 import uk.iatom.iAtomSys.common.api.VmClient;
 import uk.iatom.iAtomSys.common.api.VmStatus;
 
@@ -74,6 +75,20 @@ public class RemoteVMClient implements VmClient {
 
     } catch (RestClientException rce) {
       logger.error("Error fetching remote VM state from %s".formatted(uri), rce);
+      return null;
+    }
+  }
+
+  @Override
+  public Character[] getBreakpoints() {
+    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("state/breakpoints").build().toUri();
+
+    try {
+      RestTemplate restTemplate = new RestTemplate();
+      return restTemplate.getForEntity(uri, Character[].class).getBody();
+
+    } catch (RestClientException rce) {
+      logger.error("Error fetching remote breakpoints from %s".formatted(uri), rce);
       return null;
     }
   }
@@ -215,6 +230,38 @@ public class RemoteVMClient implements VmClient {
 
     } catch (RestClientException rce) {
       logger.error("Error executing pause command: %s".formatted(uri), rce);
+      return "Request error: %s".formatted(rce.getClass().getSimpleName());
+    }
+  }
+
+  @Override
+  public String tbreak(ToggleBreakpointRequestPacket packet) {
+    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("command/tbreak").build().toUri();
+
+    try {
+      RestTemplate restTemplate = new RestTemplate();
+      ResponseEntity<String> responseEntity = restTemplate.postForEntity(uri, packet, String.class);
+      String body = responseEntity.getBody();
+      return body == null ? "<Null response>" : body;
+
+    } catch (RestClientException rce) {
+      logger.error("Error executing tbreak command: %s".formatted(uri), rce);
+      return "Request error: %s".formatted(rce.getClass().getSimpleName());
+    }
+  }
+
+  @Override
+  public String stop() {
+    URI uri = UriComponentsBuilder.fromHttpUrl(host).path("command/stop").build().toUri();
+
+    try {
+      RestTemplate restTemplate = new RestTemplate();
+      ResponseEntity<String> responseEntity = restTemplate.postForEntity(uri, null, String.class);
+      String body = responseEntity.getBody();
+      return body == null ? "<Null response>" : body;
+
+    } catch (RestClientException rce) {
+      logger.error("Error executing stop command: %s".formatted(uri), rce);
       return "Request error: %s".formatted(rce.getClass().getSimpleName());
     }
   }

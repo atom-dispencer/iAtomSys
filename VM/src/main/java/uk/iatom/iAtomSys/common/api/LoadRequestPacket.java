@@ -1,18 +1,31 @@
 package uk.iatom.iAtomSys.common.api;
 
-import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public record LoadRequestPacket(String imageName) {
 
+  public static final int MAX_PATH_LENGTH = 64;
+  public static final String ERR_BLANK = "Image name cannot be blank!";
   private static final Logger logger = LoggerFactory.getLogger(LoadRequestPacket.class);
-  private static final int MAX_PATH_LENGTH = 64;
 
   public LoadRequestPacket {
 
     if (imageName == null || imageName.isBlank()) {
-      String message = "Image name cannot be blank!";
+      logger.warn(ERR_BLANK);
+      throw new IllegalArgumentException(ERR_BLANK);
+    }
+
+    int length = imageName.length();
+    if (length > MAX_PATH_LENGTH) {
+      String message = ERR_LENGTH(length);
+      logger.warn(message);
+      throw new IllegalArgumentException(message);
+    }
+
+    String sanitised = sanitise(imageName);
+    if (!imageName.equals(sanitised)) {
+      String message = ERR_UNSANITARY(imageName, sanitised);
       logger.warn(message);
       throw new IllegalArgumentException(message);
     }
@@ -20,19 +33,18 @@ public record LoadRequestPacket(String imageName) {
     if (!imageName.endsWith(".img")) {
       imageName = imageName + ".img";
     }
+  }
 
-    String fileNameOnly = new File(imageName).getName();
-    if (!fileNameOnly.equals(imageName)) {
-      String message = "Image name must be simple: %s != %s".formatted(fileNameOnly, imageName);
-      logger.warn(message);
-      throw new IllegalArgumentException(message);
-    }
+  public static String ERR_UNSANITARY(String bad, String sanitised) {
+    int diff = bad.length() - sanitised.length();
+    return "Image name has %d illegal character%s".formatted(diff, Math.abs(diff) == 1 ? "" : "s");
+  }
 
-    int length = imageName.length();
-    if (length > MAX_PATH_LENGTH) {
-      String message = "Image name too long: %d/%d".formatted(length, MAX_PATH_LENGTH);
-      logger.warn(message);
-      throw new IllegalArgumentException(message);
-    }
+  public static String ERR_LENGTH(int length) {
+    return "Image name too long: %d/%d".formatted(length, MAX_PATH_LENGTH);
+  }
+
+  public static String sanitise(String name) {
+    return name.replaceAll("[^a-zA-Z0-9._]", "");
   }
 }

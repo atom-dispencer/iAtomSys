@@ -7,6 +7,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties("iatomsys.client")
 public class ApiClientConfiguration {
 
-  private short vmStateRequestPcrOffset = -16;
-  private short vmStateRequestSliceWidth = 128;
+  private int vmStateRequestPcrOffset = -16;
+  private char vmStateRequestSliceWidth = 512;
 }

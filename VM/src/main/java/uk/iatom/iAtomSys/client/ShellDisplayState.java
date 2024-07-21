@@ -41,13 +41,14 @@ public class ShellDisplayState {
   private VmStatus status = VmStatus.STOPPED;
   private String commandMessage = "[Nothing to see here!]";
   private String[] availableImages = new String[0];
-  private short memorySliceStartAddress = 0;
-  private short[] memory = new short[0];
+  private char memorySliceStartAddress = 0;
+  private char[] memory = new char[0];
   private List<String[]> disassembly = new ArrayList<>();
   private DebugSymbols debugSymbols = DebugSymbols.empty();
   private RegisterPacket[] registers = new RegisterPacket[0];
   private PortPacket[] ports = new PortPacket[0];
   private LocalDateTime runningSince = LocalDateTime.now();
+  private Character[] breakpoints = new Character[0];
   private long runningInstructionsExecuted = 0L;
 
   public void update() {
@@ -103,10 +104,13 @@ public class ShellDisplayState {
     }
 
     setMemorySliceStartAddress(memoryPacket.sliceStartAddress());
-    short[] memory = memoryPacket.memorySlice();
+    char[] memory = memoryPacket.memorySlice();
     List<String[]> disassembly = memoryDisassembler.disassemble(memory);
     setMemory(memory);
     setDisassembly(disassembly);
+
+    Character[] breakpoints = api.getBreakpoints();
+    setBreakpoints(breakpoints);
 
     // Update register values
     RegisterPacket[] registers = api.getRegisters();

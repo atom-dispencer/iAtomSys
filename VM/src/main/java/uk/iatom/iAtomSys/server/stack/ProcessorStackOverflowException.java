@@ -7,10 +7,10 @@ import uk.iatom.iAtomSys.server.instruction.InstructionExecutionException;
 public class ProcessorStackOverflowException extends InstructionExecutionException {
 
   public final ProcessorStack processorStack;
-  public final short pushingValue;
+  public final char pushingValue;
 
   public ProcessorStackOverflowException(@NonNull ProcessorStack processorStack,
-      @NonNull short pushingValue,
+      @NonNull char pushingValue,
       @NonNull String message, @Nullable Throwable cause) {
     super(null, message, cause);
     this.processorStack = processorStack;
@@ -20,6 +20,6 @@ public class ProcessorStackOverflowException extends InstructionExecutionExcepti
   @Override
   public String getMessage() {
     return "ProcessorStack overflowed max size %d while pushing %d: %s (%s)"
-        .formatted(processorStack.getSizeShorts(), pushingValue, message, super.getMessage());
+        .formatted(processorStack.getSizeShorts(), (int) pushingValue, message, super.getMessage());
   }
 }

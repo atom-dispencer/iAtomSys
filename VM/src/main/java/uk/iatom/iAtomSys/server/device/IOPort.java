@@ -10,19 +10,19 @@ import uk.iatom.iAtomSys.server.memory.Memory;
 public class IOPort {
 
   @Getter
-  private final short address;
+  private final char address;
   @Getter
   private final FlagHelper.Flag flag;
   private final RegisterSet registerSet;
   private final Memory memory;
 
-  private final ArrayList<Short> outputBuffer = new ArrayList<>();
-  private final ArrayList<Short> inputBuffer = new ArrayList<>();
+  private final ArrayList<Character> outputBuffer = new ArrayList<>();
+  private final ArrayList<Character> inputBuffer = new ArrayList<>();
   private int outputPointer = 0;
   private int inputPointer = 0;
 
 
-  public IOPort(short address, FlagHelper.Flag flag, RegisterSet registerSet, Memory memory) {
+  public IOPort(char address, FlagHelper.Flag flag, RegisterSet registerSet, Memory memory) {
     this.address = address;
     this.flag = flag;
     this.registerSet = registerSet;
@@ -48,7 +48,7 @@ public class IOPort {
   /**
    * @return The value at {@link IOPort#address}
    */
-  public short peek() {
+  public char peek() {
     return memory.read(address);
   }
 
@@ -57,7 +57,7 @@ public class IOPort {
    * {@link IOPort#address}.
    */
   public void shuffleInput() {
-    short readValue = hasUnreadInput() ? inputBuffer.get(inputPointer++) : 0;
+    char readValue = hasUnreadInput() ? inputBuffer.get(inputPointer++) : 0;
     memory.write(address, readValue);
   }
 
@@ -65,7 +65,7 @@ public class IOPort {
    * Shuffle the value at the bound {@link IOPort#address} into the {@link IOPort#outputBuffer}.
    */
   public void shuffleOutput() {
-    short writeValue = memory.read(address);
+    char writeValue = memory.read(address);
     outputBuffer.add(writeValue);
   }
 
@@ -77,21 +77,21 @@ public class IOPort {
     return outputPointer < outputBuffer.size() - 1;
   }
 
-  public void writeInput(short s) {
+  public void writeInput(char s) {
     inputBuffer.add(s);
   }
 
-  public void writeInput(List<Short> data) {
+  public void writeInput(List<Character> data) {
     inputBuffer.addAll(data);
   }
 
-  public List<Short> readUnreadOutput() {
-    List<Short> result = outputBuffer.subList(outputPointer, outputBuffer.size() - 1);
+  public List<Character> readUnreadOutput() {
+    List<Character> result = outputBuffer.subList(outputPointer, outputBuffer.size() - 1);
     outputPointer = outputBuffer.size() - 1;
     return result;
   }
 
-  public List<Short> readAllOutput() {
+  public List<Character> readAllOutput() {
     outputPointer = outputBuffer.size() - 1;
     return outputBuffer.subList(0, outputBuffer.size() - 1);
   }
