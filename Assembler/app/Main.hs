@@ -20,7 +20,7 @@ optionParser =
     <*> switch (long "verbose" <> short 'v' <> help "Produce *additional* logging messages")
 
 main :: IO ()
-main = displayArgs =<< execParser opts
+main = credits >> (displayArgs =<< execParser opts)
   where
     opts =
       info
@@ -30,8 +30,8 @@ main = displayArgs =<< execParser opts
             <> header "Hiya! We are testing iasm!"
         )
 
--- credits :: IO ()
--- credits = putStrln "" >> putStrLn " ~~ iAtomSys Assembler ~~ " >> putStrLn ""
+credits :: IO ()
+credits = putStrLn "" >> putStrLn " ~~ iAtomSys Assembler ~~ " >> putStrLn ""
 
 displayArgs :: Options -> IO ()
 displayArgs (Options f c l s v) = do
