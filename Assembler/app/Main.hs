@@ -4,12 +4,12 @@ import IASM.Options
 
 {- The main function for the assembler and the application's entrypoint. -}
 main :: IO ()
-main =
-  credits >> parseProgramOptions >>= \opts -> displayArgs opts >> start opts
+main = parseProgramOptions >>= \opts -> credits (verbosity opts) >> displayArgs opts >> start opts
 
 {- Display credits, links and licensing information for the application. -}
-credits :: IO ()
-credits = do
+credits :: Verbosity -> IO ()
+credits SILENT = return ()
+credits _ = do
   putStrLn ""
   putStrLn " ~~ iAtomSys Assembler (iasm)                   ~~ "
   putStrLn " ~~ https://github.com/atom-dispencer/iAtomSys/ ~~ "

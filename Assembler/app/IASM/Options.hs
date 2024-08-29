@@ -2,6 +2,7 @@ module IASM.Options where
 
 import Options.Applicative
 
+{- Whether the assembler should just assemble or link the inputs, or both! -}
 data Mode = ASSEMBLE_ONLY | LINK_ONLY | BOTH deriving (Eq)
 
 instance Show Mode where
@@ -9,6 +10,8 @@ instance Show Mode where
   show LINK_ONLY = "link_only"
   show BOTH = "assemble_and_link"
 
+{- How many logging messages the assembler should produce.
+ - A silent assembler will produce no output at all. -}
 data Verbosity = SILENT | NORMAL | VERBOSE deriving (Eq)
 
 instance Show Verbosity where
