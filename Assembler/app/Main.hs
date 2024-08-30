@@ -1,6 +1,7 @@
 module Main where
 
 import IASM.Options
+import System.Directory
 
 {- The main function for the assembler and the application's entrypoint. -}
 main :: IO ()
@@ -28,4 +29,17 @@ displayArgs (Options f m v) = do
 
 {- Start assembling! -}
 start :: Options -> IO ()
-start (Options _ _ _) = putStrLn "Doing things..."
+start opts = do
+  fileExists <- doesFileExist (file opts)
+  directoryExists <- doesDirectoryExist (file opts)
+
+  if fileExists && directoryExists
+    then putStrLn "Ambiguous!"
+    else
+      if fileExists
+        then putStrLn "File exists!"
+        else
+          if directoryExists
+            then putStrLn "Dir exists!"
+            else
+              putStrLn "Does not exist :("
