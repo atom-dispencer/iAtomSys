@@ -1,7 +1,9 @@
 module Main where
 
+import IASM.Assembler
+import IASM.FileHelper
+import IASM.Linker
 import IASM.Options
-import System.Directory
 
 {- The main function for the assembler and the application's entrypoint. -}
 main :: IO ()
@@ -29,17 +31,6 @@ displayArgs (Options f m v) = do
 
 {- Start assembling! -}
 start :: Options -> IO ()
-start opts = do
-  fileExists <- doesFileExist (file opts)
-  directoryExists <- doesDirectoryExist (file opts)
-
-  if fileExists && directoryExists
-    then putStrLn "Ambiguous!"
-    else
-      if fileExists
-        then putStrLn "File exists!"
-        else
-          if directoryExists
-            then putStrLn "Dir exists!"
-            else
-              putStrLn "Does not exist :("
+start (Options file ASSEMBLE_ONLY verbosity) = getFilePaths file >>= assembleFiles
+start (Options file LINK_ONLY verbosity) = getFilePaths file >> linkFiles
+start (Options file BOTH verbosity) = getFilesPaths file >>= (\fs -> assembleFiles fs >> linkFiles fs)
