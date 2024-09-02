@@ -1,4 +1,4 @@
 module IASM.Linker where
 
-linkFiles :: [FilePath] -> String
-linkFiles files = ""
+linkFiles :: [String] -> IO ()
+linkFiles files = return ()

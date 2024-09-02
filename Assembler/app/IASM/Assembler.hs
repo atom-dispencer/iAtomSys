@@ -1,4 +1,4 @@
 module IASM.Assembler where
 
-assembleFiles :: [FilePath] -> String
-assembleFiles files = ""
+assembleFiles :: [String] -> IO ()
+assembleFiles files = return ()

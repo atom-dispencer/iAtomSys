@@ -1,5 +1,6 @@
 module Main where
 
+import Control.Monad (when)
 import IASM.Assembler
 import IASM.Linker
 import IASM.Options
@@ -28,9 +29,20 @@ credits (Options f m v) = do
   putStrLn $ "verbosity : " ++ show v
   putStrLn ""
 
+getFiles :: String -> IO [String]
+getFiles path = return ["", ""]
+
 {- Start assembling! -}
 assemble :: Options -> IO ()
-assemble opts = putStrLn "Assembling! (just kidding, not really!)"
+assemble opts = do
+  when
+    (verbosity opts /= SILENT)
+    (putStrLn $ "Assembling " ++ file opts ++ "...")
+  files <- getFiles (file opts)
+  when
+    (verbosity opts == VERBOSE)
+    (putStrLn $ "Found " ++ show (length files) ++ " files")
+  assembleFiles files
 
 link :: Options -> IO ()
 link opts = putStrLn "Linking! (just kidding, not really!)"
