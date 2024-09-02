@@ -67,7 +67,6 @@ executable iasm
     -- Modules included in this executable, other than Main.
     other-modules:
                       IASM.Options
-                      IASM.FileHelper
                       IASM.Assembler
                       IASM.Linker
 

@@ -1,13 +1,16 @@
 module Main where
 
 import IASM.Assembler
-import IASM.FileHelper
 import IASM.Linker
 import IASM.Options
 
 {- The main function for the assembler and the application's entrypoint. -}
 main :: IO ()
-main = parseProgramOptions >>= \opts -> credits (verbosity opts) >> displayArgs opts >> start opts
+main = do
+  opts <- parseProgramOptions
+  credits (verbosity opts)
+  displayArgs opts
+  start opts
 
 {- Display credits, links and licensing information for the application. -}
 credits :: Verbosity -> IO ()
@@ -31,6 +34,6 @@ displayArgs (Options f m v) = do
 
 {- Start assembling! -}
 start :: Options -> IO ()
-start (Options file ASSEMBLE_ONLY verbosity) = getFilePaths file >>= assembleFiles
-start (Options file LINK_ONLY verbosity) = getFilePaths file >> linkFiles
-start (Options file BOTH verbosity) = getFilesPaths file >>= (\fs -> assembleFiles fs >> linkFiles fs)
+start (Options file ASSEMBLE_ONLY verbosity) = putStrLn "Assemble only"
+start (Options file LINK_ONLY verbosity) = putStrLn "Link only"
+start (Options file BOTH verbosity) = putStrLn "Both"
