@@ -1,4 +1,5 @@
 module IASM.Assembler where
 
-assembleFiles :: [String] -> IO ()
-assembleFiles files = return ()
+assembleFiles :: [FilePath] -> IO ()
+assembleFiles files = do
+  putStrLn $ "Assembling " ++ show (length files) ++ " files..."
