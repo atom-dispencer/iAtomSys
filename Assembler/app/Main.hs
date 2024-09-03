@@ -1,9 +1,10 @@
 module Main where
 
-import Control.Monad (when)
+import Control.Monad (filterM, when)
 import IASM.Assembler
 import IASM.Options
 import System.Directory
+import System.FilePath
 
 {- The main function for the assembler and the application's entrypoint. -}
 main :: IO ()
@@ -15,8 +16,8 @@ main = do
 
 {- Display credits, links and licensing information for the application. -}
 credits :: Options -> IO ()
-credits (Options _ _ SILENT) = return ()
-credits (Options f m v) = do
+credits (Options _ _ _ SILENT) = return ()
+credits (Options f b m v) = do
   putStrLn ""
   putStrLn " ~~ iAtomSys Assembler (iasm)                   ~~ "
   putStrLn " ~~ https://github.com/atom-dispencer/iAtomSys/ ~~ "
@@ -24,6 +25,7 @@ credits (Options f m v) = do
   putStrLn ""
   putStrLn "Parsed arguments: "
   putStrLn $ "file      : " ++ f
+  putStrLn $ "batches   : " ++ show b
   putStrLn $ "mode      : " ++ show m
   putStrLn $ "verbosity : " ++ show v
   putStrLn ""
@@ -40,10 +42,16 @@ getFiles path = do
       return [path]
     else
       if dirExists
-        then
-          getDirectoryContents path
+        then do
+          listDirectory path
         else
           return []
+
+hasFileExtension :: String -> FilePath -> IO Bool
+hasFileExtension _ [] = return False
+hasFileExtension extension f = do
+  dirExists <- doesDirectoryExist f
+  return $ takeExtension f == extension && not dirExists
 
 {- Start assembling! -}
 assemble :: Options -> IO ()
@@ -53,11 +61,16 @@ assemble opts = do
     (putStrLn $ "Assembling " ++ file opts ++ "...")
   files <- getFiles (file opts)
 
-  if null files
+  filteredFiles <- filterM (hasFileExtension ".iasm") files
+  when
+    (verbosity opts /= SILENT)
+    (putStrLn $ "Filtered " ++ show (length files) ++ " mixed files to " ++ show (length filteredFiles) ++ " .iasm files")
+
+  if null filteredFiles
     then
       putStrLn $ "Cannot continue - no such file or directory: " ++ file opts
     else
-      assembleFiles files
+      assembleFiles files (batches opts)
 
 link :: Options -> IO ()
 link opts = putStrLn "Linking! (just kidding, not really!)"

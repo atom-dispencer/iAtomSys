@@ -21,6 +21,7 @@ instance Show Verbosity where
 
 data Options = Options
   { file :: String,
+    batches :: Int,
     mode :: Mode,
     verbosity :: Verbosity
   }
@@ -45,6 +46,14 @@ optionParser =
       ( long "file"
           <> short 'f'
           <> help "The input file or directory for the program."
+      )
+    <*> option
+      auto
+      ( long "batches"
+          <> short 'b'
+          <> help "The desired number of batches (threads) to run in parallel"
+          <> showDefault
+          <> value 1
       )
     <*> ( flag' ASSEMBLE_ONLY (short 'a' <> long "assemble")
             <|> flag' LINK_ONLY (short 'l' <> long "link")
