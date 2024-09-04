@@ -1,5 +1,6 @@
 module IASM.Assembler where
 
+import Data.Array.Byte (ByteArray)
 import Data.List (unfoldr)
 
 assembleFiles :: [FilePath] -> Int -> IO ()
@@ -17,3 +18,13 @@ splitListEvenly chunkSize = unfoldr split
   where
     split [] = Nothing
     split xs = Just (splitAt chunkSize xs)
+
+assembleSingle :: FilePath -> IO ()
+assembleSingle = getLines . tokenise . parse . preprocess . compile . writeToObject
+
+getLines :: FilePath -> [String]
+tokenise :: [String] -> [Token]
+parse :: [Token] -> [Statement]
+preprocess :: [Statement] -> [Statement]
+compile :: [Statement] -> ByteArray
+writeToObject :: ByteArray -> IO ()
