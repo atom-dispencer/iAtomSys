@@ -25,8 +25,7 @@ splitListEvenly chunkSize = unfoldr split
 assembleSingle :: FilePath -> IO ()
 assembleSingle path = do
   content <- readFile path
-  let bytes = compile . preprocess . parse . tokenise . lines $ content
-  writeToObject bytes
+  writeToObject . compile . preprocess . parse . tokenise . lines $ content
 
 {- Convert a list of lines to a list of Tokens representing discrete atoms of information
  - within the compilation target. -}
