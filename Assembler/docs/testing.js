@@ -59,3 +59,15 @@ export mathsWithState: State -> Int16 n -> Int16
     State.c / divide(n / 0, 0)          // There are 3 places for DivByZeroError to occur in this line.
       | Int16 -> return $               // Errors on one line are collected into a single error collection statement
       | DivByZeroError -> return x
+
+// A branchless equivalent
+export bl_mathsWithState: State -> Int16 n -> Int16
+  n = State.a + State.b
+  return { 
+    n == 0 -> n * State.c 
+  } { 
+    else -> State.c / divide(n / 0, 0)
+    // Here, 'else' is equivalent to 'n != 0', and must be the inverse of all of the conditions before.
+      | Int16 -> return $
+      | DivByZeroError -> return x
+  }
